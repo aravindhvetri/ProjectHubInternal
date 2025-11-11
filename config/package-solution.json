@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "project-hub-internal-client-side-solution",
+    "id": "c9543903-d4b9-4a5b-afdd-d7554df0bcc6",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.18.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "ProjectHubInternal description"
+      },
+      "longDescription": {
+        "default": "ProjectHubInternal description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "project-hub-internal Feature",
+        "description": "The feature that activates elements of the project-hub-internal solution.",
+        "id": "7492445f-8383-40d3-bd54-3a4308956cc7",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/project-hub-internal.sppkg"
+  }
+}
