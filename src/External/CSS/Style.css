@@ -1,0 +1,786 @@
+#workbenchPageContent {
+  max-width: 100%;
+}
+
+.content_3f3fd3c2,
+.CanvasZone {
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+#spCommandBar {
+  display: none !important;
+}
+
+.spAppAndPropertyPanelContainer .sp-appBar {
+  display: none !important;
+}
+
+[data-automation-id="CanvasZone-SectionContainer"] {
+  padding: 0px !important;
+}
+
+[data-automation-id="contentScrollRegion"] {
+  overflow-y: hidden !important;
+}
+
+div[data-sp-feature-tag="Site header host"] {
+  display: none !important;
+}
+
+/* Callout Styles */
+.import_collOut .ms-Callout-beak {
+  border-top: 1px solid #00a99d !important;
+  border-left: 1px solid #00a99d !important;
+  box-shadow: none !important;
+  z-index: 1 !important;
+}
+
+.import_collOut .ms-Callout-beakCurtain {
+  border-radius: 5px !important;
+  border: 1px solid #00a99d !important;
+}
+
+/* Scroll Bar */
+*::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #d4d4d4;
+}
+
+.DetailslistText {
+  width: 100%;
+  text-wrap: balance;
+}
+
+.ms-DetailsRow-cell {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.ms-Suggestions-title {
+  color: #000 !important;
+}
+
+/* Pagenation*/
+.pagination .ms-Button {
+  border: none !important;
+  background: none !important;
+  min-width: 0 !important;
+  padding: 5px !important;
+  color: #605e5c;
+  margin: 12px 0px;
+}
+
+.pagination .ms-Button.ms-Button--primary .ms-Button-label {
+  color: #fff;
+  background: #00a99d;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.img img {
+  width: 40px;
+  height: 40px;
+}
+
+.status,
+.days,
+.time {
+  font-size: 14px;
+  margin-bottom: 7px;
+}
+
+.card_right {
+  width: auto;
+  float: left;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.Converstion .status {
+  background: #fff1de;
+  color: #494949;
+  padding: 3px 10px;
+  border-radius: 18px;
+}
+
+.Analysis .status {
+  background: #c8ebdd;
+  color: #494949;
+  padding: 3px 10px;
+  border-radius: 18px;
+}
+
+.Quote .status {
+  background: #cfd8f0;
+  color: #494949;
+  padding: 3px 10px;
+  border-radius: 18px;
+}
+
+.Won .status {
+  background: #eac8d7;
+  color: #494949;
+  padding: 3px 10px;
+  border-radius: 18px;
+}
+
+.Lost .status {
+  background: #eac8d7;
+  color: #494949;
+  padding: 3px 10px;
+  border-radius: 18px;
+}
+
+.App {
+  text-align: center;
+  background: #fbfcfd;
+  height: 100vh;
+  padding: 40px 0px;
+}
+
+h4 {
+  font-size: 12px;
+  margin-top: 0px;
+  color: #416183;
+}
+
+.task {
+  border: 1px solid white;
+  margin: 10px;
+  box-shadow: 1px 3px 10px gray;
+  height: 8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prime React */
+.p-inputtext:enabled:focus {
+  box-shadow: 0 0 5px 0px rgb(0 169 157);
+  border-color: #00a99d;
+}
+
+.p-button:focus {
+  box-shadow: 0 0 5px 0px rgb(0 169 157);
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  text-overflow: ellipsis;
+  font-size: 12px !important;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
+  color: #00a99d;
+  background: #e9ecef !important;
+}
+
+.all_search .p-icon-field > .p-input-icon {
+  margin-top: -0.35rem !important;
+  font-size: 12px !important;
+}
+
+.all_search .p-inputtext {
+  padding: 4px 3px 6px 32px !important;
+  border: 1px solid #00a99d !important;
+  height: 32px;
+  font-size: 14px !important;
+}
+
+.p-disabled,
+.p-component:disabled {
+  opacity: 1 !important;
+}
+
+.ContactMultiChoice .p-autocomplete-multiple-container {
+  width: 100%;
+  border: 1px solid #00a99d;
+  border-radius: 6px;
+  height: max-content;
+  min-height: 58px;
+  max-height: 88px;
+  overflow: auto;
+  cursor: auto;
+}
+
+.ContactMultiDisabledChoice .p-autocomplete-multiple-container {
+  width: 100%;
+  border: 1px solid #afafaf;
+  border-radius: 6px;
+  height: max-content;
+  min-height: 58px;
+  max-height: 88px;
+  overflow: auto;
+  cursor: auto;
+}
+
+.p-autocomplete .p-autocomplete-multiple-container:not(.p-disabled).p-focus {
+  box-shadow: none;
+}
+
+.ContactMultiChoice .p-autocomplete-token {
+  background: #00a99d;
+  font-size: 12px !important;
+}
+
+.ContactMultiDisabledChoice .p-autocomplete-token {
+  background: #afafaf;
+  font-size: 12px !important;
+}
+
+.p-virtualscroller {
+  height: 206px !important;
+  min-height: 48px !important;
+}
+
+/* Prime React Data Table Design */
+.p-datatable-table {
+  border: 1px solid #ebebeb;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: #e8fffd !important;
+  border-width: 0px 0px 0px 0px !important;
+  padding: 12px;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #e4feff;
+}
+
+.p-datatable .p-column-header-content {
+  font-size: 14px;
+  color: #6a6a6a;
+}
+
+.p-datatable .p-sortable-column.p-highlight {
+  color: #000;
+}
+
+.p-datatable .p-sortable-column.p-highlight .p-sortable-column-icon {
+  color: #00a99d;
+}
+
+.p-datatable .p-sortable-column .p-sortable-column-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  font-size: 12px;
+  padding: 10px;
+}
+
+.data_table_1536 .p-datatable .p-datatable-tbody > tr > td {
+  padding: 10px;
+}
+
+.data_table_1396 .p-datatable .p-datatable-tbody > tr > td {
+  padding: 8px;
+}
+
+.p-datatable-row-expansion:hover {
+  background: transparent !important;
+}
+
+.p-datatable-row-expansion .p-datatable-thead > tr > th {
+  background: #c7dbec59 !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-toggler {
+  width: 26px;
+  height: 20px;
+}
+.p-datatable .p-datatable-tbody > tr {
+  cursor: pointer;
+}
+
+/* Drop Down */
+.drpDown .p-dropdown {
+  border: 1px solid #00a99d !important;
+}
+.dropdown .p-dropdown {
+  /* padding: 2px 5px 4px 5px ; */
+  font-size: 12px;
+  width: 100%;
+  border: 1px solid #00a99d;
+  border-color: #00a99d;
+  height: 32px;
+}
+.dropdown .p-dropdown .p-dropdown-trigger {
+  background: #00a99d;
+  color: #ffffff;
+  border-radius: 0px;
+}
+.dropDownDisabled .p-dropdown {
+  border: 1px solid #afafaf !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  box-shadow: 0 0 5px 0px rgb(0 169 157);
+}
+.dealFormPage .p-inputtextarea {
+  width: 70%;
+  border: 1px solid #00a99d;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #000;
+}
+.dealFormPage .p-dropdown {
+  border-radius: 6px;
+  border-color: #00a99d;
+  width: 70%;
+}
+.dealFormPage .ms-DatePicker {
+  width: 70%;
+}
+.dealFormPage .p-dropdown .p-dropdown-trigger {
+  background: #00a99d;
+  color: #ffffff;
+}
+
+.dealFormPage .p-dropdown:not(.p-disabled):hover {
+  border-color: #00a99d;
+}
+
+.dealFormPages .p-inputtextarea {
+  width: 100%;
+  border: 1px solid #00a99d;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #000;
+}
+.dealFormPages .p-dropdown {
+  border-radius: 6px;
+  width: 100%;
+}
+.dealFormPages .ms-DatePicker {
+  width: 100%;
+}
+.dealFormPages .ms-TextField-field {
+  font-size: 12px !important;
+}
+.dealFormPages .ms-TextField-fieldGroup {
+  border-radius: 6px;
+  border: 1px solid #ced4da !important;
+}
+.dealFormPages .p-dropdown .p-dropdown-trigger {
+  background: #00a99d;
+  color: #ffffff;
+}
+
+.dealFormPages .ms-Label {
+  padding-top: 20px;
+}
+
+.dealFormPages .ms-BasePicker-text {
+  border: 1px solid #ced4da !important;
+}
+
+.dealFormPages .p-dropdown:not(.p-disabled):hover {
+  border-color: #00a99d;
+}
+.dealFormPages .p-inputtext {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #ced4da !important;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon {
+  color: #ff0000 !important;
+}
+
+.p-dialog .p-dialog-header {
+  border-bottom: none !important;
+  padding: 12px 16px !important;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 10px 16px !important;
+}
+
+.p-dropdown .p-dropdown-label {
+  font-size: 12px !important;
+}
+
+.p-dropdown-item {
+  font-size: 12px !important;
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+  font-size: 16px !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background: #00a99d !important;
+  color: #fff !important;
+}
+
+.p-dropdown-panel
+  .p-dropdown-items
+  .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
+  background: #e8fffd !important;
+  color: #00a99d !important;
+}
+
+.p-disabled,
+.p-disabled * {
+  pointer-events: auto !important;
+}
+
+.p-dropdown-panel .p-dropdown-items {
+  padding: 0 !important;
+}
+
+.tableData .p-datatable > .p-datatable-wrapper {
+  overflow: auto;
+  height: calc(100vh - 320px) !important;
+}
+
+.tableDatas .p-datatable > .p-datatable-wrapper {
+  overflow: auto;
+  height: auto !important;
+}
+
+.accountChildTable .p-datatable > .p-datatable-wrapper {
+  overflow: auto;
+  height: auto !important;
+}
+
+.drpDown .p-dropdown-trigger {
+  color: #00a99d !important;
+}
+
+.dropDownDisabled .p-dropdown-trigger {
+  color: #afafaf !important;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight {
+  background: #00a99d;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #00a99d;
+}
+
+.p-disabled,
+.p-disabled * {
+  cursor: default !important;
+}
+
+/* Funnel Chart */
+.canvasjs-chart-credit {
+  display: none !important;
+}
+
+.canvasjs-chart-tooltip {
+  display: none !important;
+}
+
+.canvasjs-chart-canvas {
+  top: 26px !important;
+}
+
+/* Deal Add Stages */
+.AddStages .p-button {
+  background: #00a99d;
+  border: 1px solid #00a99d;
+}
+
+.AddStages .p-button:hover {
+  background: #00a99d;
+  border: 1px solid #00a99d;
+}
+
+.p-button.p-button-icon-only.p-button-rounded {
+  height: 22px !important;
+}
+
+.stageBtnWidth .p-button.p-button-icon-only {
+  width: 22px !important;
+}
+
+.stageButton .pi {
+  font-size: 12px !important;
+}
+
+/* Tostify */
+.p-toast .p-toast-message.p-toast-message-success {
+  background: rgb(228 248 240 / 87%);
+  border: solid #1ea97c;
+  border-width: 0 0 0 6px;
+  color: #1ea97c;
+}
+
+.p-toast .p-toast-message.p-toast-message-success .p-toast-message-icon,
+.p-toast .p-toast-message.p-toast-message-success .p-toast-icon-close {
+  color: #1ea97c;
+}
+
+.p-toast .p-toast-message.p-toast-message-info {
+  background: rgb(219 234 254 / 88%);
+  border: solid #3b82f6;
+  border-width: 0 0 0 6px;
+  color: #3b82f6;
+}
+
+.p-toast .p-toast-message.p-toast-message-info .p-toast-message-icon,
+.p-toast .p-toast-message.p-toast-message-info .p-toast-icon-close {
+  color: #3b82f6;
+}
+
+.p-toast .p-toast-message.p-toast-message-warn {
+  background: rgb(255 242 226 / 90%);
+  border: solid #cc8925;
+  border-width: 0 0 0 6px;
+  color: #cc8925;
+}
+
+.p-toast .p-toast-message.p-toast-message-warn .p-toast-message-icon,
+.p-toast .p-toast-message.p-toast-message-warn .p-toast-icon-close {
+  color: #cc8925;
+}
+
+.p-toast .p-toast-message.p-toast-message-error {
+  background: rgb(255 231 230 / 93%);
+  border: solid #ff5757;
+  border-width: 0 0 0 6px;
+  color: #ff5757;
+}
+
+.p-toast .p-toast-message.p-toast-message-error .p-toast-message-icon,
+.p-toast .p-toast-message.p-toast-message-error .p-toast-icon-close {
+  color: #ff5757;
+}
+
+/* Responsevie */
+@media only screen and (min-width: 1706px) {
+  .tableData .p-datatable > .p-datatable-wrapper {
+    height: calc(100vh - 400px) !important;
+  }
+  .accountChildTable .p-datatable > .p-datatable-wrapper {
+    overflow: auto;
+  }
+}
+
+@media only screen and (min-width: 1920px) {
+  .tableData .p-datatable > .p-datatable-wrapper {
+    height: calc(100vh - 500px) !important;
+  }
+
+  .accountChildTable .p-datatable > .p-datatable-wrapper {
+    overflow: auto;
+  }
+}
+
+.persona {
+  width: 26px;
+  height: 26px;
+  background-color: #55555520;
+  color: #555;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+}
+.allPersona {
+  visibility: visible;
+}
+
+/*Data table pagination Common Styles.......................................................*/
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: #00a99d;
+  color: #fff;
+  border-color: transparent;
+  border-radius: 50%;
+}
+.p-paginator {
+  padding: 20px 0px 0px 0px !important;
+}
+.paginator-bottom {
+  border-width: 0;
+}
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+  color: #00a99d;
+  border: 1px solid transparent;
+}
+.p-paginator .p-paginator-pages .p-paginator-page {
+  min-width: 28px;
+  height: 28px;
+  font-size: 14px;
+  margin: 0px 4px 0 4px;
+  border: none;
+  color: #605e5c;
+}
+.p-paginator .p-paginator-first:not(.p-disabled):not(.p-highlight):hover,
+.p-paginator .p-paginator-prev:not(.p-disabled):not(.p-highlight):hover,
+.p-paginator .p-paginator-next:not(.p-disabled):not(.p-highlight):hover,
+.p-paginator .p-paginator-last:not(.p-disabled):not(.p-highlight):hover {
+  background-color: #ffff;
+}
+.p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
+  background-color: #fff;
+}
+
+/*file upload button common styles....................*/
+.addFileButton .p-button {
+  background-color: white;
+  display: flex;
+  width: max-content;
+  gap: 1px;
+  color: black;
+  font-weight: 500;
+  font-size: 12px;
+  border: 1px solid #00a99d;
+  border-radius: 5px;
+  cursor: pointer;
+  align-items: center;
+}
+.addFileButton .p-button .p-button-icon {
+  font-size: 12px;
+}
+.pi-times {
+  font-size: 8px;
+  cursor: pointer;
+  color: white;
+  background: #00a99d;
+  width: 18px;
+  height: 18px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.fileContainer {
+  list-style: none;
+  padding: 0px;
+  margin: 0;
+  display: flex;
+  width: 290%;
+  flex-wrap: wrap;
+  gap: 1%;
+  margin-left: 74px;
+  margin-top: 7px;
+}
+
+/* Change Log Modal................................................ */
+.change-log-modal .p-dialog-header-icons {
+  position: absolute;
+  right: 2%;
+  top: 3%;
+}
+.change-log-modal .leftSideSection {
+  width: 50%;
+  text-align: left;
+  font-weight: 500;
+  background: #deeaed;
+  padding: 8px;
+  border-radius: 6px;
+  color: #061022;
+  font-size: 0.8rem;
+}
+.change-log-modal .collen {
+  width: 6%;
+  padding: 8px;
+  margin: 0;
+}
+.change-log-modal .rightSideSection {
+  width: 44%;
+  text-align: left;
+  padding: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 0.8rem;
+}
+.modal-template .p-dialog-header {
+  padding: 10px 0px;
+}
+
+.modal-template .p-dialog-content {
+  padding: 0;
+}
+
+.modal-header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-header h3,
+.modal-header h4 {
+  margin: 0;
+  border-bottom: 2px solid #00a99d;
+  padding-bottom: 5px;
+  color: #00a99d;
+}
+
+.modal-container {
+  padding: 14px 20px;
+}
+
+.modal-content {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.modal-content p {
+  margin: 10px 0px 0px 0px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/*commn text styles................................................*/
+.MultilinedisplayText {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: auto;
+  line-height: 1.5;
+  max-height: calc (1.5em * 12);
+}
+.displayText {
+  width: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.ms-BasePicker-text {
+  border: 1px solid #00a99d !important;
+  border-radius: 6px;
+}
+
+.ms-BasePicker-text::after {
+  box-shadow: 0 0 5px 0px rgb(0 169 157);
+  border: 1px solid #00a99d;
+  border-radius: 6px;
+}
+
+.tabButtons .p-button:focus {
+  box-shadow: none !important;
+}

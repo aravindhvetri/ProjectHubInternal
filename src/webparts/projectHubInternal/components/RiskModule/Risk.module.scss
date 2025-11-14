@@ -1,0 +1,45 @@
+$ThemePrimeryColor: #00a99d;
+.riskFormHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    color: $ThemePrimeryColor;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    border-bottom: 2px solid $ThemePrimeryColor;
+  }
+}
+.riskFormContainer {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 2%;
+  .riskFormChilds {
+    width: 18%;
+    .textField {
+      width: 100%;
+      position: relative;
+      height: 32px;
+
+      .requiredDesign {
+        position: absolute;
+        top: 0.2px;
+        right: 0px;
+        width: 4px;
+        height: 32px;
+        background-color: #f00;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+      }
+    }
+    .peoplePicker {
+      button {
+        background: none;
+        border: none;
+      }
+    }
+  }
+}

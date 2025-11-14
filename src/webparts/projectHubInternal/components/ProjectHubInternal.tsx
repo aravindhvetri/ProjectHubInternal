@@ -28,6 +28,6 @@ export default class ProjectHubInternal extends React.Component<
   }
 
   public render(): React.ReactElement<IProjectHubInternalProps> {
-    return <MainComponent context={this.props.context} spContext={sp} />;
+    return <MainComponent spfxContext={this.props.context} spContext={sp} />;
   }
 }
