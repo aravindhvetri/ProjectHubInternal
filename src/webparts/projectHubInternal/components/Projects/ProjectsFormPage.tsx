@@ -573,7 +573,6 @@ const ProjectFormPage = (props: any) => {
 
   //Add datas to CRMProjects List:
   const handleAdd = async (json: any) => {
-    debugger;
     try {
       const createItem: any = await SPServices.SPAddItem({
         Listname: Config.ListNames.CRMProjects,

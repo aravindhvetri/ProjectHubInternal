@@ -7,14 +7,17 @@
 
 .tabButtons {
   display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 0.5rem;
+  gap: 20px;
+  justify-content: center;
+  background: #f6f6f6;
+  width: 24%;
+  border-radius: 6px;
 }
 
 .tabButton {
   background-color: transparent !important;
-  color: #026e67 !important;
+  color: #06615b !important;
+  font-size: 14px;
   border: none !important;
   border-bottom: 2px solid transparent !important;
   border-radius: 0 !important;
@@ -22,14 +25,14 @@
   transition: all 0.3s ease;
 
   &:hover {
-    color: #478a47 !important;
-    border-bottom: 2px solid #478a47 !important;
+    color: #0aa5ec !important;
+    // border-bottom: 2px solid #478a47 !important;
   }
 }
 
 .active {
-  color: #478a47 !important;
-  border-bottom: 2px solid #478a47 !important;
+  color: #0aa5ec !important;
+  border-bottom: 2px solid #0aa5ec !important;
 }
 
 .contentContainer {

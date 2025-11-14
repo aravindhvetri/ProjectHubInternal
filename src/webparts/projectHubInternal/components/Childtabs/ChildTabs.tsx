@@ -35,6 +35,7 @@ const ChildTabs = (props: any) => {
               Notify={props.Notify}
               loginUserEmail={props?.loginUserEmail}
               rowDataID={props?.rowData?.ID}
+              Projectdata={props?.rowData}
               setActiveTab={setActiveTab}
               getTabContent={props.getTabContent}
               spfxContext={props.spfxContext}

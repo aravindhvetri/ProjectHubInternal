@@ -91,6 +91,7 @@ export interface IBillingsDetails {
 //Project Risks Details Interface:
 export interface IProjectRisksDetails {
   ID: number;
+  ProjectID: string;
   RiskId: string;
   ProjectName: string;
   RiskTitle: string;
