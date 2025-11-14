@@ -18,12 +18,13 @@ import {
 import {
   IBasicDropDown,
   ICRMProjectRisksListDrop,
+  IDelModal,
   IPeoplePickerDetails,
   IProjectRisksDetails,
 } from "../../../../External/CommonServices/interface";
 import styles from "../Projects/Projects.module.scss";
 import Loading from "../../../../External/Loader/Loading";
-import { PrimaryButton } from "@fluentui/react";
+import { Modal, PrimaryButton } from "@fluentui/react";
 import { IconField } from "primereact/iconfield";
 import { InputIcon } from "primereact/inputicon";
 import { InputText } from "primereact/inputtext";
@@ -45,6 +46,10 @@ const Risk = (props: any) => {
   const EditImage: string = require("../../../../External/Images/Edit.png");
   const FilterImage: string = require("../../../../External/Images/filter.png");
   const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
+  const isProjectManager = props?.Projectdata?.ProjectManager?.some(
+    (pm: IPeoplePickerDetails) =>
+      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+  );
 
   //Local states:
   const [ProjectRisksDetails, setProjectRisksDetails] = useState<
@@ -55,6 +60,10 @@ const Risk = (props: any) => {
   const [formMode, setFormMode] = React.useState<"add" | "edit" | "view">(
     "add"
   );
+  const [isDelModal, setIsDelModal] = React.useState<IDelModal>({
+    isOpen: false,
+    Id: null,
+  });
   const [currentPage, setCurrentPage] = React.useState<"list" | "form">("list");
   const [masterProjectRisksDetails, setMasterProjectRisksDetails] = useState<
     IProjectRisksDetails[]
@@ -81,7 +90,7 @@ const Risk = (props: any) => {
     SPServices.SPReadItems({
       Listname: Config.ListNames.CRMProjectRisks,
       Select:
-        "*,IdentifiedBy/Title,IdentifiedBy/ID,IdentifiedBy/EMail,AssignedTo/Title,AssignedTo/ID,AssignedTo/EMail,Project/Id,Project/ProjectName",
+        "*,IdentifiedBy/Title,IdentifiedBy/ID,IdentifiedBy/EMail,AssignedTo/Title,AssignedTo/ID,AssignedTo/EMail,Project/Id,Project/ProjectName,Project/ProjectID",
       Expand: "IdentifiedBy,AssignedTo,Project",
       Orderby: "Modified",
       Orderbydecorasc: true,
@@ -123,6 +132,7 @@ const Risk = (props: any) => {
           }
           projectRisksData.push({
             ID: items?.ID,
+            ProjectID: items?.Project?.ProjectID,
             RiskId: items?.RiskID,
             ProjectName: items?.Project?.ProjectName || "",
             RiskTitle: items?.RiskTitle,
@@ -402,6 +412,25 @@ const Risk = (props: any) => {
     }));
   };
 
+  //Delete Particular Item:
+  const TrashItem = () => {
+    const currObj = {
+      IsDelete: true,
+    };
+    SPServices.SPUpdateItem({
+      ID: isDelModal.Id ?? 0,
+      Listname: Config.ListNames.CRMProjectRisks,
+      RequestJSON: currObj,
+    })
+      .then(() => {
+        props.Notify("success", "Success", "Risk Deleted successfully");
+        getAllProjectRisksDetails();
+      })
+      .catch((err) => {
+        console.log(err, "rowData deleted err in risk.tsx component");
+      });
+  };
+
   //initialize data on component load:
   useEffect(() => {
     setLoader(true);
@@ -488,24 +517,27 @@ const Risk = (props: any) => {
                   Filter
                 </div>
               </div>
-
-              <div className={styles.btnAndText}>
-                <div
-                  onClick={() => {
-                    setCurrentPage("form");
-                    setSelectedData(null);
-                    setFormMode("add");
-                  }}
-                  className={styles.btnBackGround}
-                >
-                  <img
-                    src={PlusImage}
-                    alt="no image"
-                    style={{ width: "15px", height: "15px" }}
-                  />
-                  New Risk
+              {isProjectManager ? (
+                <div className={styles.btnAndText}>
+                  <div
+                    onClick={() => {
+                      setCurrentPage("form");
+                      setSelectedData(null);
+                      setFormMode("add");
+                    }}
+                    className={styles.btnBackGround}
+                  >
+                    <img
+                      src={PlusImage}
+                      alt="no image"
+                      style={{ width: "15px", height: "15px" }}
+                    />
+                    New Risk
+                  </div>
                 </div>
-              </div>
+              ) : (
+                ""
+              )}
             </div>
           </div>
           {filterBar ? (
@@ -665,40 +697,45 @@ const Risk = (props: any) => {
                 field="RiskOccurred"
                 header="Risk occurred"
               ></Column>
-              <Column
-                field="Action"
-                header="Actions"
-                body={(rowData: IProjectRisksDetails) => {
-                  return (
-                    <div className={styles.Actions}>
-                      <>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedData(rowData);
-                            setCurrentPage("form");
-                            setFormMode("edit");
-                            setLoader(true);
-                          }}
-                        >
-                          <img title="Edit" src={EditImage} alt="no image" />
-                        </div>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <img
-                            title="Delete"
-                            src={DeleteImage}
-                            alt="no image"
-                          />
-                        </div>
-                      </>
-                    </div>
-                  );
-                }}
-              ></Column>
+              {isProjectManager ? (
+                <Column
+                  field="Action"
+                  header="Actions"
+                  body={(rowData: IProjectRisksDetails) => {
+                    return (
+                      <div className={styles.Actions}>
+                        <>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedData(rowData);
+                              setCurrentPage("form");
+                              setFormMode("edit");
+                              setLoader(true);
+                            }}
+                          >
+                            <img title="Edit" src={EditImage} alt="no image" />
+                          </div>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsDelModal({ Id: rowData?.ID, isOpen: true });
+                            }}
+                          >
+                            <img
+                              title="Delete"
+                              src={DeleteImage}
+                              alt="no image"
+                            />
+                          </div>
+                        </>
+                      </div>
+                    );
+                  }}
+                ></Column>
+              ) : (
+                ""
+              )}
             </DataTable>
           </div>
         </div>
@@ -722,10 +759,36 @@ const Risk = (props: any) => {
           Notify={props.Notify}
           refresh={getAllProjectRisksDetails}
           setCurrentPage={setCurrentPage}
+          projectData={props?.Projectdata}
         />
       ) : (
         ""
       )}
+      <Modal isOpen={isDelModal.isOpen} styles={Config.delModalStyle}>
+        <p className={styles.delmsg}>
+          Are you sure, you want to delete this risk?
+        </p>
+        <div className={styles.modalBtnSec}>
+          <PrimaryButton
+            text="No"
+            className={styles.cancelBtn}
+            onClick={() => {
+              setIsDelModal({ isOpen: false, Id: null });
+            }}
+          />
+          <PrimaryButton
+            text="Yes"
+            className={styles.addBtn}
+            onClick={() => {
+              setIsDelModal((pre) => ({
+                ...pre,
+                isOpen: false,
+              }));
+              TrashItem();
+            }}
+          />
+        </div>
+      </Modal>
     </>
   );
 };

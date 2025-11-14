@@ -566,31 +566,31 @@ $ThemePrimeryColor: #00a99d;
 }
 
 /* Responsevie */
-@media only screen and (min-width: 1228px) {
-  .viewFormMain {
-    .formPage {
-      height: 56vh !important;
-      padding-right: 8px;
-    }
-  }
-}
+// @media only screen and (min-width: 1228px) {
+//   .viewFormMain {
+//     .formPage {
+//       height: 56vh !important;
+//       padding-right: 8px;
+//     }
+//   }
+// }
 
-@media only screen and (min-width: 1396px) {
-  .viewFormMain {
-    .formPage {
-      height: 62vh !important;
-      padding-right: 8px;
-    }
-  }
-}
+// @media only screen and (min-width: 1396px) {
+//   .viewFormMain {
+//     .formPage {
+//       height: 62vh !important;
+//       padding-right: 8px;
+//     }
+//   }
+// }
 
-@media only screen and (min-width: 1536px) {
-  .viewFormMain {
-    .formPage {
-      height: 60vh !important;
-    }
-  }
-}
+// @media only screen and (min-width: 1536px) {
+//   .viewFormMain {
+//     .formPage {
+//       height: 60vh !important;
+//     }
+//   }
+// }
 .formHeader {
   display: flex;
   justify-content: space-between;

@@ -387,9 +387,9 @@ h4 {
   padding-top: 20px;
 }
 
-.dealFormPages .ms-BasePicker-text {
+/* .dealFormPages .ms-BasePicker-text {
   border: 1px solid #ced4da !important;
-}
+} */
 
 .dealFormPages .p-dropdown:not(.p-disabled):hover {
   border-color: #00a99d;
@@ -397,7 +397,7 @@ h4 {
 .dealFormPages .p-inputtext {
   width: 100%;
   font-size: 12px;
-  border: 1px solid #ced4da !important;
+  border: 1px solid #ced4da;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon {
@@ -568,7 +568,7 @@ h4 {
 }
 
 /* Responsevie */
-@media only screen and (min-width: 1706px) {
+/* @media only screen and (min-width: 1706px) {
   .tableData .p-datatable > .p-datatable-wrapper {
     height: calc(100vh - 400px) !important;
   }
@@ -585,7 +585,7 @@ h4 {
   .accountChildTable .p-datatable > .p-datatable-wrapper {
     overflow: auto;
   }
-}
+} */
 
 .persona {
   width: 26px;

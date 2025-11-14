@@ -109,6 +109,7 @@ export namespace Config {
   export const initialProjectRisksDetails: IProjectRisksDetails = {
     ID: 0,
     RiskId: "",
+    ProjectID: "",
     ProjectName: "",
     RiskTitle: "",
     RiskDescription: "",
@@ -168,6 +169,13 @@ export namespace Config {
     RejectedByPM: "4",
     RejectedByDH: "5",
     Approved: "6",
+  };
+
+  //RiskValue configurations:
+  export const riskValueMap: any = {
+    Low: 1,
+    Medium: 2,
+    High: 3,
   };
 }
 

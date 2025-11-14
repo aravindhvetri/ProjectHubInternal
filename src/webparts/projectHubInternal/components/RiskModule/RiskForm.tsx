@@ -20,24 +20,51 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { PeoplePicker } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface";
 import { PrimaryButton } from "@fluentui/react";
+import SPServices from "../../../../External/CommonServices/SPServices";
+import {
+  Config,
+  DatePickerStyles,
+  peopleErrorPickerStyles,
+  peoplePickerStyles,
+} from "../../../../External/CommonServices/Config";
+import { sp } from "@pnp/sp";
 
 const RiskForm = (props: any) => {
   //State variables:
   const [loader, setLoader] = useState<boolean>(false);
-  console.log(setLoader);
   const [formData, setFormData] = useState<any>({});
-  console.log(formData, "formData in RiskFormPage.tsx");
+  const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
+    {}
+  );
 
   //handleOnChange function:
   const handleOnChange = (field: string, value: any) => {
-    setFormData((prevData: any) => ({
-      ...prevData,
-      [field]: value,
+    setFormData((prevData: any) => {
+      const updatedData = {
+        ...prevData,
+        [field]: value,
+      };
+
+      // Only recalculate when Impact or Probability changes
+      if (field === "Impact" || field === "Probability") {
+        const impactVal = Config.riskValueMap[updatedData.Impact] || 0;
+        const probabilityVal =
+          Config.riskValueMap[updatedData.Probability] || 0;
+
+        updatedData.Severity = (impactVal * probabilityVal).toString();
+      }
+
+      return updatedData;
+    });
+
+    // Remove the error once user starts typing
+    setErrorMessage((prevErrors) => ({
+      ...prevErrors,
+      [field]: !isValidField(field, value),
     }));
   };
 
   //Get selected emails from people picker:
-  //Set default user in peoplepicker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
     fallbackUsers: any[]
@@ -85,6 +112,189 @@ const RiskForm = (props: any) => {
     props?.goBack();
   };
 
+  const Validation = () => {
+    let errors: { [key: string]: boolean } = {};
+    if (!isValidField("IdentifiedBy", formData?.IdentifiedBy))
+      errors.IdentifiedBy = true;
+    if (!isValidField("AssignedTo", formData?.AssignedTo))
+      errors.AssignedTo = true;
+    if (!isValidField("RiskTitle", formData?.RiskTitle))
+      errors.RiskTitle = true;
+    if (!isValidField("RiskDescription", formData?.RiskDescription))
+      errors.RiskDescription = true;
+    if (!isValidField("RiskCategory", formData?.RiskCategory))
+      errors.RiskCategory = true;
+    if (!isValidField("DateIdentified", formData?.DateIdentified))
+      errors.DateIdentified = true;
+    if (!isValidField("Probability", formData?.Probability))
+      errors.Probability = true;
+    if (!isValidField("Impact", formData?.Impact)) errors.Impact = true;
+    if (!isValidField("CurrentStatus", formData?.CurrentStatus))
+      errors.CurrentStatus = true;
+    //Set all field errors
+    setErrorMessage(errors);
+    if (Object.keys(errors).length > 0) return;
+    //All validations passed
+    generateJson();
+  };
+
+  //Validations:
+  const isValidField = (field: string, value: any): boolean => {
+    switch (field) {
+      case "IdentifiedBy":
+        return value && value.length > 0;
+      case "AssignedTo":
+        return value && value.length > 0;
+      case "RiskTitle":
+      case "RiskDescription":
+      case "RiskCategory":
+      case "Probability":
+      case "Impact":
+      case "CurrentStatus":
+        return value && typeof value === "string" && value.trim() !== "";
+      case "DateIdentified":
+        return value !== null && value !== undefined;
+      default:
+        return true;
+    }
+  };
+
+  //Json Generations:
+  const generateJson = () => {
+    setLoader(true);
+    let IdentifiedByIds: number[] = JSON.parse(
+      JSON.stringify(formData?.IdentifiedBy)
+    )
+      .map((user: IPeoplePickerDetails) => user.id)
+      .sort((a: any, b: any) => a - b);
+
+    let AssignedToIds: number[] = JSON.parse(
+      JSON.stringify(formData?.AssignedTo)
+    )
+      .map((user: any) => (user.id ? user?.id : user?.key))
+      .sort((a: any, b: any) => a - b);
+
+    let json: any = {
+      RiskID: formData?.RiskId,
+      ProjectId: props?.projectData?.ID,
+      ProjectName: props?.projectData?.ProjectName,
+      RiskTitle: formData?.RiskTitle,
+      RiskDescription: formData?.RiskDescription,
+      DateIdentified: SPServices.GetDateFormat(formData?.DateIdentified),
+      TargetResolutionDate: SPServices.GetDateFormat(
+        formData?.TargetResolutionDate
+      ),
+      IdentifiedById: { results: IdentifiedByIds },
+      AssignedToId: { results: AssignedToIds },
+      Probability: formData?.Probability,
+      RiskCategory: formData?.RiskCategory,
+      Impact: formData?.Impact,
+      Severity: formData?.Severity,
+      MitigationPlan: formData?.MitigationPlan,
+      CurrentStatus: formData?.CurrentStatus,
+      ResidualRisk: formData?.ResidualRisk,
+      Remarks: formData?.Remarks,
+      DateClosed: SPServices.GetDateFormat(formData?.DateClosed),
+      RiskOccurred: formData?.RiskOccurred,
+    };
+    if (props?.isEdit) {
+      handleUpdate(json);
+    } else {
+      generateRiskId(json);
+    }
+  };
+
+  //Generate RiskId function:
+  const generateRiskId = (json: any) => {
+    sp.web.lists
+      .getByTitle(Config.ListNames?.CRMProjectRisks)
+      .items.orderBy("ID", false)
+      .top(1)
+      .get()
+      .then((res: any) => {
+        const projectShortId = extractProjectShortId(
+          props?.projectData?.ProjectID
+        );
+        const format = `RISK-${projectShortId}-`;
+
+        const lastId = res[0]?.RiskID || "";
+
+        const newId = GenerateFormatId(format, lastId, 3);
+        handleAdd({ ...json, RiskID: newId });
+      })
+      .catch((err) =>
+        console.log(err, "generate Risk Id Error in RiskForm.tsx")
+      );
+  };
+
+  //Extract project ID function:
+  const extractProjectShortId = (projectId: string): string => {
+    if (!projectId) return "";
+    const parts = projectId.split("-");
+    if (parts.length !== 3) return projectId;
+    const prefix = parts[0];
+    const lastNumber = parseInt(parts[2]);
+    const shortNumber = lastNumber + 100;
+    return `${prefix}${shortNumber}`;
+  };
+
+  //Generate full format:
+  const GenerateFormatId = (
+    prefix: string,
+    lastId: string,
+    padLength: number
+  ): string => {
+    let lastNumber = 0;
+    if (lastId) {
+      // Extract last number Only
+      const parts = lastId.split("-");
+      const num = parts[parts.length - 1]; // take last section
+      lastNumber = parseInt(num) || 0;
+    }
+    const nextNumber = lastNumber + 1;
+    const paddedNumber = String(nextNumber).padStart(padLength, "0");
+    return `${prefix}${paddedNumber}`;
+  };
+
+  //Update datas to sharepoint list:
+  const handleUpdate = (json: any) => {
+    SPServices.SPUpdateItem({
+      Listname: Config.ListNames?.CRMProjectRisks,
+      RequestJSON: json,
+      ID: formData?.ID,
+    })
+      .then(() => {
+        props.Notify("success", "Success", "Risk updated successfully");
+        setLoader(false);
+        emptyDatas();
+      })
+      .catch((err) => {
+        console.log(
+          err,
+          "data update error to CRMProjectRisks List in RiskForm.tsx"
+        );
+      });
+  };
+
+  //Add datas to sharepoint list:
+  const handleAdd = (json: any) => {
+    SPServices.SPAddItem({
+      Listname: Config.ListNames.CRMProjectRisks,
+      RequestJSON: json,
+    })
+      .then((res: any) => {
+        props.Notify("success", "Success", "Risk added successfully");
+        setLoader(false);
+        emptyDatas();
+      })
+      .catch((err) => {
+        console.log(
+          "Add datas to CRMProjectRisks list err in RiskForm.tsx",
+          err
+        );
+      });
+  };
+
   //Initial render:
   useEffect(() => {
     if (!props?.data) {
@@ -94,7 +304,7 @@ const RiskForm = (props: any) => {
         RiskTitle: "",
         RiskDescription: "",
         RiskCategory: "",
-        DateIdentified: "",
+        DateIdentified: null,
         Probability: "",
         Impact: "",
         Severity: "",
@@ -125,8 +335,8 @@ const RiskForm = (props: any) => {
         <Loading />
       ) : (
         <>
-          <div style={{ paddingTop: "10px" }} className={styles.riskFormHeader}>
-            <h2>
+          <div style={{ paddingTop: "20px" }} className={styles.riskFormHeader}>
+            <h2 style={{ fontSize: "16px" }}>
               {props?.isAdd
                 ? "Add Risk"
                 : props?.isEdit
@@ -149,11 +359,7 @@ const RiskForm = (props: any) => {
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Project name</Label>
-              <InputText
-                onChange={(e) => handleOnChange("ProjectName", e.target.value)}
-                value={formData?.ProjectName}
-                disabled
-              />
+              <InputText value={props?.projectData?.ProjectName} disabled />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Risk title</Label>
@@ -161,6 +367,11 @@ const RiskForm = (props: any) => {
                 onChange={(e) => handleOnChange("RiskTitle", e.target.value)}
                 value={formData?.RiskTitle}
                 disabled={props?.isView}
+                style={
+                  errorMessage["RiskTitle"]
+                    ? { border: "2px solid #ff0000" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -173,6 +384,11 @@ const RiskForm = (props: any) => {
                 maxLength={500}
                 autoResize
                 disabled={props?.isView}
+                style={
+                  errorMessage["RiskDescription"]
+                    ? { border: "2px solid #ff0000" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -187,6 +403,11 @@ const RiskForm = (props: any) => {
                 )}
                 onChange={(e) => handleOnChange("RiskCategory", e?.value?.name)}
                 disabled={props?.isView}
+                style={
+                  errorMessage["RiskCategory"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -209,6 +430,11 @@ const RiskForm = (props: any) => {
                     handleOnChange("IdentifiedBy", items)
                   }
                   disabled={props?.isView}
+                  styles={
+                    errorMessage["IdentifiedBy"]
+                      ? peopleErrorPickerStyles
+                      : peoplePickerStyles
+                  }
                 />
               </div>
             </div>
@@ -224,6 +450,17 @@ const RiskForm = (props: any) => {
                   handleOnChange("DateIdentified", date);
                 }}
                 disabled={props?.isView}
+                styles={
+                  errorMessage["DateIdentified"]
+                    ? {
+                        root: {
+                          border: "2px solid #ff0000",
+                          height: "35px",
+                          borderRadius: "6px",
+                        },
+                      }
+                    : DatePickerStyles
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -238,6 +475,11 @@ const RiskForm = (props: any) => {
                 )}
                 onChange={(e) => handleOnChange("Probability", e?.value?.name)}
                 disabled={props?.isView}
+                style={
+                  errorMessage["Probability"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -252,15 +494,16 @@ const RiskForm = (props: any) => {
                 )}
                 onChange={(e) => handleOnChange("Impact", e?.value?.name)}
                 disabled={props?.isView}
+                style={
+                  errorMessage["Impact"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Severity</Label>
-              <InputText
-                onChange={(e) => handleOnChange("Severity", e.target.value)}
-                value={formData?.Severity}
-                disabled={props?.isView}
-              />
+              <Label>Severity/Risk score</Label>
+              <InputText value={formData?.Severity} disabled />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>MitigationPlan</Label>
@@ -294,6 +537,11 @@ const RiskForm = (props: any) => {
                     handleOnChange("AssignedTo", items)
                   }
                   disabled={props?.isView}
+                  styles={
+                    errorMessage["AssignedTo"]
+                      ? peopleErrorPickerStyles
+                      : peoplePickerStyles
+                  }
                 />
               </div>
             </div>
@@ -321,10 +569,21 @@ const RiskForm = (props: any) => {
                 value={props?.initialCRMProjectsRisksListDropContainer?.CurrentStatus.find(
                   (item: any) => item.name === formData?.CurrentStatus
                 )}
-                onChange={(e) =>
-                  handleOnChange("CurrentStatus", e?.value?.name)
-                }
+                onChange={(e) => {
+                  const newStatus = e?.value?.name;
+                  handleOnChange("CurrentStatus", newStatus);
+                  if (newStatus?.toLowerCase() === "closed") {
+                    handleOnChange("DateClosed", new Date());
+                  } else {
+                    handleOnChange("DateClosed", null);
+                  }
+                }}
                 disabled={props?.isView}
+                style={
+                  errorMessage["CurrentStatus"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -359,10 +618,7 @@ const RiskForm = (props: any) => {
                     ? new Date(formData.DateClosed)
                     : undefined
                 }
-                onSelectDate={(date) => {
-                  handleOnChange("DateClosed", date);
-                }}
-                disabled={props?.isView}
+                disabled
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
@@ -389,13 +645,17 @@ const RiskForm = (props: any) => {
               Cancel
             </PrimaryButton>
 
-            <PrimaryButton
-              className={commonStyles.updateBtn}
-              iconProps={{ iconName: "Save" }}
-              onClick={() => {}}
-            >
-              {props?.isEdit ? "Update" : "Save"}
-            </PrimaryButton>
+            {props?.isAdd || props?.isEdit ? (
+              <PrimaryButton
+                className={commonStyles.updateBtn}
+                iconProps={{ iconName: "Save" }}
+                onClick={() => Validation()}
+              >
+                {props?.isEdit ? "Update" : "Save"}
+              </PrimaryButton>
+            ) : (
+              ""
+            )}
           </div>
         </>
       )}
