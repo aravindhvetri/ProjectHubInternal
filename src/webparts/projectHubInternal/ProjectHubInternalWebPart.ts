@@ -7,10 +7,12 @@ import {
 } from "@microsoft/sp-property-pane";
 import { BaseClientSideWebPart } from "@microsoft/sp-webpart-base";
 import { IReadonlyTheme } from "@microsoft/sp-component-base";
-
+import { SPComponentLoader } from "@microsoft/sp-loader";
 import * as strings from "ProjectHubInternalWebPartStrings";
 import ProjectHubInternal from "./components/ProjectHubInternal";
 import { IProjectHubInternalProps } from "./components/IProjectHubInternalProps";
+require("../../../node_modules/primereact/resources/primereact.min.css");
+import "primereact/resources/themes/bootstrap4-light-blue/theme.css";
 
 export interface IProjectHubInternalWebPartProps {
   description: string;
@@ -32,6 +34,14 @@ export default class ProjectHubInternalWebPart extends BaseClientSideWebPart<IPr
       });
 
     ReactDom.render(element, this.domElement);
+  }
+
+  public constructor() {
+    super();
+    SPComponentLoader.loadCss("https://unpkg.com/primeicons/primeicons.css");
+    SPComponentLoader.loadCss(
+      "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+    );
   }
 
   protected onInit(): Promise<void> {

@@ -1,0 +1,44 @@
+.childTabsContainer {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  padding: 6px 26px 0px 0px;
+}
+
+.tabButtons {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.tabButton {
+  background-color: transparent !important;
+  color: #026e67 !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #478a47 !important;
+    border-bottom: 2px solid #478a47 !important;
+  }
+}
+
+.active {
+  color: #478a47 !important;
+  border-bottom: 2px solid #478a47 !important;
+}
+
+.contentContainer {
+  margin-top: 0;
+}
+
+.tabContent {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #333;
+}
