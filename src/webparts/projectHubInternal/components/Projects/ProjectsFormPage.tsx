@@ -45,8 +45,6 @@ import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
 
 const ProjectFormPage = (props: any) => {
-  console.log(props?.data, "props data in project form page");
-
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
   const [formData, setFormData] = useState<any>({});
@@ -54,6 +52,7 @@ const ProjectFormPage = (props: any) => {
     {}
   );
   const [files, setFiles] = useState<File[]>([]);
+  console.log(files, "files");
   const [deletedFiles, setDeletedFiles] = useState<any[]>([]);
   const [loader, setLoader] = useState<boolean>(false);
   const [billingsData, setBillingsData] = useState<any[]>([]);
@@ -528,26 +527,64 @@ const ProjectFormPage = (props: any) => {
   };
 
   //handle approval process:
-  const handleApprovalFunc = () => {
-    const currObj = {
-      ProjectStatus: "2",
-    };
-    SPServices.SPUpdateItem({
-      ID: formData?.ID ? formData?.ID : isApproval?.id,
-      Listname: Config.ListNames.CRMProjects,
-      RequestJSON: currObj,
-    })
-      .then(() => {
-        props.Notify("success", "Success", "Approval sent successfully");
-        setIsApproval({
-          boolean: false,
-          id: null,
-        });
-        emptyDatas();
-      })
-      .catch((err) => {
-        console.log(err, "Approval send err in projects.tsx component");
+  const handleApprovalFunc = async () => {
+    try {
+      const currObj = {
+        ProjectStatus: "2",
+      };
+
+      // 1. Update main item
+      await SPServices.SPUpdateItem({
+        ID: formData?.ID ? formData?.ID : isApproval?.id,
+        Listname: Config.ListNames.CRMProjects,
+        RequestJSON: currObj,
       });
+
+      // 2. Commit deletes in ProjectFiles library
+      if (deletedFiles.length > 0) {
+        for (const file of deletedFiles) {
+          const items: any = await sp.web.lists
+            .getByTitle(Config.LibraryNames?.ProjectFiles)
+            .items.filter(`FileLeafRef eq '${file.name}'`)
+            .select("Id", "FileLeafRef")
+            .get();
+
+          if (items.length > 0) {
+            const itemId = items[0].Id;
+
+            await sp.web.lists
+              .getByTitle(Config.LibraryNames?.ProjectFiles)
+              .items.getById(itemId)
+              .update({
+                IsDelete: true,
+              });
+          }
+        }
+
+        setDeletedFiles([]);
+      }
+
+      // 3. Add new files to library
+      if (files?.length > 0) {
+        debugger;
+        const newFiles = files.filter((f: any) => f.objectURL);
+
+        if (newFiles.length > 0) {
+          await addAttachmentsInLibrary(formData?.ID, newFiles);
+        }
+      }
+
+      props.Notify("success", "Success", "Approval sent successfully");
+
+      setIsApproval({
+        boolean: false,
+        id: null,
+      });
+
+      emptyDatas();
+    } catch (err) {
+      console.log(err, "Approval send err in projects.tsx component");
+    }
   };
 
   //Generate ProjectId:
@@ -647,6 +684,7 @@ const ProjectFormPage = (props: any) => {
     ProjectID: number,
     uploadFiles: File[]
   ) => {
+    debugger;
     try {
       for (const file of uploadFiles) {
         const fileBuffer = await file.arrayBuffer();
@@ -671,35 +709,75 @@ const ProjectFormPage = (props: any) => {
   };
 
   //Project manager status updated funtions :
-  const handleStatusUpdate = (status: string) => {
-    const currentJson = {
-      ProjectStatus: status,
-    };
-    SPServices.SPUpdateItem({
-      Listname: Config.ListNames.CRMProjects,
-      ID: formData?.ID,
-      RequestJSON: currentJson,
-    })
-      .then(() => {
-        let message = "";
-        if (status === "6") {
-          message = "Project Approved Successfully";
-        } else if (status === "3") {
-          message = "Project Updated Successfully!";
-        } else if (status === "4" || status === "5") {
-          message = "Project Rejected Successfully";
-        } else {
-          message = "Project Updated Successfully";
+  const handleStatusUpdate = async (status: string) => {
+    try {
+      const currentJson = {
+        ProjectStatus: status,
+      };
+
+      // 1. Update main item
+      await SPServices.SPUpdateItem({
+        Listname: Config.ListNames.CRMProjects,
+        ID: formData?.ID,
+        RequestJSON: currentJson,
+      });
+
+      // 2. Set success message
+      let message = "";
+      if (status === "6") {
+        message = "Project Approved Successfully";
+      } else if (status === "3") {
+        message = "Project Updated Successfully!";
+      } else if (status === "4" || status === "5") {
+        message = "Project Rejected Successfully";
+      } else {
+        message = "Project Updated Successfully";
+      }
+
+      // 3. Commit deletes in ProjectFiles library
+      if (deletedFiles.length > 0) {
+        for (const file of deletedFiles) {
+          const items: any = await sp.web.lists
+            .getByTitle(Config.LibraryNames?.ProjectFiles)
+            .items.filter(`FileLeafRef eq '${file.name}'`)
+            .select("Id", "FileLeafRef")
+            .get();
+
+          if (items.length > 0) {
+            const itemId = items[0].Id;
+            await sp.web.lists
+              .getByTitle(Config.LibraryNames?.ProjectFiles)
+              .items.getById(itemId)
+              .update({
+                IsDelete: true,
+              });
+          }
         }
 
-        props.Notify("success", "Success", message);
-        emptyDatas();
-      })
-      .catch((err) => {
-        console.error(`Error updating project to ${status}:`, err);
-      });
+        setDeletedFiles([]);
+      }
+
+      // 4. Add new files (Project Manager only)
+      if (isProjectManager) {
+        debugger;
+        if (files?.length > 0) {
+          const newFiles = files.filter((f: any) => f.objectURL);
+
+          if (newFiles.length > 0) {
+            await addAttachmentsInLibrary(formData?.ID, newFiles);
+          }
+        }
+      }
+
+      // 5. Show success toast
+      props.Notify("success", "Success", message);
+      emptyDatas();
+    } catch (err) {
+      console.error(`Error updating project to ${status}:`, err);
+    }
   };
 
+  //handle file selection:
   const handleFileSelection = async (
     e: any,
     files: any,
@@ -707,13 +785,27 @@ const ProjectFormPage = (props: any) => {
     Config: any
   ) => {
     try {
-      const allowedExtensions = ["pdf", "doc", "docx", "jpg", "jpeg", "png"];
-      const maxTotalSize = 10 * 1024 * 1024; // 10 MB
+      const allowedExtensions = [
+        "pdf",
+        "doc",
+        "docx",
+        "jpg",
+        "jpeg",
+        "png",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+      ];
+
+      const maxSingleFileSize = 15 * 1024 * 1024; // 15 MB per file
+      const maxTotalSize = 25 * 1024 * 1024; // 25 MB total
 
       const selectedFiles = e.files;
+
       let totalSize = files.reduce((sum: any, f: any) => sum + f.size, 0);
 
-      //Validate file extensions
+      // Validate file extensions
       const invalidFiles = selectedFiles.filter((file: any) => {
         const ext = file.name.split(".").pop().toLowerCase();
         return !allowedExtensions.includes(ext);
@@ -723,24 +815,39 @@ const ProjectFormPage = (props: any) => {
         props.Notify(
           "warn",
           "Invalid File Type",
-          "Only PDF, Word, JPG, and PNG files are allowed!"
+          "Only PDF, Word, Excel, PPT, JPG and PNG files are allowed!"
         );
         return;
       }
 
-      //Calculate total size after adding new files
-      totalSize += selectedFiles.reduce((sum: any, f: any) => sum + f.size, 0);
+      // Check per-file limit
+      for (const file of selectedFiles) {
+        if (file.size > maxSingleFileSize) {
+          props.Notify(
+            "error",
+            "Large File",
+            `${file.name} exceeds the 15 MB single file limit!`
+          );
+          return;
+        }
+      }
 
-      if (totalSize > maxTotalSize) {
+      // Calculate total size
+      const newFilesTotal = selectedFiles.reduce(
+        (sum: any, f: any) => sum + f.size,
+        0
+      );
+
+      if (totalSize + newFilesTotal > maxTotalSize) {
         props.Notify(
           "error",
-          "File Size Limit Exceeded",
-          "Total file size cannot exceed 10 MB!"
+          "Total Size Exceeded",
+          `Total file size cannot exceed 25 MB!`
         );
         return;
       }
 
-      //Check only duplicate names in current state (not in SP)
+      // Check duplicates inside current state
       const duplicatesInState = selectedFiles.filter((newFile: any) =>
         files.some((existing: any) => existing.name === newFile.name)
       );
@@ -758,6 +865,7 @@ const ProjectFormPage = (props: any) => {
         );
       }
 
+      // Add new files
       if (newFiles.length > 0) {
         setFiles([...files, ...newFiles]);
       }
@@ -990,8 +1098,21 @@ const ProjectFormPage = (props: any) => {
               </div>
 
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                {files.length > 0 || isPMOUser ? <Label>Attachment</Label> : ""}
-                {!props?.isView && isPMOUser ? (
+                {files.length > 0 ||
+                (isPMOUser &&
+                  (files.length > 0 || props?.data?.ProjectStatus !== "6")) ||
+                (isProjectManager &&
+                  (files.length > 0 || props?.data?.ProjectStatus == "2")) ? (
+                  <Label>Attachment</Label>
+                ) : (
+                  ""
+                )}
+                {(!props?.isView &&
+                  isPMOUser &&
+                  props?.data?.ProjectStatus !== "6") ||
+                (!props?.isView &&
+                  isProjectManager &&
+                  props?.data?.ProjectStatus !== "6") ? (
                   <>
                     <FileUpload
                       className="addFileButton"
@@ -1003,15 +1124,12 @@ const ProjectFormPage = (props: any) => {
                       url="/api/upload"
                       auto
                       multiple
-                      maxFileSize={1000000}
+                      maxFileSize={15 * 1024 * 1024}
                       style={{ width: "14%" }}
                       chooseLabel="Browse"
                       chooseOptions={{ icon: "pi pi-upload" }}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.ppt,.pptx"
                     />
-                    {/* <span style={{ fontSize: "12px" }}>
-                      Attachment can only be allowed up to 10 MB.
-                    </span> */}
                   </>
                 ) : (
                   ""
@@ -1034,7 +1152,10 @@ const ProjectFormPage = (props: any) => {
                             ? `${file?.name.slice(0, 23)}...`
                             : file?.name}
                         </div>
-                        {!props?.isView && isPMOUser ? (
+                        {!props?.isView &&
+                        (file?.objectURL ||
+                          (file?.authorEmail === props?.loginUserEmail &&
+                            props?.data?.ProjectStatus !== "6")) ? (
                           <div className={selfComponentStyles.filesIconDiv}>
                             <i
                               className="pi pi-times"
@@ -1110,6 +1231,7 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Start date</Label>
                 <DatePicker
+                  minDate={new Date()}
                   value={
                     formData?.StartDate
                       ? new Date(formData.StartDate)
@@ -1141,6 +1263,7 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>End date</Label>
                 <DatePicker
+                  minDate={new Date()}
                   value={
                     formData?.PlannedEndDate
                       ? new Date(formData?.PlannedEndDate)

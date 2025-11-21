@@ -8,6 +8,10 @@
   max-width: 100% !important;
 }
 
+#CommentsWrapper {
+  display: none !important;
+}
+
 #spCommandBar {
   display: none !important;
 }
@@ -384,7 +388,7 @@ h4 {
 }
 
 .dealFormPages .ms-Label {
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 /* .dealFormPages .ms-BasePicker-text {
@@ -675,10 +679,10 @@ h4 {
   padding: 0px;
   margin: 0;
   display: flex;
-  width: 290%;
+  width: 102%;
   flex-wrap: wrap;
   gap: 1%;
-  margin-left: 74px;
+  margin-left: 64px;
   margin-top: 7px;
 }
 
