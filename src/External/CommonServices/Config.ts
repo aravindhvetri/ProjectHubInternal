@@ -6,7 +6,9 @@ import {
 } from "@fluentui/react";
 import {
   IBillingsDetails,
+  IChangeRequestDetails,
   ICRMBillingsListDrop,
+  ICRMProjectCRsListDrop,
   ICRMProjectRisksListDrop,
   ICRMProjectsListDrop,
   IDelModal,
@@ -28,6 +30,8 @@ export namespace Config {
     CRMBillings: "CRMBillings",
     RejectComments: "RejectComments",
     CRMProjectRisks: "CRMProjectRisks",
+    QuickLinks: "QuickLinks",
+    CRMProjectCRs: "CRMProjectCRs",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -57,6 +61,16 @@ export namespace Config {
     CurrentStatus: [],
     ResidualRisk: [],
     RiskOccurred: [],
+  };
+
+  //CRMProjectCRs List DropDown:
+  export const CRMProjectCRsDropDown: ICRMProjectCRsListDrop = {
+    ChangeType: [],
+    Severity: [],
+    Priority: [],
+    ApprovalStatus: [],
+    ImplementationStatus: [],
+    BillingImpact: [],
   };
 
   //Initial Modal Config:
@@ -127,6 +141,39 @@ export namespace Config {
     RiskOccurred: "",
     IdentifiedBy: [],
     AssignedTo: [],
+  };
+
+  //Project Change Request Details configurations:
+  export const initialProjectChangeRequestDetails: IChangeRequestDetails = {
+    ID: 0,
+    CRId: "",
+    ProjectId: "",
+    CRTitle: "",
+    CRDescription: "",
+    RequestedBy: [],
+    RequestDate: "",
+    ChangeType: "",
+    Severity: "",
+    Priority: "",
+    EffortEstimate: 0,
+    EstimatedStartDate: "",
+    EstimatedEndDate: "",
+    ActualStartDate: "",
+    ActualEndDate: "",
+    AssignedTo: [],
+    ApprovalStatus: "",
+    ApprovalComments: "",
+    ImplementationStatus: "",
+    ChangeImpactedModules: "",
+    ChangeImpactDescription: "",
+    CostImpact: 0,
+    BillingImpact: "",
+    BillingDetailsAmount: "",
+    Remarsk: "",
+    CreatedBy: [],
+    CreatedDate: "",
+    LastUpdatedBy: [],
+    LastUpdatedDate: "",
   };
 
   //Billings status configurations:

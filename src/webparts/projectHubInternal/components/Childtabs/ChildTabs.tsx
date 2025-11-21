@@ -25,7 +25,15 @@ const ChildTabs = (props: any) => {
       case "ChangeRequest":
         return (
           <div className={styles.tabContent}>
-            <ChangeRequest rowDataID={props?.rowData?.ID} />
+            <ChangeRequest
+              Notify={props.Notify}
+              loginUserEmail={props?.loginUserEmail}
+              rowDataID={props?.rowData?.ID}
+              Projectdata={props?.rowData}
+              setActiveTab={setActiveTab}
+              getTabContent={props.getTabContent}
+              spfxContext={props.spfxContext}
+            />
           </div>
         );
       case "Risk":
@@ -45,7 +53,14 @@ const ChildTabs = (props: any) => {
       case "QuickLinks":
         return (
           <div className={styles.tabContent}>
-            <QuickLinks />
+            <QuickLinks
+              loginUserEmail={props?.loginUserEmail}
+              rowDataID={props?.rowData?.ID}
+              Projectdata={props?.rowData}
+              setActiveTab={setActiveTab}
+              getTabContent={props.getTabContent}
+              spfxContext={props.spfxContext}
+            />
           </div>
         );
       default:

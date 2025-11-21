@@ -47,6 +47,15 @@ export interface ICRMProjectRisksListDrop {
   RiskOccurred: IBasicDropDown[];
 }
 
+export interface ICRMProjectCRsListDrop {
+  ChangeType: IBasicDropDown[];
+  Severity: IBasicDropDown[];
+  Priority: IBasicDropDown[];
+  ApprovalStatus: IBasicDropDown[];
+  ImplementationStatus: IBasicDropDown[];
+  BillingImpact: IBasicDropDown[];
+}
+
 export interface ICRMBillingsListDrop {
   Status: IBasicDropDown[];
   Currency: IBasicDropDown[];
@@ -110,4 +119,36 @@ export interface IProjectRisksDetails {
   RiskOccurred: string;
   IdentifiedBy: IPeoplePickerDetails[];
   AssignedTo: IPeoplePickerDetails[];
+}
+
+export interface IChangeRequestDetails {
+  ID: number;
+  CRId: string;
+  ProjectId: string;
+  CRTitle: string;
+  CRDescription: string;
+  RequestedBy: IPeoplePickerDetails[];
+  RequestDate: string;
+  ChangeType: string;
+  Severity: string;
+  Priority: string;
+  EffortEstimate: number;
+  EstimatedStartDate: string;
+  EstimatedEndDate: string;
+  ActualStartDate: string;
+  ActualEndDate: string;
+  AssignedTo: IPeoplePickerDetails[];
+  ApprovalStatus: string;
+  ApprovalComments: string;
+  ImplementationStatus: string;
+  ChangeImpactedModules: string;
+  ChangeImpactDescription: string;
+  CostImpact: number;
+  BillingImpact: string;
+  BillingDetailsAmount: string;
+  Remarsk: string;
+  CreatedBy: IPeoplePickerDetails[];
+  CreatedDate: string;
+  LastUpdatedBy: IPeoplePickerDetails[];
+  LastUpdatedDate: string;
 }

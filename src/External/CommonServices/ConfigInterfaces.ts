@@ -11,6 +11,8 @@ interface IList {
   CRMBillings: string;
   RejectComments: string;
   CRMProjectRisks: string;
+  QuickLinks: string;
+  CRMProjectCRs: string;
 }
 interface ILibrary {
   ProjectFiles: string;

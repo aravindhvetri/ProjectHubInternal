@@ -29,7 +29,6 @@ import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
 
 const Billings = (props: any) => {
-  console.log(props?.isPMOUser, "isPMOuser");
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
   const BillingModel: string = props?.BillingModel;

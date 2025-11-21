@@ -9,11 +9,20 @@
           "manifest": "./src/webparts/projectHubInternal/ProjectHubInternalWebPart.manifest.json"
         }
       ]
+    },
+    "reports-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/reports/ReportsWebPart.js",
+          "manifest": "./src/webparts/reports/ReportsWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "ProjectHubInternalWebPartStrings": "lib/webparts/projectHubInternal/loc/{locale}.js",
-    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js",
+    "ReportsWebPartStrings": "lib/webparts/reports/loc/{locale}.js"
   }
 }
