@@ -146,7 +146,7 @@ export interface IChangeRequestDetails {
   CostImpact: number;
   BillingImpact: string;
   BillingDetailsAmount: string;
-  Remarsk: string;
+  Remarks: string;
   CreatedBy: IPeoplePickerDetails[];
   CreatedDate: string;
   LastUpdatedBy: IPeoplePickerDetails[];

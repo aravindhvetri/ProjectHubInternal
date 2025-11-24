@@ -29,7 +29,7 @@ import SPServices from "../../../../External/CommonServices/SPServices";
 import { sp } from "@pnp/sp";
 
 const CRForm = (props: any) => {
-  console.log(props?.projectData, "aari");
+  console.log(props?.initialCRMProjectCRsListDropContainer, "aari");
   //Local states:
   const [loader, setLoader] = useState<boolean>(false);
   const [formData, setFormData] = useState<any>({});
@@ -99,7 +99,7 @@ const CRForm = (props: any) => {
       CostImpact: null,
       BillingImpact: "",
       BillingDetailsAmount: null,
-      Remarsk: "",
+      Remarks: "",
       CreatedBy: [],
       CreatedDate: "",
       LastUpdatedBy: [],
@@ -290,7 +290,7 @@ const CRForm = (props: any) => {
         CostImpact: "",
         BillingImpact: "",
         BillingDetailsAmount: "",
-        Remarsk: "",
+        Remarks: "",
         CreatedBy: [],
         CreatedDate: "",
         LastUpdatedBy: [],
@@ -470,12 +470,10 @@ const CRForm = (props: any) => {
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Effort estimate</Label>
               <InputText
+                keyfilter="int"
+                inputMode="numeric"
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow digits
-                  if (/^\d*$/.test(value)) {
-                    handleOnChange("EffortEstimate", value);
-                  }
+                  handleOnChange("EffortEstimate", e?.target?.value);
                 }}
                 value={formData?.EffortEstimate}
                 disabled={props?.isView}
@@ -644,14 +642,12 @@ const CRForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Cost impact($ / %)</Label>
+              <Label>Cost impact ($ / %)</Label>
               <InputText
+                keyfilter="int"
+                inputMode="numeric"
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow digits
-                  if (/^\d*$/.test(value)) {
-                    handleOnChange("CostImpact", value);
-                  }
+                  handleOnChange("CostImpact", e?.target?.value);
                 }}
                 value={formData?.CostImpact}
                 disabled={props?.isView}
@@ -676,12 +672,10 @@ const CRForm = (props: any) => {
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Billing details amount</Label>
               <InputText
+                keyfilter="int"
+                inputMode="numeric"
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow digits
-                  if (/^\d*$/.test(value)) {
-                    handleOnChange("BillingDetailsAmount", value);
-                  }
+                  handleOnChange("BillingDetailsAmount", e.target.value);
                 }}
                 value={formData?.BillingDetailsAmount}
                 disabled={props?.isView}
@@ -690,8 +684,8 @@ const CRForm = (props: any) => {
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Remarks</Label>
               <InputTextarea
-                onChange={(e) => handleOnChange("Remarsk", e.target.value)}
-                value={formData?.Remarsk}
+                onChange={(e) => handleOnChange("Remarks", e.target.value)}
+                value={formData?.Remarks}
                 maxLength={500}
                 autoResize
                 disabled={props?.isView}
