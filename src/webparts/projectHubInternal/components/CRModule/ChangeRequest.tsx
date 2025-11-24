@@ -172,7 +172,7 @@ const ChangeRequest = (props: any) => {
             CostImpact: items?.CostImpact,
             BillingImpact: items?.BillingImpact,
             BillingDetailsAmount: items?.BillingDetailsAmount,
-            Remarsk: items?.Remarks,
+            Remarks: items?.Remarks,
             CreatedBy: _CreatedBy,
             CreatedDate: items?.Created,
             LastUpdatedBy: _LastUpdatedBy,

@@ -169,7 +169,7 @@ export namespace Config {
     CostImpact: 0,
     BillingImpact: "",
     BillingDetailsAmount: "",
-    Remarsk: "",
+    Remarks: "",
     CreatedBy: [],
     CreatedDate: "",
     LastUpdatedBy: [],
