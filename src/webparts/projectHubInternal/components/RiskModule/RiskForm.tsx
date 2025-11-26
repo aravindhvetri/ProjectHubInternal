@@ -335,7 +335,7 @@ const RiskForm = (props: any) => {
         <Loading />
       ) : (
         <>
-          <div style={{ paddingTop: "20px" }} className={styles.riskFormHeader}>
+          <div className={styles.riskFormHeader}>
             <h2 style={{ fontSize: "16px" }}>
               {props?.isAdd
                 ? "Add Risk"

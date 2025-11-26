@@ -71,7 +71,7 @@ const ChildTabs = (props: any) => {
   return (
     <div className={styles.childTabsContainer}>
       <div className={`${styles.tabButtons} tabButtons`}>
-        <Button
+        {/* <Button
           label="Change Request"
           className={`${styles.tabButton} ${
             activeTab === "ChangeRequest" ? styles.active : ""
@@ -80,7 +80,7 @@ const ChildTabs = (props: any) => {
             setActiveTab("ChangeRequest");
             props.getTabContent(true);
           }}
-        />
+        /> */}
         <Button
           label="Risk"
           className={`${styles.tabButton} ${
