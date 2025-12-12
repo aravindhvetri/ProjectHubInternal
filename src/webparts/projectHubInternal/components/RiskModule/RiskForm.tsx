@@ -23,7 +23,7 @@ import { PrimaryButton } from "@fluentui/react";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import {
   Config,
-  DatePickerStyles,
+  // DatePickerStyles,
   peopleErrorPickerStyles,
   peoplePickerStyles,
 } from "../../../../External/CommonServices/Config";
@@ -114,23 +114,27 @@ const RiskForm = (props: any) => {
 
   const Validation = () => {
     let errors: { [key: string]: boolean } = {};
-    if (!isValidField("IdentifiedBy", formData?.IdentifiedBy))
-      errors.IdentifiedBy = true;
+    // if (!isValidField("IdentifiedBy", formData?.IdentifiedBy))
+    //   errors.IdentifiedBy = true;
     if (!isValidField("AssignedTo", formData?.AssignedTo))
       errors.AssignedTo = true;
-    if (!isValidField("RiskTitle", formData?.RiskTitle))
-      errors.RiskTitle = true;
+    // if (!isValidField("RiskTitle", formData?.RiskTitle))
+    //   errors.RiskTitle = true;
     if (!isValidField("RiskDescription", formData?.RiskDescription))
       errors.RiskDescription = true;
+    if (!isValidField("MitigationPlan", formData?.MitigationPlan))
+      errors.MitigationPlan = true;
     if (!isValidField("RiskCategory", formData?.RiskCategory))
       errors.RiskCategory = true;
-    if (!isValidField("DateIdentified", formData?.DateIdentified))
-      errors.DateIdentified = true;
-    if (!isValidField("Probability", formData?.Probability))
-      errors.Probability = true;
+    // if (!isValidField("DateIdentified", formData?.DateIdentified))
+    //   errors.DateIdentified = true;
+
+    // if (!isValidField("Probability", formData?.Probability))
+    //   errors.Probability = true;
     if (!isValidField("Impact", formData?.Impact)) errors.Impact = true;
     if (!isValidField("CurrentStatus", formData?.CurrentStatus))
       errors.CurrentStatus = true;
+
     //Set all field errors
     setErrorMessage(errors);
     if (Object.keys(errors).length > 0) return;
@@ -141,19 +145,15 @@ const RiskForm = (props: any) => {
   //Validations:
   const isValidField = (field: string, value: any): boolean => {
     switch (field) {
-      case "IdentifiedBy":
-        return value && value.length > 0;
       case "AssignedTo":
         return value && value.length > 0;
-      case "RiskTitle":
       case "RiskDescription":
       case "RiskCategory":
-      case "Probability":
+      case "MitigationPlan":
       case "Impact":
       case "CurrentStatus":
         return value && typeof value === "string" && value.trim() !== "";
-      case "DateIdentified":
-        return value !== null && value !== undefined;
+
       default:
         return true;
     }
@@ -361,7 +361,7 @@ const RiskForm = (props: any) => {
               <Label>Project name</Label>
               <InputText value={props?.projectData?.ProjectName} disabled />
             </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Risk title</Label>
               <InputText
                 onChange={(e) => handleOnChange("RiskTitle", e.target.value)}
@@ -373,7 +373,7 @@ const RiskForm = (props: any) => {
                     : undefined
                 }
               />
-            </div>
+            </div> */}
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Risk description</Label>
               <InputTextarea
@@ -392,7 +392,7 @@ const RiskForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Risk category</Label>
+              <Label>Category</Label>
               <Dropdown
                 options={
                   props?.initialCRMProjectsRisksListDropContainer?.RiskCategory
@@ -405,79 +405,6 @@ const RiskForm = (props: any) => {
                 disabled={props?.isView}
                 style={
                   errorMessage["RiskCategory"]
-                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
-                    : undefined
-                }
-              />
-            </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Identified by</Label>
-              <div className={`${styles.textField} ${styles.peoplePicker}`}>
-                <PeoplePicker
-                  ensureUser
-                  placeholder="Select the Person"
-                  personSelectionLimit={1}
-                  context={props.spfxContext}
-                  defaultSelectedUsers={getSelectedEmails(
-                    props?.data?.IdentifiedBy,
-                    formData?.IdentifiedBy
-                  )}
-                  webAbsoluteUrl={
-                    props?.spfxContext._pageContext._web.absoluteUrl
-                  }
-                  resolveDelay={100}
-                  onChange={(items: any[]) =>
-                    handleOnChange("IdentifiedBy", items)
-                  }
-                  disabled={props?.isView}
-                  styles={
-                    errorMessage["IdentifiedBy"]
-                      ? peopleErrorPickerStyles
-                      : peoplePickerStyles
-                  }
-                />
-              </div>
-            </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Date identified</Label>
-              <DatePicker
-                minDate={new Date()}
-                value={
-                  formData?.DateIdentified
-                    ? new Date(formData.DateIdentified)
-                    : undefined
-                }
-                onSelectDate={(date) => {
-                  handleOnChange("DateIdentified", date);
-                }}
-                disabled={props?.isView}
-                styles={
-                  errorMessage["DateIdentified"]
-                    ? {
-                        root: {
-                          border: "2px solid #ff0000",
-                          height: "35px",
-                          borderRadius: "6px",
-                        },
-                      }
-                    : DatePickerStyles
-                }
-              />
-            </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Probability</Label>
-              <Dropdown
-                options={
-                  props?.initialCRMProjectsRisksListDropContainer?.Probability
-                }
-                optionLabel="name"
-                value={props?.initialCRMProjectsRisksListDropContainer?.Probability.find(
-                  (item: any) => item.name === formData?.Probability
-                )}
-                onChange={(e) => handleOnChange("Probability", e?.value?.name)}
-                disabled={props?.isView}
-                style={
-                  errorMessage["Probability"]
                     ? { border: "2px solid #ff0000", borderRadius: "6px" }
                     : undefined
                 }
@@ -503,11 +430,7 @@ const RiskForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Severity/Risk score</Label>
-              <InputText value={formData?.Severity} disabled />
-            </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>MitigationPlan</Label>
+              <Label>Mitigation strategy</Label>
               <InputTextarea
                 onChange={(e) =>
                   handleOnChange("MitigationPlan", e.target.value)
@@ -516,10 +439,15 @@ const RiskForm = (props: any) => {
                 maxLength={500}
                 autoResize
                 disabled={props?.isView}
+                style={
+                  errorMessage["MitigationPlan"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>AssignedTo</Label>
+              <Label>Owner</Label>
               <div className={`${styles.textField} ${styles.peoplePicker}`}>
                 <PeoplePicker
                   ensureUser
@@ -545,21 +473,6 @@ const RiskForm = (props: any) => {
                   }
                 />
               </div>
-            </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Target resolution date</Label>
-              <DatePicker
-                minDate={new Date()}
-                value={
-                  formData?.TargetResolutionDate
-                    ? new Date(formData.TargetResolutionDate)
-                    : undefined
-                }
-                onSelectDate={(date) => {
-                  handleOnChange("TargetResolutionDate", date);
-                }}
-                disabled={props?.isView}
-              />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Status</Label>
@@ -589,6 +502,126 @@ const RiskForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Date added</Label>
+              <DatePicker
+                minDate={new Date()}
+                value={
+                  formData?.DateIdentified
+                    ? new Date(formData.DateIdentified)
+                    : undefined
+                }
+                onSelectDate={(date) => {
+                  handleOnChange("DateIdentified", date);
+                }}
+                disabled={props?.isView}
+                // styles={
+                //   errorMessage["DateIdentified"]
+                //     ? {
+                //         root: {
+                //           border: "2px solid #ff0000",
+                //           height: "35px",
+                //           borderRadius: "6px",
+                //         },
+                //       }
+                //     : DatePickerStyles
+                // }
+              />
+            </div>
+            <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Target date</Label>
+              <DatePicker
+                minDate={new Date()}
+                value={
+                  formData?.TargetResolutionDate
+                    ? new Date(formData.TargetResolutionDate)
+                    : undefined
+                }
+                onSelectDate={(date) => {
+                  handleOnChange("TargetResolutionDate", date);
+                }}
+                disabled={props?.isView}
+                // styles={
+                //   errorMessage["TargetResolutionDate"]
+                //     ? {
+                //         root: {
+                //           border: "2px solid #ff0000",
+                //           height: "35px",
+                //           borderRadius: "6px",
+                //         },
+                //       }
+                //     : DatePickerStyles
+                // }
+              />
+            </div>
+            <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Risk occurred</Label>
+              <Dropdown
+                options={
+                  props?.initialCRMProjectsRisksListDropContainer?.RiskOccurred
+                }
+                optionLabel="name"
+                value={props?.initialCRMProjectsRisksListDropContainer?.RiskOccurred.find(
+                  (item: any) => item.name === formData?.RiskOccurred
+                )}
+                onChange={(e) => handleOnChange("RiskOccurred", e?.value?.name)}
+                disabled={props?.isView}
+              />
+            </div>
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Identified by</Label>
+              <div className={`${styles.textField} ${styles.peoplePicker}`}>
+                <PeoplePicker
+                  ensureUser
+                  placeholder="Select the Person"
+                  personSelectionLimit={1}
+                  context={props.spfxContext}
+                  defaultSelectedUsers={getSelectedEmails(
+                    props?.data?.IdentifiedBy,
+                    formData?.IdentifiedBy
+                  )}
+                  webAbsoluteUrl={
+                    props?.spfxContext._pageContext._web.absoluteUrl
+                  }
+                  resolveDelay={100}
+                  onChange={(items: any[]) =>
+                    handleOnChange("IdentifiedBy", items)
+                  }
+                  disabled={props?.isView}
+                  styles={
+                    errorMessage["IdentifiedBy"]
+                      ? peopleErrorPickerStyles
+                      : peoplePickerStyles
+                  }
+                />
+              </div>
+            </div> */}
+
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Probability</Label>
+              <Dropdown
+                options={
+                  props?.initialCRMProjectsRisksListDropContainer?.Probability
+                }
+                optionLabel="name"
+                value={props?.initialCRMProjectsRisksListDropContainer?.Probability.find(
+                  (item: any) => item.name === formData?.Probability
+                )}
+                onChange={(e) => handleOnChange("Probability", e?.value?.name)}
+                disabled={props?.isView}
+                style={
+                  errorMessage["Probability"]
+                    ? { border: "2px solid #ff0000", borderRadius: "6px" }
+                    : undefined
+                }
+              />
+            </div> */}
+
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Severity/Risk score</Label>
+              <InputText value={formData?.Severity} disabled />
+            </div> */}
+
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Residual risk</Label>
               <Dropdown
                 options={
@@ -624,20 +657,7 @@ const RiskForm = (props: any) => {
                 disabled
               />
             </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Risk occurred</Label>
-              <Dropdown
-                options={
-                  props?.initialCRMProjectsRisksListDropContainer?.RiskOccurred
-                }
-                optionLabel="name"
-                value={props?.initialCRMProjectsRisksListDropContainer?.RiskOccurred.find(
-                  (item: any) => item.name === formData?.RiskOccurred
-                )}
-                onChange={(e) => handleOnChange("RiskOccurred", e?.value?.name)}
-                disabled={props?.isView}
-              />
-            </div>
+            */}
           </div>
           <div className={commonStyles.addUpdateBtns}>
             <PrimaryButton

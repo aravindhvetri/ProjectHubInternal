@@ -73,9 +73,9 @@ const Risk = (props: any) => {
   const [filterBar, setFilterBar] = React.useState<boolean>(false);
   const [filterValues, setFilterValues] = React.useState({
     RiskId: "",
-    ProjectName: "",
+    RiskCategory: "",
     RiskOccurred: "",
-    RiskTitle: "",
+    Impact: "",
     CurrentStatus: "",
   });
   const [
@@ -355,11 +355,11 @@ const Risk = (props: any) => {
       const matchRiskID = item?.RiskId?.toLowerCase().includes(
         filterValues.RiskId.toLowerCase()
       );
-      const matchProjectName = item?.ProjectName?.toLowerCase().includes(
-        filterValues.ProjectName.toLowerCase()
+      const matchCategory = item?.RiskCategory?.toLowerCase().includes(
+        filterValues?.RiskCategory.toLowerCase()
       );
-      const matchRiskTitle = item?.RiskTitle?.toLowerCase().includes(
-        filterValues.RiskTitle.toLowerCase()
+      const matchImpact = item?.Impact?.toLowerCase().includes(
+        filterValues?.Impact.toLowerCase()
       );
       const matchStatus = filterValues.CurrentStatus
         ? item?.CurrentStatus === filterValues.CurrentStatus
@@ -370,8 +370,8 @@ const Risk = (props: any) => {
 
       return (
         matchRiskID &&
-        matchProjectName &&
-        matchRiskTitle &&
+        matchCategory &&
+        matchImpact &&
         matchStatus &&
         matchRiskOccurred
       );
@@ -381,16 +381,16 @@ const Risk = (props: any) => {
   };
 
   //Render Identified By Column:
-  const renderIdentifiedByColumn = (rowData: IProjectRisksDetails) => {
-    const identifiedBy: IPeoplePickerDetails[] = rowData?.IdentifiedBy || [];
-    return (
-      <div>
-        {rowData?.IdentifiedBy?.length > 1
-          ? multiPeoplePickerTemplate(identifiedBy)
-          : peoplePickerTemplate(identifiedBy[0])}
-      </div>
-    );
-  };
+  // const renderIdentifiedByColumn = (rowData: IProjectRisksDetails) => {
+  //   const identifiedBy: IPeoplePickerDetails[] = rowData?.IdentifiedBy || [];
+  //   return (
+  //     <div>
+  //       {rowData?.IdentifiedBy?.length > 1
+  //         ? multiPeoplePickerTemplate(identifiedBy)
+  //         : peoplePickerTemplate(identifiedBy[0])}
+  //     </div>
+  //   );
+  // };
 
   //Render Assigned To Column:
   const renderAssignedToColumn = (rowData: IProjectRisksDetails) => {
@@ -484,9 +484,9 @@ const Risk = (props: any) => {
                     setSearchVal("");
                     setFilterValues({
                       RiskId: "",
-                      ProjectName: "",
+                      RiskCategory: "",
                       RiskOccurred: "",
-                      RiskTitle: "",
+                      Impact: "",
                       CurrentStatus: "",
                     });
                     setLoader(true);
@@ -551,22 +551,20 @@ const Risk = (props: any) => {
                 />
               </div>
               <div className={styles.filterField}>
-                <label>Project name</label>
+                <label>Category</label>
                 <InputText
-                  value={filterValues?.ProjectName}
+                  value={filterValues?.RiskCategory}
                   onChange={(e) =>
-                    handleFilterChange("ProjectName", e.target.value)
+                    handleFilterChange("RiskCategory", e.target.value)
                   }
                   placeholder="Enter here"
                 />
               </div>
               <div className={styles.filterField}>
-                <label>Risk title</label>
+                <label>Impact</label>
                 <InputText
-                  value={filterValues?.RiskTitle}
-                  onChange={(e) =>
-                    handleFilterChange("RiskTitle", e.target.value)
-                  }
+                  value={filterValues?.Impact}
+                  onChange={(e) => handleFilterChange("Impact", e.target.value)}
                   placeholder="Enter here"
                 />
               </div>
@@ -611,9 +609,9 @@ const Risk = (props: any) => {
                     setSearchVal("");
                     setFilterValues({
                       RiskId: "",
-                      ProjectName: "",
+                      RiskCategory: "",
                       RiskOccurred: "",
-                      RiskTitle: "",
+                      Impact: "",
                       CurrentStatus: "",
                     });
                   }}
@@ -640,27 +638,51 @@ const Risk = (props: any) => {
               }}
             >
               <Column sortable field="RiskId" header="Risk id" />
-              <Column
+              {/* <Column
                 sortable
                 field="ProjectName"
                 header="Project name"
-              ></Column>
-              <Column sortable field="RiskTitle" header="Risk title"></Column>
+              ></Column> */}
               <Column
                 sortable
-                field="RiskCategory"
-                header="Risk category"
+                field="RiskDescription"
+                header="Risk description"
               ></Column>
-              <Column
+              <Column sortable field="RiskCategory" header="Category"></Column>
+              <Column sortable field="Impact" header="Impact"></Column>
+              {/* <Column
                 sortable
                 field="IdentifiedBy"
                 header="Identified By"
                 body={renderIdentifiedByColumn}
               ></Column>
+             */}
+              {/* <Column
+                sortable
+                field="Probability"
+                header="Probability"
+              ></Column> */}
+              <Column
+                sortable
+                field="RiskOccurred"
+                header="Risk occurred"
+              ></Column>
+              <Column
+                sortable
+                field="MitigationPlan"
+                header="Mitigation strategy"
+              ></Column>
+              <Column
+                sortable
+                field="AssignedTo"
+                header="Owner"
+                body={renderAssignedToColumn}
+              ></Column>
+              <Column sortable field="CurrentStatus" header="Status"></Column>
               <Column
                 sortable
                 field="DateIdentified"
-                header="Date identified"
+                header="Date added"
                 body={(rowData) => {
                   return (
                     <div>
@@ -673,30 +695,26 @@ const Risk = (props: any) => {
               ></Column>
               <Column
                 sortable
-                field="Probability"
-                header="Probability"
+                field="TargetResolutionDate"
+                header="Target date"
+                body={(rowData) => {
+                  return (
+                    <div>
+                      {rowData?.TargetResolutionDate
+                        ? moment(rowData?.TargetResolutionDate).format(
+                            "DD/MM/YYYY"
+                          )
+                        : ""}
+                    </div>
+                  );
+                }}
               ></Column>
-              <Column
-                sortable
-                field="AssignedTo"
-                header="Assigned to"
-                body={renderAssignedToColumn}
-              ></Column>
-              <Column
-                sortable
-                field="CurrentStatus"
-                header="Current status"
-              ></Column>
-              <Column
+              {/* <Column
                 sortable
                 field="ResidualRisk"
                 header="Residual risk"
               ></Column>
-              <Column
-                sortable
-                field="RiskOccurred"
-                header="Risk occurred"
-              ></Column>
+              */}
               {isProjectManager ? (
                 <Column
                   field="Action"
