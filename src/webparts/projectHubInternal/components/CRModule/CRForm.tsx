@@ -27,6 +27,7 @@ import { Dropdown } from "primereact/dropdown";
 import commonStyles from "../CommonStyles/CommonStyle.module.scss";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import { sp } from "@pnp/sp";
+import crStyles from "./ChangeRequest.module.scss";
 
 const CRForm = (props: any) => {
   console.log(props?.initialCRMProjectCRsListDropContainer, "aari");
@@ -318,7 +319,9 @@ const CRForm = (props: any) => {
               {props?.isAdd ? "Add CR" : props?.isEdit ? "Edit CR" : "View CR"}
             </h2>
           </div>
-          <div className={styles.riskFormContainer}>
+          <div
+            className={`${styles.riskFormContainer} ${crStyles.CRFormContainer}`}
+          >
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>CR id</Label>
               <InputText
