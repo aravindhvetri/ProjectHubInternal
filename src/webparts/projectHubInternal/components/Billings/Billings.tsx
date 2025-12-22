@@ -29,6 +29,7 @@ import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
 
 const Billings = (props: any) => {
+  console.log(props?.data, "propsData in Billings.tsx ");
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
   const BillingModel: string = props?.BillingModel;
@@ -294,9 +295,10 @@ const Billings = (props: any) => {
                   />
                 </IconField>
               </div>
-              {!props?.isView &&
-              (!props?.isDeliveryHead || props?.isPMOUser) &&
-              props?.data?.ProjectStatus !== "6" ? (
+              {(!props?.isView &&
+                (!props?.isDeliveryHead || props?.isPMOUser) &&
+                props?.data?.ProjectStatus !== "6") ||
+              (props?.isProjectManager && props?.data?.ProjectStatus == "6") ? (
                 <div className={styles.btnAndText}>
                   <div
                     onClick={() => openForm("add")}
@@ -475,6 +477,13 @@ const Billings = (props: any) => {
                           ) ||
                             props?.isPMOUser) &&
                             props?.data?.BillingModel == "T&M" &&
+                            (rowData?.Status == "0" ||
+                              rowData?.Status == "4")) ||
+                          (props?.ProjectsFormData?.ProjectStatus == "6" &&
+                            props?.data?.ProjectManager?.some(
+                              (user: any) =>
+                                user?.email == props?.loginUserEmail
+                            ) &&
                             (rowData?.Status == "0" ||
                               rowData?.Status == "4")) ? (
                             <>

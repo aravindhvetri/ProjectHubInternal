@@ -40,11 +40,11 @@ const QuickLinks = (props: any) => {
           Operator: "eq",
           FilterValue: "1",
         },
-        {
-          FilterKey: "ProjectId",
-          Operator: "eq",
-          FilterValue: `${props?.rowDataID}`,
-        },
+        // {
+        //   FilterKey: "ProjectId",
+        //   Operator: "eq",
+        //   FilterValue: `${props?.rowDataID}`,
+        // },
       ],
     })
       .then((res: any) => {

@@ -480,7 +480,6 @@ const BillingsForm = (props: any) => {
                   <div className={`${projectFormStyles.allField} dealFormPage`}>
                     <Label> Start month</Label>
                     <DatePicker
-                      minDate={new Date()}
                       value={
                         formData?.StartMonth
                           ? new Date(formData?.StartMonth)
@@ -514,7 +513,6 @@ const BillingsForm = (props: any) => {
                   <div className={`${projectFormStyles.allField} dealFormPage`}>
                     <Label>End month</Label>
                     <DatePicker
-                      minDate={new Date()}
                       value={
                         formData?.EndMonth
                           ? new Date(formData?.EndMonth)
@@ -735,7 +733,6 @@ const BillingsForm = (props: any) => {
               <div className={`${projectFormStyles.allField} dealFormPage`}>
                 <Label>Due date</Label>
                 <DatePicker
-                  minDate={new Date()}
                   value={
                     formData?.DueDate ? new Date(formData?.DueDate) : undefined
                   }

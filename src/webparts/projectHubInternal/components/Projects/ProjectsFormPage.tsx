@@ -1231,7 +1231,6 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Start date</Label>
                 <DatePicker
-                  minDate={new Date()}
                   value={
                     formData?.StartDate
                       ? new Date(formData.StartDate)
@@ -1263,7 +1262,6 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>End date</Label>
                 <DatePicker
-                  minDate={new Date()}
                   value={
                     formData?.PlannedEndDate
                       ? new Date(formData?.PlannedEndDate)
@@ -1526,6 +1524,7 @@ const ProjectFormPage = (props: any) => {
             <Billings
               ProjectsFormData={formData}
               isPMOUser={isPMOUser}
+              isProjectManager={isProjectManager}
               loginUserEmail={props?.loginUserEmail}
               getBillingsAddDetails={getBillingsAddDetails}
               isAdd={props?.isAdd}
