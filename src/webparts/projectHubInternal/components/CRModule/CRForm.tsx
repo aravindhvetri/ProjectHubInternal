@@ -407,7 +407,6 @@ const CRForm = (props: any) => {
                 onSelectDate={(date) => {
                   handleOnChange("RequestDate", date);
                 }}
-                minDate={new Date()}
                 disabled={props?.isView}
                 styles={
                   errorMessage["RequestDate"]
@@ -495,7 +494,6 @@ const CRForm = (props: any) => {
                     ? new Date(formData.EstimatedStartDate)
                     : undefined
                 }
-                minDate={new Date()}
                 onSelectDate={(date) => {
                   handleOnChange("EstimatedStartDate", date);
                 }}
@@ -510,7 +508,6 @@ const CRForm = (props: any) => {
                     ? new Date(formData.EstimatedEndDate)
                     : undefined
                 }
-                minDate={new Date()}
                 onSelectDate={(date) => {
                   handleOnChange("EstimatedEndDate", date);
                 }}
@@ -525,7 +522,6 @@ const CRForm = (props: any) => {
                     ? new Date(formData.ActualStartDate)
                     : undefined
                 }
-                minDate={new Date()}
                 onSelectDate={(date) => {
                   handleOnChange("ActualStartDate", date);
                 }}
@@ -540,7 +536,6 @@ const CRForm = (props: any) => {
                     ? new Date(formData.ActualEndDate)
                     : undefined
                 }
-                minDate={new Date()}
                 onSelectDate={(date) => {
                   handleOnChange("ActualEndDate", date);
                 }}

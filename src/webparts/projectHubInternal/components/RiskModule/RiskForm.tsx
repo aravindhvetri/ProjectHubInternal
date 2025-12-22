@@ -504,7 +504,6 @@ const RiskForm = (props: any) => {
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Date added</Label>
               <DatePicker
-                minDate={new Date()}
                 value={
                   formData?.DateIdentified
                     ? new Date(formData.DateIdentified)
@@ -530,7 +529,6 @@ const RiskForm = (props: any) => {
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Target date</Label>
               <DatePicker
-                minDate={new Date()}
                 value={
                   formData?.TargetResolutionDate
                     ? new Date(formData.TargetResolutionDate)
