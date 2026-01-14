@@ -14,6 +14,7 @@ export interface IProjectData {
   ProjectName: string;
   StartDate: string;
   PlannedEndDate: string;
+  UpWork: boolean;
   ProjectManager: IPeoplePickerDetails[];
   DeliveryHead: IPeoplePickerDetails[];
   ProjectStatus: string;
@@ -21,6 +22,8 @@ export interface IProjectData {
   Budget: number;
   Hours: string;
   Currency: string;
+  CustomerDisplayName: string;
+  CustomerID: string;
   BillingContactName: string;
   BillingContactEmail: string;
   BillingContactMobile: string;

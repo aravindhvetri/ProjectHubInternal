@@ -10,9 +10,14 @@ $ThemePrimeryColor: #00a99d;
 
   .viewFormNavBar {
     display: flex;
-    justify-content: space-between;
+    gap: 20px;
     align-items: center;
     margin-bottom: 15px;
+
+    span {
+      color: #056861;
+      font-size: 14px;
+    }
 
     h2 {
       color: $ThemePrimeryColor;

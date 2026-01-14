@@ -829,7 +829,11 @@ const MainComponent = (props: any) => {
                 header="Start Date"
                 body={(rowData) => {
                   return (
-                    <div>{moment(rowData?.StartDate).format("DD/MM/YYYY")}</div>
+                    <div>
+                      {rowData?.StartDate
+                        ? moment(rowData?.StartDate).format("DD/MM/YYYY")
+                        : ""}
+                    </div>
                   );
                 }}
               ></Column>
@@ -840,7 +844,9 @@ const MainComponent = (props: any) => {
                 body={(rowData) => {
                   return (
                     <div>
-                      {moment(rowData?.PlannedEndDate).format("DD/MM/YYYY")}
+                      {rowData?.PlannedEndDate
+                        ? moment(rowData?.PlannedEndDate).format("DD/MM/YYYY")
+                        : ""}
                     </div>
                   );
                 }}
@@ -857,7 +863,11 @@ const MainComponent = (props: any) => {
                 header="Due Date"
                 body={(rowData) => {
                   return (
-                    <div>{moment(rowData?.DueDate).format("DD/MM/YYYY")}</div>
+                    <div>
+                      {rowData?.DueDate
+                        ? moment(rowData?.DueDate).format("DD/MM/YYYY")
+                        : ""}
+                    </div>
                   );
                 }}
               ></Column>

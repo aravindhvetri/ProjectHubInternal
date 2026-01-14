@@ -29,7 +29,6 @@ import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
 
 const Billings = (props: any) => {
-  console.log(props?.data, "propsData in Billings.tsx ");
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
   const BillingModel: string = props?.BillingModel;
@@ -309,7 +308,7 @@ const Billings = (props: any) => {
                       alt="no image"
                       style={{ width: "15px", height: "15px" }}
                     />
-                    New milestone
+                    New invoice
                   </div>
                 </div>
               ) : (
@@ -424,7 +423,7 @@ const Billings = (props: any) => {
               )}
 
               {BillingModel == "T&M" && (
-                <Column sortable field="Rate" header="Rate"></Column>
+                <Column sortable field="TMAmount" header="Rate"></Column>
               )}
               {BillingModel == "T&M" && (
                 <Column sortable field="Hours" header="Hours"></Column>
@@ -433,10 +432,14 @@ const Billings = (props: any) => {
               <Column
                 sortable
                 field="DueDate"
-                header="Due date"
+                header="Invoice date"
                 body={(rowData) => {
                   return (
-                    <div>{moment(rowData?.DueDate).format("DD/MM/YYYY")}</div>
+                    <div>
+                      {rowData?.DueDate
+                        ? moment(rowData?.DueDate).format("DD/MM/YYYY")
+                        : ""}
+                    </div>
                   );
                 }}
               ></Column>
@@ -523,7 +526,8 @@ const Billings = (props: any) => {
                           ) : (
                             ""
                           )}
-                          {(props?.data?.ProjectStatus == "6" &&
+                          {props?.ProjectsFormData?.UpWork == false &&
+                          ((props?.data?.ProjectStatus == "6" &&
                             (props?.data?.ProjectManager?.some(
                               (user: any) =>
                                 user?.email == props?.loginUserEmail
@@ -534,17 +538,19 @@ const Billings = (props: any) => {
                               rowData?.DueDate,
                               rowData?.ReminderDaysBeforeDue
                             )) ||
-                          ((props?.data?.ProjectManager?.some(
-                            (user: any) => user?.email == props?.loginUserEmail
-                          ) ||
-                            props?.isPMOUser) &&
-                            rowData?.Status == "4") ||
-                          (props?.data?.ProjectManager?.some(
-                            (user: any) => user?.email == props?.loginUserEmail
-                          ) &&
-                            new Date(rowData?.DueDate) < new Date() &&
-                            props?.data?.ProjectStatus == "6" &&
-                            rowData?.Status == "0") ? (
+                            ((props?.data?.ProjectManager?.some(
+                              (user: any) =>
+                                user?.email == props?.loginUserEmail
+                            ) ||
+                              props?.isPMOUser) &&
+                              rowData?.Status == "4") ||
+                            (props?.data?.ProjectManager?.some(
+                              (user: any) =>
+                                user?.email == props?.loginUserEmail
+                            ) &&
+                              new Date(rowData?.DueDate) < new Date() &&
+                              props?.data?.ProjectStatus == "6" &&
+                              rowData?.Status == "0")) ? (
                             <div
                               onClick={(e) => {
                                 e.stopPropagation();
