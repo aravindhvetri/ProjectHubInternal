@@ -20,6 +20,7 @@ import {
   NormalPeoplePicker,
   PrimaryButton,
 } from "@fluentui/react";
+import { Checkbox } from "primereact/checkbox";
 import { InputText } from "primereact/inputtext";
 import { Label } from "office-ui-fabric-react";
 import { Dropdown } from "primereact/dropdown";
@@ -43,16 +44,19 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { FileUpload } from "primereact/fileupload";
 import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
+import { Web } from "@pnp/sp/webs";
 
 const ProjectFormPage = (props: any) => {
+  const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
   const [formData, setFormData] = useState<any>({});
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
     {}
   );
   const [files, setFiles] = useState<File[]>([]);
-  console.log(files, "files");
   const [deletedFiles, setDeletedFiles] = useState<any[]>([]);
   const [loader, setLoader] = useState<boolean>(false);
   const [billingsData, setBillingsData] = useState<any[]>([]);
@@ -81,15 +85,20 @@ const ProjectFormPage = (props: any) => {
   const emptyDatas = () => {
     setFormData({
       ProjectID: "",
-      Lead: "",
+      AccountManager: "",
       AccountName: "",
       ProjectName: "",
       StartDate: null,
       PlannedEndDate: null,
       ProjectManager: [],
       DeliveryHead: [],
-      ProjectStatus: "",
+      ProjectStatus: "0",
       BillingModel: "",
+      Hours: "",
+      Budget: "",
+      Currency: "",
+      CustomerID: "",
+      CustomerDisplayName: "",
       BillingContactName: "",
       BillingContactEmail: "",
       BillingContactMobile: "",
@@ -119,11 +128,32 @@ const ProjectFormPage = (props: any) => {
         getPMOGroupUsers();
         getDHGroupMembers();
         getBillingsListDetails();
+        getCustomerDisplayName();
         props?.setLoader(false);
       })
       .catch((err) => {
         console.log("Error fetching Leads group members:", err);
       });
+  };
+
+  const getCustomerDisplayName = async () => {
+    try {
+      const web = Web(TARGET_SITE_URL);
+      const res = await web.lists
+        .getByTitle("Customer")
+        .items.select(
+          "Id",
+          "Customerdisplayname",
+          "Firstname",
+          "Emailaddress",
+          "Address1"
+        )
+        .getAll();
+
+      setCustomers(res);
+    } catch (err) {
+      console.error("Cross site fetch error", err);
+    }
   };
 
   //Get Group Members:
@@ -278,6 +308,19 @@ const ProjectFormPage = (props: any) => {
       LoadExistingFiles(props?.data?.ID);
     }
   }, [props?.data, leadOptions]);
+
+  //Set selected customer when customers data or formData changes:
+  React.useEffect(() => {
+    if (customers?.length && formData?.CustomerDisplayName) {
+      const matchedCustomer = customers.find(
+        (c) => c.Customerdisplayname === formData.CustomerDisplayName
+      );
+
+      if (matchedCustomer) {
+        setSelectedCustomer(matchedCustomer);
+      }
+    }
+  }, [customers, formData?.CustomerDisplayName]);
 
   //LoadExistingFiles in Library:
   const LoadExistingFiles = async (id: number) => {
@@ -454,7 +497,10 @@ const ProjectFormPage = (props: any) => {
       BillingModel: formData?.BillingModel,
       Budget: formData?.Budget,
       Hours: formData?.Hours,
+      CustomerID: formData?.CustomerID,
+      CustomerDisplayName: formData?.CustomerDisplayName,
       Currency: formData?.Currency,
+      UpWork: formData?.UpWork,
       BillingContactName: formData?.BillingContactName,
       BillingContactEmail: formData?.BillingContactEmail,
       BillingContactMobile: formData?.BillingContactMobile,
@@ -598,7 +644,10 @@ const ProjectFormPage = (props: any) => {
         let format: string = "PRJ-";
         let lastId = res[0]?.ProjectID || "";
         let newId = SPServices.GenerateFormatId(format, lastId, 3);
-        handleAdd({ ...json, ProjectID: newId });
+        // ----- CustomerID Logic -----
+        let lastCustomerId = res[0]?.CustomerID;
+        let newCustomerId = lastCustomerId ? lastCustomerId + 1 : 1;
+        handleAdd({ ...json, ProjectID: newId, CustomerID: newCustomerId });
       })
       .catch((err: any) =>
         console.log(
@@ -958,9 +1007,12 @@ const ProjectFormPage = (props: any) => {
         DeliveryHead: [],
         ProjectStatus: "0",
         BillingModel: "",
+        UpWork: false,
         Hours: "",
         Budget: "",
         Currency: "",
+        CustomerID: "",
+        CustomerDisplayName: "",
         BillingContactName: "",
         BillingContactEmail: "",
         BillingContactMobile: "",
@@ -1026,10 +1078,32 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Account name</Label>
                 <InputText
-                  onChange={(e) =>
-                    handleOnChange("AccountName", e.target.value)
-                  }
+                  // onChange={(e) =>
+                  //   handleOnChange("AccountName", e.target.value)
+                  // }
                   value={formData?.AccountName}
+                  // disabled={
+                  //   props?.isView ||
+                  //   // isProjectManager ||
+                  //   (isProjectManager && !isPMOUser) ||
+                  //   (isDeliveryHead && !isPMOUser) ||
+                  //   props?.data?.ProjectStatus == "6"
+                  // }
+                  disabled
+                  // style={
+                  //   errorMessage["AccountName"]
+                  //     ? { border: "2px solid #ff0000" }
+                  //     : undefined
+                  // }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Customer Name</Label>
+                {/* <InputText
+                  onChange={(e) =>
+                    handleOnChange("CustomerDisplayName", e.target.value)
+                  }
+                  value={formData?.CustomerDisplayName}
                   disabled={
                     props?.isView ||
                     // isProjectManager ||
@@ -1037,10 +1111,36 @@ const ProjectFormPage = (props: any) => {
                     (isDeliveryHead && !isPMOUser) ||
                     props?.data?.ProjectStatus == "6"
                   }
-                  style={
-                    errorMessage["AccountName"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
+                /> */}
+                <Dropdown
+                  value={selectedCustomer}
+                  options={customers}
+                  optionLabel="Customerdisplayname"
+                  filter
+                  filterPlaceholder="Search customer"
+                  placeholder="Select Customer"
+                  className="w-full"
+                  onChange={(e) => {
+                    const customer = e.value;
+                    setSelectedCustomer(customer);
+
+                    handleOnChange(
+                      "CustomerDisplayName",
+                      customer.Customerdisplayname
+                    );
+                    handleOnChange("BillingContactName", customer?.Firstname);
+                    handleOnChange(
+                      "BillingContactEmail",
+                      customer?.Emailaddress
+                    );
+                    handleOnChange("AccountName", customer.Customerdisplayname);
+                    handleOnChange("BillingAddress", customer.Address1);
+                  }}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
                   }
                 />
               </div>
@@ -1422,43 +1522,45 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact name</Label>
                 <InputText
-                  onChange={(e) =>
-                    handleOnChange("BillingContactName", e.target.value)
-                  }
+                  // onChange={(e) =>
+                  //   handleOnChange("BillingContactName", e.target.value)
+                  // }
                   value={formData?.BillingContactName}
-                  disabled={
-                    props?.isView ||
-                    // isProjectManager ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                  style={
-                    errorMessage["BillingContactName"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
-                  }
+                  // disabled={
+                  //   props?.isView ||
+                  //   // isProjectManager ||
+                  //   (isProjectManager && !isPMOUser) ||
+                  //   (isDeliveryHead && !isPMOUser) ||
+                  //   props?.data?.ProjectStatus == "6"
+                  // }
+                  disabled
+                  // style={
+                  //   errorMessage["BillingContactName"]
+                  //     ? { border: "2px solid #ff0000" }
+                  //     : undefined
+                  // }
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact email</Label>
                 <InputText
-                  onChange={(e) =>
-                    handleOnChange("BillingContactEmail", e.target.value)
-                  }
+                  // onChange={(e) =>
+                  //   handleOnChange("BillingContactEmail", e.target.value)
+                  // }
                   value={formData?.BillingContactEmail}
-                  disabled={
-                    props?.isView ||
-                    // isProjectManager ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                  style={
-                    errorMessage["BillingContactEmail"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
-                  }
+                  // disabled={
+                  //   props?.isView ||
+                  //   // isProjectManager ||
+                  //   (isProjectManager && !isPMOUser) ||
+                  //   (isDeliveryHead && !isPMOUser) ||
+                  //   props?.data?.ProjectStatus == "6"
+                  // }
+                  disabled
+                  // style={
+                  //   errorMessage["BillingContactEmail"]
+                  //     ? { border: "2px solid #ff0000" }
+                  //     : undefined
+                  // }
                   placeholder="e.g., abc@gmail.com"
                 />
               </div>
@@ -1487,21 +1589,37 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing address</Label>
                 <InputTextarea
-                  onChange={(e) =>
-                    handleOnChange("BillingAddress", e.target.value)
-                  }
+                  // onChange={(e) =>
+                  //   handleOnChange("BillingAddress", e.target.value)
+                  // }
                   value={formData?.BillingAddress}
-                  disabled={
-                    props?.isView ||
-                    // isProjectManager ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
+                  disabled
+                  // disabled={
+                  //   props?.isView ||
+                  //   // isProjectManager ||
+                  //   (isProjectManager && !isPMOUser) ||
+                  //   (isDeliveryHead && !isPMOUser) ||
+                  //   props?.data?.ProjectStatus == "6"
+                  // }
                   maxLength={500}
                   autoResize
                 />
               </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>UpWork project</Label>
+                <Checkbox
+                  inputId="upwork"
+                  checked={formData?.UpWork === true}
+                  onChange={(e) => handleOnChange("UpWork", e.checked)}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Remarks</Label>
                 <InputTextarea

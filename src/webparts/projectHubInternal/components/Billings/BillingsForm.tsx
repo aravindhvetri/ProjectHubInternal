@@ -29,6 +29,7 @@ import { InputTextarea } from "primereact/inputtextarea";
 import Loading from "../../../../External/Loader/Loading";
 
 const BillingsForm = (props: any) => {
+  console.log(props, "billings form props");
   //Local States:
   const [
     initialCRMBillingsListDropContainer,
@@ -402,11 +403,23 @@ const BillingsForm = (props: any) => {
           <div className={styles.viewFormNavBar}>
             <h2>
               {props?.isAdd
-                ? "Add milestone"
+                ? "Add invoice"
                 : props?.isEdit
-                ? "Edit milestone"
-                : "View milestone"}
+                ? "Edit invoice"
+                : "View invoice"}
             </h2>
+            {props?.isEdit || props?.isView ? (
+              <span>{`(${props?.ProjectsFormData?.ProjectName} - ${props?.ProjectsFormData?.CustomerDisplayName})`}</span>
+            ) : (
+              ""
+            )}
+            {props?.selectedCRMBillingsRowData?.InvoiceID ? (
+              <span>
+                Invoice no : {props?.selectedCRMBillingsRowData?.InvoiceID}
+              </span>
+            ) : (
+              ""
+            )}
           </div>
           <div
             style={{ height: "48vh" }}
@@ -708,26 +721,28 @@ const BillingsForm = (props: any) => {
                   disabled={props?.isView}
                 />
               </div>
-              {/* <div className={`${projectFormStyles.allField} dealFormPage`}>
-            <Label>Status</Label>
-            <Dropdown
-              value={initialCRMBillingsListDropContainer?.Status.find(
-                (item) =>
-                  item.name ===
-                  (Config.statusLabelMap[formData?.Status] || formData?.Status)
+              {props?.ProjectsFormData?.UpWork == true && (
+                <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <Label>Status</Label>
+                  <Dropdown
+                    value={initialCRMBillingsListDropContainer?.Status.find(
+                      (item) =>
+                        item.name ===
+                        (Config.statusLabelMap[formData?.Status] ||
+                          formData?.Status)
+                    )}
+                    onChange={(e) => handleOnChange("Status", e?.value?.name)}
+                    options={initialCRMBillingsListDropContainer?.Status}
+                    optionLabel="name"
+                    placeholder="Select a start month"
+                    style={
+                      errorMessage["Status"]
+                        ? { border: "2px solid #ff0000", borderRadius: "4px" }
+                        : undefined
+                    }
+                  />
+                </div>
               )}
-              onChange={(e) => handleOnChange("Status", e?.value?.name)}
-              options={initialCRMBillingsListDropContainer?.Status}
-              optionLabel="name"
-              placeholder="Select a start month"
-              style={
-                errorMessage["Status"]
-                  ? { border: "2px solid #ff0000", borderRadius: "4px" }
-                  : undefined
-              }
-              disabled
-            />
-          </div> */}
             </div>
             <div className={projectFormStyles.secondPage}>
               <div className={`${projectFormStyles.allField} dealFormPage`}>
