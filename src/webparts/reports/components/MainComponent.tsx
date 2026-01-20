@@ -52,9 +52,9 @@ const MainComponent = (props: any) => {
     ...Config.CRMBillingsDropDown,
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
+  console.log("searchVal", searchVal);
   const [filterBar, setFilterBar] = React.useState<boolean>(false);
   const [reportData, setReportData] = React.useState<any[]>([]);
-  console.log("reportData", reportData);
   const [filteredData, setFilteredData] = React.useState<any[]>([]);
 
   const [masterReportData, setMasterReportData] = React.useState<any[]>([]);
@@ -183,7 +183,7 @@ const MainComponent = (props: any) => {
             AccountName: project.AccountName,
             AccountManager: project.AccountManager,
             ProjectManager: _ProjectManager,
-            DeliverHead: _DeliverHead,
+            DeliveryHead: _DeliverHead,
             BillingModel: project.BillingModel,
             StartDate: project.StartDate,
             PlannedEndDate: project.PlannedEndDate,
@@ -279,9 +279,10 @@ const MainComponent = (props: any) => {
   //Render Delivery head Column function:
   const renderDeliveryHeadColumn = (rowData: IProjectData) => {
     const DeliveryHead: IPeoplePickerDetails[] = rowData?.DeliveryHead;
+    console.log("DeliveryHead", DeliveryHead);
     return (
       <div>
-        {rowData?.ProjectManager?.length > 1
+        {rowData?.DeliveryHead?.length > 1
           ? multiPeoplePickerTemplate(DeliveryHead)
           : peoplePickerTemplate(DeliveryHead[0])}
       </div>
@@ -363,6 +364,10 @@ const MainComponent = (props: any) => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase()
         ).join(" ") || "";
+      const deliveryHeadNames =
+        item?.DeliveryHead?.map((dh: IPeoplePickerDetails) =>
+          dh.name?.toLowerCase()
+        ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountManager?.toLowerCase().includes(val.toLowerCase()) ||
@@ -376,7 +381,8 @@ const MainComponent = (props: any) => {
         item?.Remarks?.toLowerCase().includes(val.toLowerCase()) ||
         // item?.Amount?.toString().toLowerCase().includes(val.toLowerCase()) ||
         item.Currency?.toLowerCase().includes(val.toLowerCase()) ||
-        managerNames.includes(val.toLowerCase())
+        managerNames.includes(val.toLowerCase()) ||
+        deliveryHeadNames.includes(val.toLowerCase())
       );
     });
 
