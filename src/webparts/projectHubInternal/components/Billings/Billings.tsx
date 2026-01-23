@@ -127,7 +127,7 @@ const Billings = (props: any) => {
       .catch((err) => {
         console.log(
           err,
-          "Get CRMBillings details error in Billings.tsx component"
+          "Get CRMBillings details error in Billings.tsx component",
         );
       });
   };
@@ -158,7 +158,7 @@ const Billings = (props: any) => {
       });
 
       setMasterBillingDetails((prev) =>
-        prev.filter((item) => item?.ID !== isDelModal?.Id)
+        prev.filter((item) => item?.ID !== isDelModal?.Id),
       );
     } else {
       const currObj = {
@@ -195,7 +195,7 @@ const Billings = (props: any) => {
   //Function to check whether to show invoice icon or not:
   const shouldShowInvoiceIcon = (
     dueDateStr: string,
-    reminderDays: string
+    reminderDays: string,
   ): boolean => {
     if (!dueDateStr) return false;
 
@@ -230,7 +230,7 @@ const Billings = (props: any) => {
   //Open BillingsForm popup:
   const openForm = (
     mode: "add" | "edit" | "view",
-    data: IBillingsDetails | null = null
+    data: IBillingsDetails | null = null,
   ) => {
     setFormBooleansMode(mode);
     setSelectedCRMBillingsRowData(data);
@@ -249,9 +249,9 @@ const Billings = (props: any) => {
           typeof field === "string"
             ? field.toLowerCase().includes(lowerValue)
             : typeof field === "number"
-            ? field.toString().includes(lowerValue)
-            : false
-        )
+              ? field.toString().includes(lowerValue)
+              : false,
+        ),
       );
       setBillingDetails(filtered);
     }
@@ -382,7 +382,9 @@ const Billings = (props: any) => {
                   body={(rowData) => {
                     return (
                       <div>
-                        {moment(rowData?.StartMonth).format("MMM/YYYY")}
+                        {rowData?.StartMonth
+                          ? moment(rowData?.StartMonth).format("MMM/YYYY")
+                          : ""}
                       </div>
                     );
                   }}
@@ -395,7 +397,11 @@ const Billings = (props: any) => {
                   header="End month"
                   body={(rowData) => {
                     return (
-                      <div>{moment(rowData?.EndMonth).format("MMM/YYYY")}</div>
+                      <div>
+                        {rowData?.EndMonth
+                          ? moment(rowData?.EndMonth).format("MMM/YYYY")
+                          : ""}
+                      </div>
                     );
                   }}
                 ></Column>
@@ -466,7 +472,7 @@ const Billings = (props: any) => {
                 (!props?.isDeliveryHead ||
                   props?.isPMOUser ||
                   props?.data?.ProjectManager?.some(
-                    (user: any) => user?.email == props?.loginUserEmail
+                    (user: any) => user?.email == props?.loginUserEmail,
                   )) && (
                   <Column
                     field="Action"
@@ -476,7 +482,7 @@ const Billings = (props: any) => {
                         <div className={styles.Actions}>
                           {props?.ProjectsFormData?.ProjectStatus !== "6" ||
                           ((props?.data?.ProjectManager?.some(
-                            (user: any) => user?.email == props?.loginUserEmail
+                            (user: any) => user?.email == props?.loginUserEmail,
                           ) ||
                             props?.isPMOUser) &&
                             props?.data?.BillingModel == "T&M" &&
@@ -485,7 +491,7 @@ const Billings = (props: any) => {
                           (props?.ProjectsFormData?.ProjectStatus == "6" &&
                             props?.data?.ProjectManager?.some(
                               (user: any) =>
-                                user?.email == props?.loginUserEmail
+                                user?.email == props?.loginUserEmail,
                             ) &&
                             (rowData?.Status == "0" ||
                               rowData?.Status == "4")) ? (
@@ -530,23 +536,23 @@ const Billings = (props: any) => {
                           ((props?.data?.ProjectStatus == "6" &&
                             (props?.data?.ProjectManager?.some(
                               (user: any) =>
-                                user?.email == props?.loginUserEmail
+                                user?.email == props?.loginUserEmail,
                             ) ||
                               props?.isPMOUser) &&
                             rowData?.Status == "0" &&
                             shouldShowInvoiceIcon(
                               rowData?.DueDate,
-                              rowData?.ReminderDaysBeforeDue
+                              rowData?.ReminderDaysBeforeDue,
                             )) ||
                             ((props?.data?.ProjectManager?.some(
                               (user: any) =>
-                                user?.email == props?.loginUserEmail
+                                user?.email == props?.loginUserEmail,
                             ) ||
                               props?.isPMOUser) &&
                               rowData?.Status == "4") ||
                             (props?.data?.ProjectManager?.some(
                               (user: any) =>
-                                user?.email == props?.loginUserEmail
+                                user?.email == props?.loginUserEmail,
                             ) &&
                               new Date(rowData?.DueDate) < new Date() &&
                               props?.data?.ProjectStatus == "6" &&

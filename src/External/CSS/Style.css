@@ -1,11 +1,18 @@
 #workbenchPageContent {
   max-width: 100%;
 }
+.ms-HubNav {
+  display: none !important;
+}
 
 .content_3f3fd3c2,
 .CanvasZone {
   padding: 0 !important;
   max-width: 100% !important;
+}
+
+div[role="contentinfo"] {
+  display: none !important;
 }
 
 #CommentsWrapper {
@@ -452,7 +459,7 @@ h4 {
 
 .tableData .p-datatable > .p-datatable-wrapper {
   overflow: auto;
-  height: calc(100vh - 320px) !important;
+  height: calc(100vh - 257px) !important;
 }
 
 .tableDatas .p-datatable > .p-datatable-wrapper {
@@ -615,7 +622,7 @@ h4 {
   border-radius: 50%;
 }
 .p-paginator {
-  padding: 20px 0px 0px 0px !important;
+  padding: 10px 0px 10px 0px !important;
 }
 .paginator-bottom {
   border-width: 0;
@@ -787,4 +794,13 @@ h4 {
 
 .tabButtons .p-button:focus {
   box-shadow: none !important;
+}
+
+.p-checkbox.p-highlight .p-checkbox-box {
+  border-color: #00a99d;
+  background: #00a99d;
+}
+
+.reportData .p-datatable > .p-datatable-wrapper {
+  height: 398px !important;
 }

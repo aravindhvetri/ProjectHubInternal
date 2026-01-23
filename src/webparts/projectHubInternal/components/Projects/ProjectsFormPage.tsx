@@ -54,7 +54,7 @@ const ProjectFormPage = (props: any) => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
-    {}
+    {},
   );
   const [files, setFiles] = useState<File[]>([]);
   const [deletedFiles, setDeletedFiles] = useState<any[]>([]);
@@ -78,7 +78,7 @@ const ProjectFormPage = (props: any) => {
     {
       isOpen: false,
       Id: null,
-    }
+    },
   );
 
   //Data refresh and goBack mainPage function:
@@ -97,6 +97,7 @@ const ProjectFormPage = (props: any) => {
       Hours: "",
       Budget: "",
       Currency: "",
+      ProjectType: "",
       CustomerID: "",
       CustomerDisplayName: "",
       BillingContactName: "",
@@ -146,7 +147,7 @@ const ProjectFormPage = (props: any) => {
           "Customerdisplayname",
           "Firstname",
           "Emailaddress",
-          "Address1"
+          "Address1",
         )
         .getAll();
 
@@ -235,7 +236,7 @@ const ProjectFormPage = (props: any) => {
       filtered = DHusers.filter(
         (u) =>
           u.name.toLowerCase().includes(filterText.toLowerCase()) ||
-          u.email.toLowerCase().includes(filterText.toLowerCase())
+          u.email.toLowerCase().includes(filterText.toLowerCase()),
       );
     }
     return filtered.map((u) => ({
@@ -255,7 +256,7 @@ const ProjectFormPage = (props: any) => {
   //Set default user in peoplepicker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
-    fallbackUsers: any[]
+    fallbackUsers: any[],
   ) => {
     let selectedEmails: string[] = [];
     if (selectedUsers?.length) {
@@ -297,7 +298,7 @@ const ProjectFormPage = (props: any) => {
           typeof props?.data?.AccountManager === "string"
         ) {
           const matchedLead = leadOptions.find(
-            (x) => x.name === props?.data?.AccountManager
+            (x) => x.name === props?.data?.AccountManager,
           );
           if (matchedLead) {
             newForm.AccountManager = matchedLead;
@@ -313,7 +314,7 @@ const ProjectFormPage = (props: any) => {
   React.useEffect(() => {
     if (customers?.length && formData?.CustomerDisplayName) {
       const matchedCustomer = customers.find(
-        (c) => c.Customerdisplayname === formData.CustomerDisplayName
+        (c) => c.Customerdisplayname === formData.CustomerDisplayName,
       );
 
       if (matchedCustomer) {
@@ -328,7 +329,7 @@ const ProjectFormPage = (props: any) => {
     sp.web.lists
       .getByTitle(Config.LibraryNames?.ProjectFiles)
       .items.select(
-        "*,FileLeafRef,FileRef,FileDirRef,Author/Id,Author/Title,Author/EMail"
+        "*,FileLeafRef,FileRef,FileDirRef,Author/Id,Author/Title,Author/EMail",
       )
       .filter(`project eq '${projectId}' and IsDelete eq false`)
       .expand("File,Author")
@@ -351,7 +352,7 @@ const ProjectFormPage = (props: any) => {
       .catch((err: any) => {
         console.log(
           err,
-          "Get existing files data error in ProjectsFormPage.tsx component"
+          "Get existing files data error in ProjectsFormPage.tsx component",
         );
       });
   };
@@ -438,7 +439,7 @@ const ProjectFormPage = (props: any) => {
         props.Notify(
           "error",
           "Validation Error",
-          "Planned End Date cannot be later than Start Date!"
+          "Planned End Date cannot be later than Start Date!",
         );
         errors.PlannedEndDate = true;
       }
@@ -457,7 +458,7 @@ const ProjectFormPage = (props: any) => {
       props.Notify(
         "error",
         "Validation Error",
-        "Please add at least one billing entry before saving!"
+        "Please add at least one billing entry before saving!",
       );
       return; // stop save
     }
@@ -470,12 +471,12 @@ const ProjectFormPage = (props: any) => {
   const generateJson = () => {
     setLoader(true);
     let ProjectManagerIds: number[] = JSON.parse(
-      JSON.stringify(formData?.ProjectManager)
+      JSON.stringify(formData?.ProjectManager),
     )
       .map((user: IPeoplePickerDetails) => user.id)
       .sort((a: any, b: any) => a - b);
     let DeliveryHeadIds: number[] = JSON.parse(
-      JSON.stringify(formData?.DeliveryHead)
+      JSON.stringify(formData?.DeliveryHead),
     )
       .map((user: any) => (user.id ? user?.id : user?.key))
       .sort((a: any, b: any) => a - b);
@@ -497,6 +498,7 @@ const ProjectFormPage = (props: any) => {
       BillingModel: formData?.BillingModel,
       Budget: formData?.Budget,
       Hours: formData?.Hours,
+      ProjectType: formData?.ProjectType,
       CustomerID: formData?.CustomerID,
       CustomerDisplayName: formData?.CustomerDisplayName,
       Currency: formData?.Currency,
@@ -567,7 +569,7 @@ const ProjectFormPage = (props: any) => {
     } catch (err) {
       console.log(
         err,
-        "Update Datas to CRMProjects err in ProjectsFormPage.tsx component"
+        "Update Datas to CRMProjects err in ProjectsFormPage.tsx component",
       );
     }
   };
@@ -652,8 +654,8 @@ const ProjectFormPage = (props: any) => {
       .catch((err: any) =>
         console.log(
           err,
-          "getDetails from CRMPojects err in ProjectsFormPage.tsx component"
-        )
+          "getDetails from CRMPojects err in ProjectsFormPage.tsx component",
+        ),
       );
   };
 
@@ -704,12 +706,12 @@ const ProjectFormPage = (props: any) => {
           PMOusers?.some(
             (user) =>
               user?.email?.toLowerCase() ===
-              props?.loginUserEmail?.toLowerCase()
+              props?.loginUserEmail?.toLowerCase(),
           )
           ? "project added successfully"
           : props?.isAdd
-          ? "Project added successfully"
-          : ""
+            ? "Project added successfully"
+            : "",
       );
 
       // 4. Reset approval + cleanup
@@ -723,7 +725,7 @@ const ProjectFormPage = (props: any) => {
     } catch (err) {
       console.log(
         err,
-        "Add Datas to CRMProjects err in ProjectsFormPage.tsx component"
+        "Add Datas to CRMProjects err in ProjectsFormPage.tsx component",
       );
     }
   };
@@ -731,7 +733,7 @@ const ProjectFormPage = (props: any) => {
   //Add attachment to library:
   const addAttachmentsInLibrary = async (
     ProjectID: number,
-    uploadFiles: File[]
+    uploadFiles: File[],
   ) => {
     debugger;
     try {
@@ -831,7 +833,7 @@ const ProjectFormPage = (props: any) => {
     e: any,
     files: any,
     setFiles: any,
-    Config: any
+    Config: any,
   ) => {
     try {
       const allowedExtensions = [
@@ -864,7 +866,7 @@ const ProjectFormPage = (props: any) => {
         props.Notify(
           "warn",
           "Invalid File Type",
-          "Only PDF, Word, Excel, PPT, JPG and PNG files are allowed!"
+          "Only PDF, Word, Excel, PPT, JPG and PNG files are allowed!",
         );
         return;
       }
@@ -875,7 +877,7 @@ const ProjectFormPage = (props: any) => {
           props.Notify(
             "error",
             "Large File",
-            `${file.name} exceeds the 15 MB single file limit!`
+            `${file.name} exceeds the 15 MB single file limit!`,
           );
           return;
         }
@@ -884,33 +886,33 @@ const ProjectFormPage = (props: any) => {
       // Calculate total size
       const newFilesTotal = selectedFiles.reduce(
         (sum: any, f: any) => sum + f.size,
-        0
+        0,
       );
 
       if (totalSize + newFilesTotal > maxTotalSize) {
         props.Notify(
           "error",
           "Total Size Exceeded",
-          `Total file size cannot exceed 25 MB!`
+          `Total file size cannot exceed 25 MB!`,
         );
         return;
       }
 
       // Check duplicates inside current state
       const duplicatesInState = selectedFiles.filter((newFile: any) =>
-        files.some((existing: any) => existing.name === newFile.name)
+        files.some((existing: any) => existing.name === newFile.name),
       );
 
       const newFiles = selectedFiles.filter(
         (newFile: any) =>
-          !files.some((existing: any) => existing.name === newFile.name)
+          !files.some((existing: any) => existing.name === newFile.name),
       );
 
       if (duplicatesInState.length > 0) {
         props.Notify(
           "info",
           "Duplicate Files",
-          "Some file names already exist!"
+          "Some file names already exist!",
         );
       }
 
@@ -979,17 +981,17 @@ const ProjectFormPage = (props: any) => {
   //Check user is PMO,Project Manager and Delivery Head:
   const isPMOUser = PMOusers?.some(
     (user) =>
-      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
   const isProjectManager = formData?.ProjectManager?.some(
     (pm: IPeoplePickerDetails) =>
-      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
   const isDeliveryHead = formData?.DeliveryHead?.some(
     (user: IPeoplePickerDetails) =>
-      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
   //Initial Render:
@@ -1008,6 +1010,7 @@ const ProjectFormPage = (props: any) => {
         ProjectStatus: "0",
         BillingModel: "",
         UpWork: false,
+        ProjectType: "",
         Hours: "",
         Budget: "",
         Currency: "",
@@ -1029,12 +1032,18 @@ const ProjectFormPage = (props: any) => {
       ) : (
         <div style={{ overflow: "auto" }} className={styles.viewFormMain}>
           <div className={styles.viewFormNavBar}>
+            <div className={styles.backButton} onClick={() => props?.goBack()}>
+              <img
+                src={require("../../../../External/Images/back.png")}
+                alt="no image"
+              ></img>
+            </div>
             <h2>
               {props?.isAdd
                 ? "Add project"
                 : props?.isEdit
-                ? "Edit project"
-                : "View project"}
+                  ? "Edit project"
+                  : "View project"}
             </h2>
           </div>
           <div
@@ -1098,7 +1107,7 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Customer Name</Label>
+                <Label>Client Name</Label>
                 {/* <InputText
                   onChange={(e) =>
                     handleOnChange("CustomerDisplayName", e.target.value)
@@ -1126,12 +1135,12 @@ const ProjectFormPage = (props: any) => {
 
                     handleOnChange(
                       "CustomerDisplayName",
-                      customer.Customerdisplayname
+                      customer.Customerdisplayname,
                     );
                     handleOnChange("BillingContactName", customer?.Firstname);
                     handleOnChange(
                       "BillingContactEmail",
-                      customer?.Emailaddress
+                      customer?.Emailaddress,
                     );
                     handleOnChange("AccountName", customer.Customerdisplayname);
                     handleOnChange("BillingAddress", customer.Address1);
@@ -1177,7 +1186,7 @@ const ProjectFormPage = (props: any) => {
                     context={props.spfxContext}
                     defaultSelectedUsers={getSelectedEmails(
                       props?.data?.ProjectManager,
-                      formData?.ProjectManager
+                      formData?.ProjectManager,
                     )}
                     webAbsoluteUrl={
                       props?.spfxContext._pageContext._web.absoluteUrl
@@ -1295,7 +1304,7 @@ const ProjectFormPage = (props: any) => {
                     selectedItems={
                       formData?.DeliveryHead
                         ? formData?.DeliveryHead.map((u: any) =>
-                            mapToPersona(u)
+                            mapToPersona(u),
                           )
                         : []
                     }
@@ -1401,7 +1410,7 @@ const ProjectFormPage = (props: any) => {
                     (item: any) =>
                       item.name ===
                       (Config.projectStatusMap[formData?.ProjectStatus] ||
-                        formData?.ProjectStatus)
+                        formData?.ProjectStatus),
                   )}
                   onChange={(e) =>
                     handleOnChange("ProjectStatus", e?.value?.name)
@@ -1422,7 +1431,7 @@ const ProjectFormPage = (props: any) => {
                   }
                   optionLabel="name"
                   value={props?.initialCRMProjectsListDropContainer?.BillingModel.find(
-                    (item: any) => item.name === formData?.BillingModel
+                    (item: any) => item.name === formData?.BillingModel,
                   )}
                   onChange={(e) =>
                     handleOnChange("BillingModel", e?.value?.name)
@@ -1494,6 +1503,27 @@ const ProjectFormPage = (props: any) => {
                   }
                 />
               </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>ProjectType</Label>
+                <Dropdown
+                  options={
+                    props?.initialCRMProjectsListDropContainer?.ProjectType
+                  }
+                  optionLabel="name"
+                  value={props?.initialCRMProjectsListDropContainer?.ProjectType.find(
+                    (item: any) => item.name === formData?.ProjectType,
+                  )}
+                  onChange={(e) =>
+                    handleOnChange("ProjectType", e?.value?.name)
+                  }
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
             </div>
             <div className={selfComponentStyles.thirdPage}>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
@@ -1502,7 +1532,7 @@ const ProjectFormPage = (props: any) => {
                   options={props?.initialCRMProjectsListDropContainer?.Currency}
                   optionLabel="name"
                   value={props?.initialCRMProjectsListDropContainer?.Currency.find(
-                    (item: any) => item.name === formData?.Currency
+                    (item: any) => item.name === formData?.Currency,
                   )}
                   onChange={(e) => handleOnChange("Currency", e?.value?.name)}
                   disabled={
@@ -1606,7 +1636,7 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>UpWork project</Label>
+                <Label>Upwork project</Label>
                 <Checkbox
                   inputId="upwork"
                   checked={formData?.UpWork === true}
@@ -1657,12 +1687,39 @@ const ProjectFormPage = (props: any) => {
               setCurrentPage={props?.setCurrentPage}
             />
           )}
-          <div className={styles.addUpdateBtns}>
+          <div
+            style={props?.isAdd ? { padding: "20px 20px 0px 0px" } : {}}
+            className={styles.addUpdateBtns}
+          >
             <PrimaryButton
               className={styles.cancelBtn}
               iconProps={{ iconName: "cancel" }}
               onClick={() => {
-                emptyDatas();
+                // emptyDatas();
+                setFormData({
+                  ProjectID: "",
+                  AccountManager: "",
+                  AccountName: "",
+                  ProjectName: "",
+                  StartDate: null,
+                  PlannedEndDate: null,
+                  ProjectManager: [],
+                  DeliveryHead: [],
+                  ProjectStatus: "0",
+                  BillingModel: "",
+                  Hours: "",
+                  Budget: "",
+                  Currency: "",
+                  ProjectType: "",
+                  CustomerID: "",
+                  CustomerDisplayName: "",
+                  BillingContactName: "",
+                  BillingContactEmail: "",
+                  BillingContactMobile: "",
+                  BillingAddress: "",
+                  Remarks: "",
+                });
+                props?.goBack();
                 sessionStorage.removeItem("billingsData");
               }}
             >

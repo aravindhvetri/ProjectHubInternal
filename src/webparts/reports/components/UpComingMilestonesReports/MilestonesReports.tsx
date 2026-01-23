@@ -47,7 +47,7 @@ const MilestonesReports = (props: any) => {
   const [filteredData, setFilteredData] = React.useState<any[]>([]);
   console.log("Filtered Data", filteredData);
   const [masterReportData, setMasterReportData] = React.useState<any[]>([]);
-  const [filterBar, setFilterBar] = React.useState<boolean>(false);
+  const [filterBar, setFilterBar] = React.useState<boolean>(true);
   const [filterValues, setFilterValues] = React.useState({
     ProjectID: "",
     AccountName: "",
@@ -118,7 +118,7 @@ const MilestonesReports = (props: any) => {
         }
 
         const relatedBillings = billingRes.filter(
-          (bill: any) => bill.ProjectId == project.ID
+          (bill: any) => bill.ProjectId == project.ID,
         );
 
         if (relatedBillings.length > 0) {
@@ -166,7 +166,7 @@ const MilestonesReports = (props: any) => {
         }
       });
       const filteredStatusData = combinedData.filter(
-        (item: any) => item.Status == "0"
+        (item: any) => item.Status == "0",
       );
       setFilteredData([...filteredStatusData]);
       setMasterReportData([...filteredStatusData]);
@@ -174,7 +174,7 @@ const MilestonesReports = (props: any) => {
     } catch (error) {
       console.error(
         "Error fetching data in reports webpart main component.tsx page:",
-        error
+        error,
       );
     }
   };
@@ -198,7 +198,7 @@ const MilestonesReports = (props: any) => {
           (prev: ICRMProjectsListDrop) => ({
             ...prev,
             BillingModel: tempBillingModel,
-          })
+          }),
         );
       })
       .catch((err) => {
@@ -342,7 +342,7 @@ const MilestonesReports = (props: any) => {
     // File name with timestamp
     const now = new Date();
     const fileName = `Upcoming_Milestones_Report_${moment(now).format(
-      "DD_MM_YYYY_HH:mm"
+      "DD_MM_YYYY_HH:mm",
     )}.xlsx`;
 
     workbook.xlsx
@@ -372,7 +372,7 @@ const MilestonesReports = (props: any) => {
     const filtered = sourceData.filter((item) => {
       const managerNames =
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-          pm.name?.toLowerCase()
+          pm.name?.toLowerCase(),
         ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
@@ -393,17 +393,17 @@ const MilestonesReports = (props: any) => {
     const filtered = masterReportData.filter((item: any) => {
       const managerNames =
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-          pm.name?.toLowerCase()
+          pm.name?.toLowerCase(),
         ).join(" ") || "";
 
       const matchProjectID = item?.ProjectID?.toLowerCase().includes(
-        filterValues.ProjectID.toLowerCase()
+        filterValues.ProjectID.toLowerCase(),
       );
       const matchAccount = item?.AccountName?.toLowerCase().includes(
-        filterValues.AccountName.toLowerCase()
+        filterValues.AccountName.toLowerCase(),
       );
       const matchProjectName = item?.ProjectName?.toLowerCase().includes(
-        filterValues.ProjectName.toLowerCase()
+        filterValues.ProjectName.toLowerCase(),
       );
       const matchProjectManager = filterValues.ProjectManager
         ? managerNames.includes(filterValues.ProjectManager.toLowerCase())
@@ -435,7 +435,7 @@ const MilestonesReports = (props: any) => {
       const filteredSearch = filtered.filter((item) => {
         const managerNames =
           item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-            pm.name?.toLowerCase()
+            pm.name?.toLowerCase(),
           ).join(" ") || "";
         return (
           item.ProjectID?.toLowerCase().includes(searchVal.toLowerCase()) ||
@@ -554,7 +554,7 @@ const MilestonesReports = (props: any) => {
               optionLabel="name"
               placeholder="Select a status"
               value={initialCRMProejctsListDropContainer?.BillingModel.find(
-                (item) => item.name === filterValues?.BillingModel
+                (item) => item.name === filterValues?.BillingModel,
               )}
               onChange={(e) =>
                 handleFilterChange("BillingModel", e.value?.name)
@@ -597,7 +597,7 @@ const MilestonesReports = (props: any) => {
         ""
       )}
       <div
-        className={`${styles.tableData} tableData
+        className={`${styles.tableData} tableData reportData
                     ${
                       ScreenWidth >= 1536
                         ? "data_table_1536"

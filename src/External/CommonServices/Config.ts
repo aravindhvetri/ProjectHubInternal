@@ -51,6 +51,7 @@ export namespace Config {
     projectStaus: [],
     BillingModel: [],
     Currency: [],
+    ProjectType: [],
   };
 
   //CRMProjectsRisks List DropDown:
