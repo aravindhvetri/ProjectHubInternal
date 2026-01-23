@@ -53,7 +53,7 @@ const MainComponent = (props: any) => {
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
   console.log("searchVal", searchVal);
-  const [filterBar, setFilterBar] = React.useState<boolean>(false);
+  const [filterBar, setFilterBar] = React.useState<boolean>(true);
   const [reportData, setReportData] = React.useState<any[]>([]);
   const [filteredData, setFilteredData] = React.useState<any[]>([]);
 
@@ -69,7 +69,7 @@ const MainComponent = (props: any) => {
     InvoiceTrigger: "",
   });
   const [selectedReport, setSelectedReport] = React.useState<string>(
-    "Project Billing Status Report"
+    "Project Billing Status Report",
   );
 
   //Function to fetch Project and Billing data and combine them for report:
@@ -132,7 +132,7 @@ const MainComponent = (props: any) => {
         }
 
         const relatedBillings = billingRes.filter(
-          (bill: any) => bill.ProjectId == project.ID
+          (bill: any) => bill.ProjectId == project.ID,
         );
 
         let receivedAmount = 0;
@@ -209,7 +209,7 @@ const MainComponent = (props: any) => {
     } catch (error) {
       console.error(
         "Error fetching data in reports webpart main component.tsx page:",
-        error
+        error,
       );
     }
   };
@@ -233,7 +233,7 @@ const MainComponent = (props: any) => {
           (prev: ICRMBillingsListDrop) => ({
             ...prev,
             Status: tempStatus,
-          })
+          }),
         );
         SPServices.SPGetChoices({
           Listname: Config.ListNames.CRMBillings,
@@ -252,7 +252,7 @@ const MainComponent = (props: any) => {
               (prev: ICRMBillingsListDrop) => ({
                 ...prev,
                 Currency: tempCurrency,
-              })
+              }),
             );
           })
           .catch((err) => {
@@ -310,8 +310,8 @@ const MainComponent = (props: any) => {
         {rowData?.BillingModel == "Milestone"
           ? rowData?.Amount
           : rowData?.BillingModel == "T&M"
-          ? rowData?.TMAmount
-          : rowData?.MonthlyAmount || "-"}
+            ? rowData?.TMAmount
+            : rowData?.MonthlyAmount || "-"}
       </div>
     );
   };
@@ -362,11 +362,11 @@ const MainComponent = (props: any) => {
     const filtered = sourceData.filter((item) => {
       const managerNames =
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-          pm.name?.toLowerCase()
+          pm.name?.toLowerCase(),
         ).join(" ") || "";
       const deliveryHeadNames =
         item?.DeliveryHead?.map((dh: IPeoplePickerDetails) =>
-          dh.name?.toLowerCase()
+          dh.name?.toLowerCase(),
         ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
@@ -472,7 +472,7 @@ const MainComponent = (props: any) => {
     // File name with timestamp
     const now = new Date();
     const fileName = `Project_Billing_Report_${moment(now).format(
-      "DD_MM_YYYY_HH:mm"
+      "DD_MM_YYYY_HH:mm",
     )}.xlsx`;
 
     workbook.xlsx
@@ -490,20 +490,20 @@ const MainComponent = (props: any) => {
     const filtered = masterReportData.filter((item: any) => {
       const managerNames =
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-          pm.name?.toLowerCase()
+          pm.name?.toLowerCase(),
         ).join(" ") || "";
 
       const matchProjectID = item?.ProjectID?.toLowerCase().includes(
-        filterValues.ProjectID.toLowerCase()
+        filterValues.ProjectID.toLowerCase(),
       );
       const matchLead = item?.AccountManager?.toLowerCase().includes(
-        filterValues.AccountManager.toLowerCase()
+        filterValues.AccountManager.toLowerCase(),
       );
       const matchAccount = item?.AccountName?.toLowerCase().includes(
-        filterValues.AccountName.toLowerCase()
+        filterValues.AccountName.toLowerCase(),
       );
       const matchProjectName = item?.ProjectName?.toLowerCase().includes(
-        filterValues.ProjectName.toLowerCase()
+        filterValues.ProjectName.toLowerCase(),
       );
       const matchStatus = filterValues.Status
         ? (Config.statusLabelMap[item?.Status] || item?.Status) ===
@@ -541,12 +541,12 @@ const MainComponent = (props: any) => {
       const filteredSearch = filtered.filter((item) => {
         const managerNames =
           item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
-            pm.name?.toLowerCase()
+            pm.name?.toLowerCase(),
           ).join(" ") || "";
         return (
           item.ProjectID?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.AccountManager?.toLowerCase().includes(
-            searchVal.toLowerCase()
+            searchVal.toLowerCase(),
           ) ||
           item.AccountName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.ProjectName?.toLowerCase().includes(searchVal.toLowerCase()) ||
@@ -723,7 +723,7 @@ const MainComponent = (props: any) => {
                     (item) =>
                       item.name ===
                       (Config.statusLabelMap[filterValues?.Status] ||
-                        filterValues?.Status)
+                        filterValues?.Status),
                   )}
                   onChange={(e) => handleFilterChange("Status", e.value?.name)}
                 />
@@ -735,7 +735,7 @@ const MainComponent = (props: any) => {
                   optionLabel="name"
                   placeholder="Select a billing model"
                   value={initialCRMBillingsListDropContainer?.Currency.find(
-                    (item) => item.name === filterValues?.Currency
+                    (item) => item.name === filterValues?.Currency,
                   )}
                   onChange={(e) =>
                     handleFilterChange("Currency", e.value?.name)
@@ -783,7 +783,7 @@ const MainComponent = (props: any) => {
             ""
           )}
           <div
-            className={`${styles.tableData} tableData
+            className={`${styles.tableData} tableData reportData
                     ${
                       ScreenWidth >= 1536
                         ? "data_table_1536"

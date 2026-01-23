@@ -47,7 +47,7 @@ interface IProps {
   Notify: (
     type: "info" | "success" | "warn" | "error" | "secondary" | "contrast",
     summary: string,
-    msg: string
+    msg: string,
   ) => void;
   spfxContext: any;
   pageName: string;
@@ -70,8 +70,9 @@ const Projects = (props: IProps): JSX.Element => {
 
   //Local States:
   const [projectDetails, setProjectDetails] = React.useState<IProjectData[]>(
-    []
+    [],
   );
+  console.log(projectDetails, "projectDetails");
   const [PMOusers, setPMOusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [masterProjectDetails, setMasterProjectDetails] = React.useState<
     IProjectData[]
@@ -80,20 +81,21 @@ const Projects = (props: IProps): JSX.Element => {
     "list" | "form" | "BillingList"
   >("list");
   const [selectedData, setSelectedData] = React.useState<IProjectData | null>(
-    null
+    null,
   );
   const [billingsDetails, setBillingDetails] = React.useState<any>([]);
   const [formMode, setFormMode] = React.useState<"add" | "edit" | "view">(
-    "add"
+    "add",
   );
   const [isDelModal, setIsDelModal] = React.useState<IDelModal>({
     isOpen: false,
     Id: null,
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
+  console.log(searchVal, "searchVal");
   const [filterBar, setFilterBar] = React.useState<boolean>(false);
   const [filterValues, setFilterValues] = React.useState({
-    ProjectID: "",
+    CustomerDisplayName: "",
     AccountManager: "",
     AccountName: "",
     ProjectStatus: "",
@@ -170,6 +172,7 @@ const Projects = (props: IProps): JSX.Element => {
             Hours: items?.Hours,
             Currency: items?.Currency,
             UpWork: items?.UpWork,
+            ProjectType: items?.ProjectType,
             CustomerID: items?.CustomerID,
             CustomerDisplayName: items?.CustomerDisplayName,
             BillingContactName: items?.BillingContactName,
@@ -253,7 +256,7 @@ const Projects = (props: IProps): JSX.Element => {
           (prev: ICRMProjectsListDrop) => ({
             ...prev,
             projectStaus: tempProjectStatus,
-          })
+          }),
         );
         SPServices.SPGetChoices({
           Listname: Config.ListNames.CRMProjects,
@@ -272,7 +275,7 @@ const Projects = (props: IProps): JSX.Element => {
               (prev: ICRMProjectsListDrop) => ({
                 ...prev,
                 BillingModel: tempBillingModel,
-              })
+              }),
             );
             SPServices.SPGetChoices({
               Listname: Config.ListNames.CRMProjects,
@@ -291,11 +294,34 @@ const Projects = (props: IProps): JSX.Element => {
                   (prev: ICRMProjectsListDrop) => ({
                     ...prev,
                     Currency: tempCurrency,
-                  })
+                  }),
                 );
-                setLoader(false);
-                getPMOGroupUsers();
-                getBillingsListDetails();
+                SPServices.SPGetChoices({
+                  Listname: Config.ListNames.CRMProjects,
+                  FieldName: "ProjectType",
+                })
+                  .then((res: any) => {
+                    let tempProjectType: IBasicDropDown[] = [];
+                    if (res?.Choices?.length) {
+                      res?.Choices?.forEach((val: any) => {
+                        tempProjectType.push({
+                          name: val,
+                        });
+                      });
+                    }
+                    setinitialCRMProjectsListDropContainer(
+                      (prev: ICRMProjectsListDrop) => ({
+                        ...prev,
+                        ProjectType: tempProjectType,
+                      }),
+                    );
+                    setLoader(false);
+                    getPMOGroupUsers();
+                    getBillingsListDetails();
+                  })
+                  .catch((err) => {
+                    console.log(err, "Get choice error from CRMProjects list");
+                  });
               })
               .catch((err) => {
                 console.log(err, "Get choice error from CRMProjects list");
@@ -419,14 +445,15 @@ const Projects = (props: IProps): JSX.Element => {
   //apply filters in purticular columns:
   const applyFilters = () => {
     const filtered = masterProjectDetails.filter((item) => {
-      const matchProjectID = item?.ProjectID?.toLowerCase().includes(
-        filterValues.ProjectID.toLowerCase()
-      );
+      const matchCustomerName =
+        item?.CustomerDisplayName?.toLowerCase().includes(
+          filterValues.CustomerDisplayName.toLowerCase(),
+        );
       const matchLead = item?.AccountManager?.toLowerCase().includes(
-        filterValues.AccountManager.toLowerCase()
+        filterValues.AccountManager.toLowerCase(),
       );
       const matchAccount = item?.AccountName?.toLowerCase().includes(
-        filterValues.AccountName.toLowerCase()
+        filterValues.AccountName.toLowerCase(),
       );
       const matchStatus = filterValues.ProjectStatus
         ? (Config.projectStatusMap[item?.ProjectStatus] ||
@@ -437,7 +464,7 @@ const Projects = (props: IProps): JSX.Element => {
         : true;
 
       return (
-        matchProjectID &&
+        matchCustomerName &&
         matchLead &&
         matchAccount &&
         matchStatus &&
@@ -577,17 +604,17 @@ const Projects = (props: IProps): JSX.Element => {
   const isEditable = (rowData: IProjectData) => {
     const isPMOUser = PMOusers?.some(
       (user) =>
-        user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+        user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
     );
 
     const isProjectManager = rowData?.ProjectManager?.some(
       (pm: IPeoplePickerDetails) =>
-        pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+        pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
     );
 
     const isDeliveryHead = rowData?.DeliveryHead?.some(
       (dh: IPeoplePickerDetails) =>
-        dh?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+        dh?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
     );
 
     return (
@@ -602,7 +629,7 @@ const Projects = (props: IProps): JSX.Element => {
           (bill: any) =>
             bill?.ProjectId === rowData?.ID &&
             (bill?.Status == "0" || bill?.Status == "4") &&
-            rowData?.BillingModel == "T&M"
+            rowData?.BillingModel == "T&M",
         )) ||
       (isProjectManager &&
         (rowData?.ProjectStatus == "2" ||
@@ -610,7 +637,7 @@ const Projects = (props: IProps): JSX.Element => {
             billingsDetails?.some(
               (bill: any) =>
                 bill?.ProjectId === rowData?.ID &&
-                (bill?.Status == "0" || bill?.Status == "4")
+                (bill?.Status == "0" || bill?.Status == "4"),
             )))) ||
       (isDeliveryHead && rowData?.ProjectStatus == "3")
     );
@@ -645,7 +672,7 @@ const Projects = (props: IProps): JSX.Element => {
       console.error("Error opening project folder:", err);
       window.open(
         `${spfxContext?.pageContext?.web?.absoluteUrl}/ProjectFolderStructure/Forms/AllItems.aspx`,
-        "_blank"
+        "_blank",
       );
     }
   };
@@ -687,7 +714,7 @@ const Projects = (props: IProps): JSX.Element => {
                   onClick={() => {
                     window.open(
                       `${props?.spfxContext?.pageContext?.web?.absoluteUrl}//SitePages/Reports.aspx`,
-                      "_blank"
+                      "_blank",
                     );
                   }}
                 >
@@ -709,7 +736,7 @@ const Projects = (props: IProps): JSX.Element => {
                   onClick={() => {
                     setSearchVal("");
                     setFilterValues({
-                      ProjectID: "",
+                      CustomerDisplayName: "",
                       AccountManager: "",
                       AccountName: "",
                       ProjectStatus: "",
@@ -746,7 +773,7 @@ const Projects = (props: IProps): JSX.Element => {
               {PMOusers?.some(
                 (user) =>
                   user?.email?.toLowerCase() ===
-                  props?.loginUserEmail?.toLowerCase()
+                  props?.loginUserEmail?.toLowerCase(),
               ) && (
                 <div className={styles.btnAndText}>
                   <div
@@ -772,11 +799,11 @@ const Projects = (props: IProps): JSX.Element => {
           {filterBar ? (
             <div className={styles.filterFields}>
               <div className={styles.filterField}>
-                <label>Project Id</label>
+                <label>Client name</label>
                 <InputText
-                  value={filterValues?.ProjectID}
+                  value={filterValues?.CustomerDisplayName}
                   onChange={(e) =>
-                    handleFilterChange("ProjectID", e.target.value)
+                    handleFilterChange("CustomerDisplayName", e.target.value)
                   }
                   placeholder="Enter here"
                 />
@@ -808,7 +835,7 @@ const Projects = (props: IProps): JSX.Element => {
                   optionLabel="name"
                   placeholder="Select a status"
                   value={initialCRMProjectsListDropContainer?.projectStaus.find(
-                    (item) => item.name === filterValues?.ProjectStatus
+                    (item) => item.name === filterValues?.ProjectStatus,
                   )}
                   onChange={(e) =>
                     handleFilterChange("ProjectStatus", e.value?.name)
@@ -822,7 +849,7 @@ const Projects = (props: IProps): JSX.Element => {
                   optionLabel="name"
                   placeholder="Select a billing model"
                   value={initialCRMProjectsListDropContainer?.BillingModel.find(
-                    (item) => item.name === filterValues?.BillingModel
+                    (item) => item.name === filterValues?.BillingModel,
                   )}
                   onChange={(e) =>
                     handleFilterChange("BillingModel", e.value?.name)
@@ -837,7 +864,7 @@ const Projects = (props: IProps): JSX.Element => {
                   onClick={() => {
                     setSearchVal("");
                     setFilterValues({
-                      ProjectID: "",
+                      CustomerDisplayName: "",
                       AccountManager: "",
                       AccountName: "",
                       ProjectStatus: "",
@@ -870,36 +897,52 @@ const Projects = (props: IProps): JSX.Element => {
               }}
               emptyMessage={<p className={styles.noData}>No data !!!</p>}
             >
-              <Column sortable field="ProjectID" header="Project id" />
               <Column
+                style={{ width: "8%" }}
+                sortable
+                field="ProjectID"
+                header="Project id"
+              />
+              <Column
+                style={{ width: "14%" }}
                 sortable
                 field="ProjectName"
                 header="Project name"
               ></Column>
               <Column
+                style={{ width: "11%" }}
                 sortable
                 field="AccountName"
                 header="Account name"
               ></Column>
               <Column
+                style={{ width: "12%" }}
                 sortable
                 field="AccountManager"
                 header="Account manager"
                 body={renderAccountManagerColumn}
               ></Column>
               <Column
+                style={{ width: "12%" }}
+                sortable
+                field="CustomerDisplayName"
+                header="Client name"
+              ></Column>
+              <Column
+                style={{ width: "12%" }}
                 sortable
                 field="ProjectManager"
                 header="Project manager"
                 body={renderManagersColumn}
               ></Column>
               <Column
+                style={{ width: "10%" }}
                 sortable
                 field="DeliveryHead"
                 header="Delivery head"
                 body={renderDeliveryHeadsColumn}
               ></Column>
-              <Column
+              {/* <Column
                 sortable
                 field="StartDate"
                 header="Start date"
@@ -912,8 +955,8 @@ const Projects = (props: IProps): JSX.Element => {
                     </div>
                   );
                 }}
-              ></Column>
-              <Column
+              ></Column> */}
+              {/* <Column
                 sortable
                 field="PlannedEndDate"
                 header="End date"
@@ -926,21 +969,23 @@ const Projects = (props: IProps): JSX.Element => {
                     </div>
                   );
                 }}
-              ></Column>
+              ></Column> */}
               <Column
+                style={{ width: "10%" }}
                 sortable
                 field="ProjectStatus"
                 header="Project status"
                 body={(rowData) => renderStatus(rowData)}
               ></Column>
               <Column
+                style={{ width: "10%" }}
                 sortable
                 field="BillingModel"
                 header="Billing model"
               ></Column>
-              <Column sortable field="Budget" header="Budget"></Column>
+              {/* <Column sortable field="Budget" header="Budget"></Column>
               <Column sortable field="Hours" header="Hours"></Column>
-              <Column sortable field="Currency" header="Currency"></Column>
+              <Column sortable field="Currency" header="Currency"></Column> */}
               <Column
                 field="Action"
                 header="Actions"
@@ -995,7 +1040,7 @@ const Projects = (props: IProps): JSX.Element => {
                             e.stopPropagation();
                             handleOpenProjectFolder(
                               rowData,
-                              props?.spfxContext
+                              props?.spfxContext,
                             );
                           }}
                         >

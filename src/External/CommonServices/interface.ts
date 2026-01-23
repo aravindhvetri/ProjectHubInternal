@@ -14,6 +14,7 @@ export interface IProjectData {
   ProjectName: string;
   StartDate: string;
   PlannedEndDate: string;
+  ProjectType: string;
   UpWork: boolean;
   ProjectManager: IPeoplePickerDetails[];
   DeliveryHead: IPeoplePickerDetails[];
@@ -39,6 +40,7 @@ export interface ICRMProjectsListDrop {
   projectStaus: IBasicDropDown[];
   BillingModel: IBasicDropDown[];
   Currency: IBasicDropDown[];
+  ProjectType: IBasicDropDown[];
 }
 
 export interface ICRMProjectRisksListDrop {

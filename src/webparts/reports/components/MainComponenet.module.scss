@@ -13,7 +13,7 @@ $ThemePrimeryColor: #00a99d;
     padding: 10px 8px;
   }
   .filterBarAndTableBorder {
-    margin: 10px 25px 0 25px;
+    margin: 10px 10px 0 10px;
     border: 1px solid #ebebeb;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
@@ -65,7 +65,7 @@ $ThemePrimeryColor: #00a99d;
     }
   }
   .tableData {
-    margin: -2px 25px 0 25px;
+    margin: 0px 10px 0 10px;
 
     .noData {
       text-align: center;
@@ -96,7 +96,7 @@ $ThemePrimeryColor: #00a99d;
   justify-content: space-between;
   align-items: flex-end;
   gap: 10px;
-  margin: 0 25px 5px 25px;
+  margin: 0 10px 5px 10px;
   padding: 5px 8px;
   border-right: 1px solid #ebebeb;
   border-left: 1px solid #ebebeb;
@@ -150,5 +150,5 @@ $ThemePrimeryColor: #00a99d;
     font-weight: 500;
   }
 
-  padding-left: 26px;
+  padding: 10px 0px 0px 10px;
 }
