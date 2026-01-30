@@ -47,7 +47,10 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 
 const ProjectFormPage = (props: any) => {
-  const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
+  // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
+  const TARGET_SITE_URL =
+    "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
+
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
   const [formData, setFormData] = useState<any>({});
@@ -96,6 +99,7 @@ const ProjectFormPage = (props: any) => {
       BillingModel: "",
       Hours: "",
       Budget: "",
+      ClientName: "",
       Currency: "",
       ProjectType: "",
       CustomerID: "",
@@ -368,7 +372,6 @@ const ProjectFormPage = (props: any) => {
       case "ProjectStatus":
       case "BillingModel":
       case "Currency":
-      case "AccountName":
       case "Budget":
       case "ProjectName":
       case "BillingContactName":
@@ -411,8 +414,6 @@ const ProjectFormPage = (props: any) => {
       errors.ProjectManager = true;
     if (!isValidField("DeliveryHead", formData?.DeliveryHead))
       errors.DeliveryHead = true;
-    if (!isValidField("AccountName", formData?.AccountName))
-      errors.AccountName = true;
     if (!isValidField("Budget", formData?.Budget)) errors.Budget = true;
     if (!isValidField("ProjectName", formData?.ProjectName))
       errors.ProjectName = true;
@@ -484,7 +485,8 @@ const ProjectFormPage = (props: any) => {
     let json: any = {
       ProjectID: formData?.ProjectID,
       AccountManager: formData?.AccountManager?.name,
-      AccountName: formData?.AccountName,
+      // AccountName: formData?.AccountName,
+      ClientName: formData?.ClientName,
       ProjectName: formData?.ProjectName,
       StartDate: SPServices.GetDateFormat(formData?.StartDate),
       PlannedEndDate: SPServices.GetDateFormat(formData?.PlannedEndDate),
@@ -1013,6 +1015,7 @@ const ProjectFormPage = (props: any) => {
         ProjectType: "",
         Hours: "",
         Budget: "",
+        ClientName: "",
         Currency: "",
         CustomerID: "",
         CustomerDisplayName: "",
@@ -1087,18 +1090,14 @@ const ProjectFormPage = (props: any) => {
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Account name</Label>
                 <InputText
-                  // onChange={(e) =>
-                  //   handleOnChange("AccountName", e.target.value)
-                  // }
-                  value={formData?.AccountName}
-                  // disabled={
-                  //   props?.isView ||
-                  //   // isProjectManager ||
-                  //   (isProjectManager && !isPMOUser) ||
-                  //   (isDeliveryHead && !isPMOUser) ||
-                  //   props?.data?.ProjectStatus == "6"
-                  // }
-                  disabled
+                  onChange={(e) => handleOnChange("ClientName", e.target.value)}
+                  value={formData?.ClientName}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
                   // style={
                   //   errorMessage["AccountName"]
                   //     ? { border: "2px solid #ff0000" }
@@ -1709,6 +1708,7 @@ const ProjectFormPage = (props: any) => {
                   BillingModel: "",
                   Hours: "",
                   Budget: "",
+                  ClientName: "",
                   Currency: "",
                   ProjectType: "",
                   CustomerID: "",

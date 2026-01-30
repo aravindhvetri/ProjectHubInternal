@@ -45,7 +45,6 @@ const MilestonesReports = (props: any) => {
   const ImportUploadImage: string = require("../../../../External/Images/fileupload.png");
   //Local States:
   const [filteredData, setFilteredData] = React.useState<any[]>([]);
-  console.log("Filtered Data", filteredData);
   const [masterReportData, setMasterReportData] = React.useState<any[]>([]);
   const [filterBar, setFilterBar] = React.useState<boolean>(true);
   const [filterValues, setFilterValues] = React.useState({
@@ -376,7 +375,8 @@ const MilestonesReports = (props: any) => {
         ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
-        item.AccountName?.toLowerCase().includes(val.toLowerCase()) ||
+        item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
+        item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
         item?.Remarks?.toLowerCase().includes(val.toLowerCase()) ||
@@ -399,7 +399,7 @@ const MilestonesReports = (props: any) => {
       const matchProjectID = item?.ProjectID?.toLowerCase().includes(
         filterValues.ProjectID.toLowerCase(),
       );
-      const matchAccount = item?.AccountName?.toLowerCase().includes(
+      const matchAccount = item?.ClientName?.toLowerCase().includes(
         filterValues.AccountName.toLowerCase(),
       );
       const matchProjectName = item?.ProjectName?.toLowerCase().includes(
@@ -439,6 +439,10 @@ const MilestonesReports = (props: any) => {
           ).join(" ") || "";
         return (
           item.ProjectID?.toLowerCase().includes(searchVal.toLowerCase()) ||
+          item.ClientName?.toLowerCase().includes(searchVal.toLowerCase()) ||
+          item.CustomerDisplayName?.toLowerCase().includes(
+            searchVal.toLowerCase(),
+          ) ||
           item.AccountName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.ProjectName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.BillingModel?.toLowerCase().includes(searchVal.toLowerCase()) ||

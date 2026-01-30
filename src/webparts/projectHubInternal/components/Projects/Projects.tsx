@@ -92,7 +92,6 @@ const Projects = (props: IProps): JSX.Element => {
     Id: null,
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
-  console.log(searchVal, "searchVal");
   const [filterBar, setFilterBar] = React.useState<boolean>(false);
   const [filterValues, setFilterValues] = React.useState({
     CustomerDisplayName: "",
@@ -171,6 +170,7 @@ const Projects = (props: IProps): JSX.Element => {
             Budget: items?.Budget,
             Hours: items?.Hours,
             Currency: items?.Currency,
+            ClientName: items?.ClientName,
             UpWork: items?.UpWork,
             ProjectType: items?.ProjectType,
             CustomerID: items?.CustomerID,
@@ -452,7 +452,7 @@ const Projects = (props: IProps): JSX.Element => {
       const matchLead = item?.AccountManager?.toLowerCase().includes(
         filterValues.AccountManager.toLowerCase(),
       );
-      const matchAccount = item?.AccountName?.toLowerCase().includes(
+      const matchAccount = item?.ClientName?.toLowerCase().includes(
         filterValues.AccountName.toLowerCase(),
       );
       const matchStatus = filterValues.ProjectStatus
@@ -491,8 +491,10 @@ const Projects = (props: IProps): JSX.Element => {
         item?.DeliveryHead?.map((dh) => dh.name?.toLowerCase()).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
+        item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountManager?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountName?.toLowerCase().includes(val.toLowerCase()) ||
+        item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectStatus?.toLowerCase().includes(val.toLowerCase()) ||
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
@@ -912,7 +914,7 @@ const Projects = (props: IProps): JSX.Element => {
               <Column
                 style={{ width: "11%" }}
                 sortable
-                field="AccountName"
+                field="ClientName"
                 header="Account name"
               ></Column>
               <Column

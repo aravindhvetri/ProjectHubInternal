@@ -52,7 +52,6 @@ const MainComponent = (props: any) => {
     ...Config.CRMBillingsDropDown,
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
-  console.log("searchVal", searchVal);
   const [filterBar, setFilterBar] = React.useState<boolean>(true);
   const [reportData, setReportData] = React.useState<any[]>([]);
   const [filteredData, setFilteredData] = React.useState<any[]>([]);
@@ -370,8 +369,10 @@ const MainComponent = (props: any) => {
         ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
+        item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountManager?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountName?.toLowerCase().includes(val.toLowerCase()) ||
+        item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
         (Config.statusLabelMap[item?.Status] || item?.Status)
@@ -499,7 +500,7 @@ const MainComponent = (props: any) => {
       const matchLead = item?.AccountManager?.toLowerCase().includes(
         filterValues.AccountManager.toLowerCase(),
       );
-      const matchAccount = item?.AccountName?.toLowerCase().includes(
+      const matchAccount = item?.ClientName?.toLowerCase().includes(
         filterValues.AccountName.toLowerCase(),
       );
       const matchProjectName = item?.ProjectName?.toLowerCase().includes(
@@ -549,6 +550,10 @@ const MainComponent = (props: any) => {
             searchVal.toLowerCase(),
           ) ||
           item.AccountName?.toLowerCase().includes(searchVal.toLowerCase()) ||
+          item.ClientName?.toLowerCase().includes(searchVal.toLowerCase()) ||
+          item.CustomerDisplayName?.toLowerCase().includes(
+            searchVal.toLowerCase(),
+          ) ||
           item.ProjectName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.BillingModel?.toLowerCase().includes(searchVal.toLowerCase()) ||
           (Config.statusLabelMap[item?.Status] || item?.Status)
