@@ -22,6 +22,7 @@ export interface IProjectData {
   BillingModel: string;
   Budget: number;
   Hours: string;
+  ClientName: string;
   Currency: string;
   CustomerDisplayName: string;
   CustomerID: string;
