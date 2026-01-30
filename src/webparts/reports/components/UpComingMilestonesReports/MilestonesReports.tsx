@@ -127,6 +127,8 @@ const MilestonesReports = (props: any) => {
               IsDeleted: project.IsDelete,
               ProjectName: project.ProjectName,
               AccountName: project.AccountName,
+              ClientName: project.ClientName,
+              CustomerDisplayName: project.CustomerDisplayName,
               ProjectManager: _ProjectManager,
               BillingModel: project.BillingModel,
               StartDate: project.StartDate,
@@ -147,6 +149,8 @@ const MilestonesReports = (props: any) => {
           combinedData.push({
             ProjectID: project.ProjectID,
             ProjectName: project.ProjectName,
+            ClientName: project.ClientName,
+            CustomerDisplayName: project.CustomerDisplayName,
             AccountName: project.AccountName,
             ProjectManager: _ProjectManager,
             BillingModel: project.BillingModel,
