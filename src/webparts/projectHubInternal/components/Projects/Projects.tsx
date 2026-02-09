@@ -65,6 +65,12 @@ const FilterImage: string = require("../../../../External/Images/filter.png");
 const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
 
 const Projects = (props: IProps): JSX.Element => {
+  const loginEmail = props?.loginUserEmail?.toLowerCase();
+  const adminUsers = [
+    "sreedhar.sk@technorucs.com",
+    "Chandru@technorucs.com",
+    "Chandru@technorucs365.onmicrosoft.com",
+  ];
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
 
@@ -72,7 +78,6 @@ const Projects = (props: IProps): JSX.Element => {
   const [projectDetails, setProjectDetails] = React.useState<IProjectData[]>(
     [],
   );
-  console.log(projectDetails, "projectDetails");
   const [PMOusers, setPMOusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [masterProjectDetails, setMasterProjectDetails] = React.useState<
     IProjectData[]
@@ -120,8 +125,8 @@ const Projects = (props: IProps): JSX.Element => {
     SPServices.SPReadItems({
       Listname: Config.ListNames.CRMProjects,
       Select:
-        "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title",
-      Expand: "ProjectManager,DeliveryHead",
+        "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
+      Expand: "ProjectManager,DeliveryHead,BA",
       Orderby: "Modified",
       Orderbydecorasc: true,
       Filter: [
@@ -155,6 +160,16 @@ const Projects = (props: IProps): JSX.Element => {
               });
             });
           }
+          let _BA: IPeoplePickerDetails[] = [];
+          if (items?.BA) {
+            items?.BA.forEach((user: any) => {
+              _BA.push({
+                id: user?.Id,
+                name: user?.Title,
+                email: user?.EMail,
+              });
+            });
+          }
           projectDetails.push({
             ID: items?.ID,
             ProjectID: items?.ProjectID,
@@ -165,6 +180,7 @@ const Projects = (props: IProps): JSX.Element => {
             PlannedEndDate: items?.PlannedEndDate,
             ProjectManager: _ProjectManager ? _ProjectManager : [],
             DeliveryHead: _DeliveryHead ? _DeliveryHead : [],
+            BA: _BA ? _BA : [],
             ProjectStatus: items?.ProjectStatus,
             BillingModel: items?.BillingModel,
             Budget: items?.Budget,
@@ -180,10 +196,27 @@ const Projects = (props: IProps): JSX.Element => {
             BillingContactMobile: items?.BillingContactMobile,
             BillingAddress: items?.BillingAddress,
             Remarks: items?.Remarks,
+            Status: items?.Status,
+            DealProfit: items?.DealProfit,
+            DealMargin: items?.DealMargin,
+            FPMProfit: items?.FPMProfit,
+            FPMMargin: items?.FPMMargin,
           });
         });
-        setProjectDetails([...projectDetails]);
-        setMasterProjectDetails([...projectDetails]);
+        const filteredProjects = adminUsers.includes(loginEmail)
+          ? projectDetails
+          : projectDetails.filter(
+              (project) =>
+                project.ProjectManager?.some(
+                  (u) => u.email?.toLowerCase() === loginEmail,
+                ) ||
+                project.DeliveryHead?.some(
+                  (u) => u.email?.toLowerCase() === loginEmail,
+                ) ||
+                project.BA?.some((u) => u.email?.toLowerCase() === loginEmail),
+            );
+        setProjectDetails([...filteredProjects]);
+        setMasterProjectDetails([...filteredProjects]);
         getAllChoices();
       })
       .catch((err) => {
@@ -315,9 +348,35 @@ const Projects = (props: IProps): JSX.Element => {
                         ProjectType: tempProjectType,
                       }),
                     );
-                    setLoader(false);
-                    getPMOGroupUsers();
-                    getBillingsListDetails();
+                    SPServices.SPGetChoices({
+                      Listname: Config.ListNames.CRMProjects,
+                      FieldName: "Status",
+                    })
+                      .then((res: any) => {
+                        let Status: IBasicDropDown[] = [];
+                        if (res?.Choices?.length) {
+                          res?.Choices?.forEach((val: any) => {
+                            Status.push({
+                              name: val,
+                            });
+                          });
+                        }
+                        setinitialCRMProjectsListDropContainer(
+                          (prev: ICRMProjectsListDrop) => ({
+                            ...prev,
+                            Status: Status,
+                          }),
+                        );
+                        setLoader(false);
+                        getPMOGroupUsers();
+                        getBillingsListDetails();
+                      })
+                      .catch((err) => {
+                        console.log(
+                          err,
+                          "Get choice error from CRMProjects list",
+                        );
+                      });
                   })
                   .catch((err) => {
                     console.log(err, "Get choice error from CRMProjects list");
@@ -648,7 +707,7 @@ const Projects = (props: IProps): JSX.Element => {
   //Open Project Folder function:
   const handleOpenProjectFolder = async (rowData: any, spfxContext: any) => {
     try {
-      const accountName = rowData?.AccountName?.trim();
+      const accountName = rowData?.ClientName?.trim();
       const libraryName = Config.LibraryNames.ProjectFolderStructure;
       const siteUrl = spfxContext?.pageContext?.web?.absoluteUrl;
       const serverRelativeUrl =
@@ -831,7 +890,7 @@ const Projects = (props: IProps): JSX.Element => {
                 />
               </div>
               <div className={`${styles.filterField} dropdown`}>
-                <label>Project status</label>
+                <label>Approval status</label>
                 <Dropdown
                   options={initialCRMProjectsListDropContainer?.projectStaus}
                   optionLabel="name"
@@ -976,7 +1035,7 @@ const Projects = (props: IProps): JSX.Element => {
                 style={{ width: "10%" }}
                 sortable
                 field="ProjectStatus"
-                header="Project status"
+                header="Approval status"
                 body={(rowData) => renderStatus(rowData)}
               ></Column>
               <Column

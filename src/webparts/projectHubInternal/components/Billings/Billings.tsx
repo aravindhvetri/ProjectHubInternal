@@ -588,7 +588,7 @@ const Billings = (props: any) => {
       )}
       <Dialog
         visible={isFormModalOpen}
-        style={{ width: "80vw" }}
+        style={{ width: "74vw" }}
         modal
         draggable={false}
         resizable={false}

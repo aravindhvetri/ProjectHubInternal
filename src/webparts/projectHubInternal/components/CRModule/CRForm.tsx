@@ -36,7 +36,7 @@ const CRForm = (props: any) => {
   const [formData, setFormData] = useState<any>({});
   console.log(formData, "formData");
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
-    {}
+    {},
   );
 
   //handleOnChange function:
@@ -55,7 +55,7 @@ const CRForm = (props: any) => {
   //Get selected emails from people picker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
-    fallbackUsers: any[]
+    fallbackUsers: any[],
   ) => {
     let selectedEmails: string[] = [];
     if (selectedUsers?.length) {
@@ -160,13 +160,13 @@ const CRForm = (props: any) => {
   const generateJson = () => {
     setLoader(true);
     let RequestedByIds: number[] = JSON.parse(
-      JSON.stringify(formData?.RequestedBy)
+      JSON.stringify(formData?.RequestedBy),
     )
       .map((user: IPeoplePickerDetails) => user.id)
       .sort((a: any, b: any) => a - b);
 
     let AssignedToIds: number[] = JSON.parse(
-      JSON.stringify(formData?.AssignedTo)
+      JSON.stringify(formData?.AssignedTo),
     )
       .map((user: any) => (user.id ? user?.id : user?.key))
       .sort((a: any, b: any) => a - b);
@@ -222,7 +222,7 @@ const CRForm = (props: any) => {
       .catch((err) => {
         console.log(
           err,
-          "data update error to CRMProjectCRs List in CRForm.tsx"
+          "data update error to CRMProjectCRs List in CRForm.tsx",
         );
       });
   };
@@ -243,8 +243,8 @@ const CRForm = (props: any) => {
       .catch((err: any) =>
         console.log(
           err,
-          "getDetails from CRMPojects err in ProjectsFormPage.tsx component"
-        )
+          "getDetails from CRMPojects err in ProjectsFormPage.tsx component",
+        ),
       );
   };
 
@@ -378,7 +378,7 @@ const CRForm = (props: any) => {
                   context={props.spfxContext}
                   defaultSelectedUsers={getSelectedEmails(
                     props?.data?.RequestedBy,
-                    formData?.RequestedBy
+                    formData?.RequestedBy,
                   )}
                   webAbsoluteUrl={
                     props?.spfxContext._pageContext._web.absoluteUrl
@@ -429,7 +429,7 @@ const CRForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.ChangeType.find(
-                  (item: any) => item.name === formData?.ChangeType
+                  (item: any) => item.name === formData?.ChangeType,
                 )}
                 onChange={(e) => handleOnChange("ChangeType", e?.value?.name)}
                 disabled={props?.isView}
@@ -446,7 +446,7 @@ const CRForm = (props: any) => {
                 options={props?.initialCRMProjectCRsListDropContainer?.Severity}
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.Severity.find(
-                  (item: any) => item.name === formData?.Severity
+                  (item: any) => item.name === formData?.Severity,
                 )}
                 onChange={(e) => handleOnChange("Severity", e?.value?.name)}
                 disabled={props?.isView}
@@ -463,7 +463,7 @@ const CRForm = (props: any) => {
                 options={props?.initialCRMProjectCRsListDropContainer?.Priority}
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.Priority.find(
-                  (item: any) => item.name === formData?.Priority
+                  (item: any) => item.name === formData?.Priority,
                 )}
                 onChange={(e) => handleOnChange("Priority", e?.value?.name)}
                 disabled={props?.isView}
@@ -552,7 +552,7 @@ const CRForm = (props: any) => {
                   context={props.spfxContext}
                   defaultSelectedUsers={getSelectedEmails(
                     props?.data?.AssignedTo,
-                    formData?.AssignedTo
+                    formData?.AssignedTo,
                   )}
                   webAbsoluteUrl={
                     props?.spfxContext._pageContext._web.absoluteUrl
@@ -578,7 +578,7 @@ const CRForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.ApprovalStatus.find(
-                  (item: any) => item.name === formData?.ApprovalStatus
+                  (item: any) => item.name === formData?.ApprovalStatus,
                 )}
                 onChange={(e) =>
                   handleOnChange("ApprovalStatus", e?.value?.name)
@@ -607,7 +607,7 @@ const CRForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.ImplementationStatus.find(
-                  (item: any) => item.name === formData?.ImplementationStatus
+                  (item: any) => item.name === formData?.ImplementationStatus,
                 )}
                 onChange={(e) =>
                   handleOnChange("ImplementationStatus", e?.value?.name)
@@ -640,13 +640,17 @@ const CRForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Cost impact ($ / %)</Label>
+              <Label>Billable hours</Label>
               <InputText
-                keyfilter="int"
-                inputMode="numeric"
                 onChange={(e) => {
-                  handleOnChange("CostImpact", e?.target?.value);
+                  const val = e.target.value;
+                  // Allow only digits and colon
+                  const regex = /^[0-9:]*$/;
+                  if (regex.test(val)) {
+                    handleOnChange("CostImpact", val);
+                  }
                 }}
+                placeholder="Enter Hours (e.g. 90:20)"
                 value={formData?.CostImpact}
                 disabled={props?.isView}
               />
@@ -659,7 +663,7 @@ const CRForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectCRsListDropContainer?.BillingImpact.find(
-                  (item: any) => item.name === formData?.BillingImpact
+                  (item: any) => item.name === formData?.BillingImpact,
                 )}
                 onChange={(e) =>
                   handleOnChange("BillingImpact", e?.value?.name)
@@ -668,7 +672,7 @@ const CRForm = (props: any) => {
               />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
-              <Label>Billing details amount</Label>
+              <Label>Billable amount</Label>
               <InputText
                 keyfilter="int"
                 inputMode="numeric"
@@ -701,7 +705,7 @@ const CRForm = (props: any) => {
                       context={props.spfxContext}
                       defaultSelectedUsers={getSelectedEmails(
                         props?.data?.CreatedBy,
-                        formData?.CreatedBy
+                        formData?.CreatedBy,
                       )}
                       webAbsoluteUrl={
                         props?.spfxContext._pageContext._web.absoluteUrl
@@ -738,7 +742,7 @@ const CRForm = (props: any) => {
                       context={props.spfxContext}
                       defaultSelectedUsers={getSelectedEmails(
                         props?.data?.LastUpdatedBy,
-                        formData?.LastUpdatedBy
+                        formData?.LastUpdatedBy,
                       )}
                       webAbsoluteUrl={
                         props?.spfxContext._pageContext._web.absoluteUrl

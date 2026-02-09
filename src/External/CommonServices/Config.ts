@@ -41,6 +41,7 @@ export namespace Config {
     PMO: "PMO",
     DH: "DH",
     Leads: "Leads",
+    BA: "BA",
   };
   export const CRMOwners: string = "Admins";
   export const CRMManagersGroup: string = "Managers";
@@ -52,6 +53,7 @@ export namespace Config {
     BillingModel: [],
     Currency: [],
     ProjectType: [],
+    Status: [],
   };
 
   //CRMProjectsRisks List DropDown:
@@ -201,7 +203,7 @@ export namespace Config {
   //Projects Status configurations:
   export const projectStatusMap: { [key: string]: string } = {
     "0": "Draft",
-    "1": "ProjectUpdatedByPMO",
+    "1": "ProjectUpdated",
     "2": "PendingWithPM",
     "3": "PendingwithDH",
     "4": "RejectedByPM",

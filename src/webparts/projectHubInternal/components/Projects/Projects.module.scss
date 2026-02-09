@@ -187,24 +187,18 @@ $ThemePrimeryColor: #00a99d;
 
   .allField {
     width: 100%;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 25px;
-    padding: 15px 0;
     position: relative;
 
     label {
-      width: 32%;
-      text-align: end;
       font-size: 14px;
       font-weight: 500;
+      padding-bottom: 12px;
     }
 
     input {
       padding: 5px;
       font-size: 12px;
-      width: 70%;
+      width: 100%;
       border-color: $ThemePrimeryColor;
       border-radius: 6px;
       height: 30px;
@@ -214,7 +208,7 @@ $ThemePrimeryColor: #00a99d;
 
     .dropDown {
       font-size: 12px;
-      width: 70%;
+      width: 100%;
       border-radius: 6px;
       height: 32px;
       color: #000;
@@ -405,7 +399,7 @@ $ThemePrimeryColor: #00a99d;
     }
 
     .textField {
-      width: 70%;
+      width: 100%;
       position: relative;
       height: 32px;
 
@@ -522,4 +516,14 @@ $ThemePrimeryColor: #00a99d;
   display: flex;
   justify-content: space-between;
   margin-top: 15px;
+}
+
+.fieldWraps {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 31px;
+  .allField {
+    width: 18%;
+  }
 }

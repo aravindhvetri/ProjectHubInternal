@@ -18,6 +18,7 @@ export interface IProjectData {
   UpWork: boolean;
   ProjectManager: IPeoplePickerDetails[];
   DeliveryHead: IPeoplePickerDetails[];
+  BA: IPeoplePickerDetails[];
   ProjectStatus: string;
   BillingModel: string;
   Budget: number;
@@ -31,6 +32,11 @@ export interface IProjectData {
   BillingContactMobile: string;
   BillingAddress: string;
   Remarks: string;
+  Status: string;
+  DealProfit?: number;
+  DealMargin?: number;
+  FPMProfit?: number;
+  FPMMargin?: number;
 }
 
 export interface IBasicDropDown {
@@ -42,6 +48,7 @@ export interface ICRMProjectsListDrop {
   BillingModel: IBasicDropDown[];
   Currency: IBasicDropDown[];
   ProjectType: IBasicDropDown[];
+  Status: IBasicDropDown[];
 }
 
 export interface ICRMProjectRisksListDrop {
