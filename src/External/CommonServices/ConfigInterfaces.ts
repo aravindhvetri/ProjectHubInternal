@@ -22,4 +22,5 @@ interface IGroup {
   PMO: string;
   DH: string;
   Leads: string;
+  BA: string;
 }

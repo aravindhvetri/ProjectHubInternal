@@ -345,7 +345,7 @@ h4 {
   box-shadow: 0 0 5px 0px rgb(0 169 157);
 }
 .dealFormPage .p-inputtextarea {
-  width: 70%;
+  width: 100%;
   border: 1px solid #00a99d;
   border-radius: 6px;
   font-size: 12px;
@@ -354,10 +354,10 @@ h4 {
 .dealFormPage .p-dropdown {
   border-radius: 6px;
   border-color: #00a99d;
-  width: 70%;
+  width: 100%;
 }
 .dealFormPage .ms-DatePicker {
-  width: 70%;
+  width: 100%;
 }
 .dealFormPage .p-dropdown .p-dropdown-trigger {
   background: #00a99d;
@@ -689,8 +689,6 @@ h4 {
   width: 102%;
   flex-wrap: wrap;
   gap: 1%;
-  margin-left: 64px;
-  margin-top: 7px;
 }
 
 /* Change Log Modal................................................ */

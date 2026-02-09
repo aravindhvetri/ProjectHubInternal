@@ -53,6 +53,10 @@ const ProjectFormPage = (props: any) => {
 
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
+  const [crDetails, setCrDetails] = useState({
+    amount: 0,
+    hours: "",
+  });
   const [formData, setFormData] = useState<any>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -66,6 +70,7 @@ const ProjectFormPage = (props: any) => {
   const [billingsListData, setBillingsListData] = useState<any[]>([]);
   const [PMOusers, setPMOusers] = useState<IPeoplePickerDetails[]>([]);
   const [DHusers, setDHusers] = useState<IPeoplePickerDetails[]>([]);
+  const [BAusers, setBAusers] = useState<IPeoplePickerDetails[]>([]);
   const [isApproval, setIsApproval] = useState<any>({
     boolean: false,
     id: null,
@@ -95,6 +100,7 @@ const ProjectFormPage = (props: any) => {
       PlannedEndDate: null,
       ProjectManager: [],
       DeliveryHead: [],
+      BA: [],
       ProjectStatus: "0",
       BillingModel: "",
       Hours: "",
@@ -109,6 +115,11 @@ const ProjectFormPage = (props: any) => {
       BillingContactMobile: "",
       BillingAddress: "",
       Remarks: "",
+      Status: "",
+      FPMProfit: "",
+      FPMMargin: "",
+      DealProfit: "",
+      DealMargin: "",
     });
     props?.refresh();
     props?.goBack();
@@ -132,8 +143,10 @@ const ProjectFormPage = (props: any) => {
         setLeadOptions(leads);
         getPMOGroupUsers();
         getDHGroupMembers();
+        getBAGroupUsers();
         getBillingsListDetails();
         getCustomerDisplayName();
+        getChangeRequestDetails();
         props?.setLoader(false);
       })
       .catch((err) => {
@@ -159,6 +172,63 @@ const ProjectFormPage = (props: any) => {
     } catch (err) {
       console.error("Cross site fetch error", err);
     }
+  };
+
+  const getChangeRequestDetails = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames?.CRMProjectCRs,
+      Select: "*",
+      Orderby: "Modified",
+      Orderbydecorasc: true,
+      Filter: [
+        {
+          FilterKey: "IsDelete",
+          Operator: "eq",
+          FilterValue: "false",
+        },
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.data?.ID}`,
+        },
+        {
+          FilterKey: "BillingImpact",
+          Operator: "eq",
+          FilterValue: "Yes",
+        },
+      ],
+    })
+      .then((res: any) => {
+        let totalAmount = 0;
+        let totalHours = 0;
+        let totalMinutes = 0;
+
+        res?.forEach((item: any) => {
+          totalAmount += Number(item?.BillingDetailsAmount || 0);
+          const costImpact = item?.CostImpact?.toString() || "0";
+          if (costImpact.includes(":")) {
+            const [h, m] = costImpact.split(":");
+            totalHours += Number(h || 0);
+            totalMinutes += Number(m || 0);
+          } else {
+            totalHours += Number(costImpact || 0);
+          }
+        });
+        // convert extra minutes → hours
+        totalHours += Math.floor(totalMinutes / 60);
+        totalMinutes = totalMinutes % 60;
+
+        setCrDetails({
+          amount: totalAmount,
+          hours: `${totalHours}:${totalMinutes.toString().padStart(2, "0")}`,
+        });
+      })
+      .catch((err) => {
+        console.error(
+          err,
+          "Error fetching change request details in projects form page",
+        );
+      });
   };
 
   //Get Group Members:
@@ -203,6 +273,27 @@ const ProjectFormPage = (props: any) => {
       });
   };
 
+  //Get BA Group members:
+  const getBAGroupUsers = () => {
+    SPServices.getSPGroupMember({
+      GroupName: Config.GroupNames.BA,
+    })
+      .then((res) => {
+        const tempBAusers: IPeoplePickerDetails[] = [];
+        res.forEach((items: any) => {
+          tempBAusers.push({
+            id: items?.Id,
+            email: items?.Email,
+            name: items?.Title,
+          });
+        });
+        setBAusers([...tempBAusers]);
+      })
+      .catch((err) => {
+        console.log(err, "Get BA group users errro in projectsFormPage.tsx");
+      });
+  };
+
   //Get Billings List Details:
   const getBillingsListDetails = () => {
     if (props?.isEdit && props?.data?.ID) {
@@ -238,6 +329,23 @@ const ProjectFormPage = (props: any) => {
     let filtered = DHusers;
     if (filterText) {
       filtered = DHusers.filter(
+        (u) =>
+          u.name.toLowerCase().includes(filterText.toLowerCase()) ||
+          u.email.toLowerCase().includes(filterText.toLowerCase()),
+      );
+    }
+    return filtered.map((u) => ({
+      key: u.id,
+      text: u.name,
+      secondaryText: u.email,
+    }));
+  };
+
+  // When binding to PeoplePicker BA users convert into PersonaProps
+  const onFilterChangedBA = (filterText: string): IPersonaProps[] => {
+    let filtered = BAusers;
+    if (filterText) {
+      filtered = BAusers.filter(
         (u) =>
           u.name.toLowerCase().includes(filterText.toLowerCase()) ||
           u.email.toLowerCase().includes(filterText.toLowerCase()),
@@ -482,34 +590,44 @@ const ProjectFormPage = (props: any) => {
       .map((user: any) => (user.id ? user?.id : user?.key))
       .sort((a: any, b: any) => a - b);
 
+    let BAIds: number[] = JSON.parse(JSON.stringify(formData?.BA))
+      .map((user: any) => (user.id ? user?.id : user?.key))
+      .sort((a: any, b: any) => a - b);
+
     let json: any = {
       ProjectID: formData?.ProjectID,
       AccountManager: formData?.AccountManager?.name,
       // AccountName: formData?.AccountName,
-      ClientName: formData?.ClientName,
-      ProjectName: formData?.ProjectName,
+      ClientName: formData?.ClientName || "",
+      ProjectName: formData?.ProjectName || "",
       StartDate: SPServices.GetDateFormat(formData?.StartDate),
       PlannedEndDate: SPServices.GetDateFormat(formData?.PlannedEndDate),
       ProjectManagerId: { results: ProjectManagerIds },
       DeliveryHeadId: { results: DeliveryHeadIds },
+      BAId: { results: BAIds },
       ProjectStatus:
         formData?.ProjectStatus == "0"
           ? "1"
           : Config.projectStatusReverseMap[formData?.ProjectStatus] ||
             formData?.ProjectStatus,
       BillingModel: formData?.BillingModel,
+      Status: formData?.Status || "",
       Budget: formData?.Budget,
       Hours: formData?.Hours,
-      ProjectType: formData?.ProjectType,
+      ProjectType: formData?.ProjectType || "",
       CustomerID: formData?.CustomerID,
       CustomerDisplayName: formData?.CustomerDisplayName,
       Currency: formData?.Currency,
       UpWork: formData?.UpWork,
-      BillingContactName: formData?.BillingContactName,
-      BillingContactEmail: formData?.BillingContactEmail,
+      BillingContactName: formData?.BillingContactName || "",
+      BillingContactEmail: formData?.BillingContactEmail || "",
       BillingContactMobile: formData?.BillingContactMobile,
-      BillingAddress: formData?.BillingAddress,
+      BillingAddress: formData?.BillingAddress || "",
       Remarks: formData?.Remarks,
+      FPMProfit: formData?.FPMProfit ? formData?.FPMProfit : null,
+      FPMMargin: formData?.FPMMargin ? formData?.FPMMargin : null,
+      DealProfit: formData?.DealProfit ? formData?.DealProfit : null,
+      DealMargin: formData?.DealMargin ? formData?.DealMargin : null,
     };
     if (props?.isEdit) {
       handleUpdate(json);
@@ -663,6 +781,7 @@ const ProjectFormPage = (props: any) => {
 
   //Add datas to CRMProjects List:
   const handleAdd = async (json: any) => {
+    debugger;
     try {
       const createItem: any = await SPServices.SPAddItem({
         Listname: Config.ListNames.CRMProjects,
@@ -1009,6 +1128,7 @@ const ProjectFormPage = (props: any) => {
         PlannedEndDate: null,
         ProjectManager: [],
         DeliveryHead: [],
+        BA: [],
         ProjectStatus: "0",
         BillingModel: "",
         UpWork: false,
@@ -1018,12 +1138,17 @@ const ProjectFormPage = (props: any) => {
         ClientName: "",
         Currency: "",
         CustomerID: "",
+        Status: "",
         CustomerDisplayName: "",
         BillingContactName: "",
         BillingContactEmail: "",
         BillingContactMobile: "",
         BillingAddress: "",
         Remarks: "",
+        FPMProfit: "",
+        FPMMargin: "",
+        DealProfit: "",
+        DealMargin: "",
       });
     }
   }, []);
@@ -1053,7 +1178,7 @@ const ProjectFormPage = (props: any) => {
             style={{ height: "auto" }}
             className={selfComponentStyles.formPage}
           >
-            <div className={selfComponentStyles.firstPage}>
+            <div className={selfComponentStyles.fieldWraps}>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Project id</Label>
                 <InputText
@@ -1204,82 +1329,6 @@ const ProjectFormPage = (props: any) => {
                   />
                 </div>
               </div>
-
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                {files.length > 0 ||
-                (isPMOUser &&
-                  (files.length > 0 || props?.data?.ProjectStatus !== "6")) ||
-                (isProjectManager &&
-                  (files.length > 0 || props?.data?.ProjectStatus == "2")) ? (
-                  <Label>Attachment</Label>
-                ) : (
-                  ""
-                )}
-                {(!props?.isView &&
-                  isPMOUser &&
-                  props?.data?.ProjectStatus !== "6") ||
-                (!props?.isView &&
-                  isProjectManager &&
-                  props?.data?.ProjectStatus !== "6") ? (
-                  <>
-                    <FileUpload
-                      className="addFileButton"
-                      name="demo[]"
-                      mode="basic"
-                      onSelect={(e) =>
-                        handleFileSelection(e, files, setFiles, Config)
-                      }
-                      url="/api/upload"
-                      auto
-                      multiple
-                      maxFileSize={15 * 1024 * 1024}
-                      style={{ width: "14%" }}
-                      chooseLabel="Browse"
-                      chooseOptions={{ icon: "pi pi-upload" }}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.ppt,.pptx"
-                    />
-                  </>
-                ) : (
-                  ""
-                )}
-              </div>
-
-              {files.length > 0 && (
-                <ul className="fileContainer">
-                  {files.map((file: any, index) => (
-                    <li className={selfComponentStyles?.fileList} key={index}>
-                      <div className={selfComponentStyles.filNameTag}>
-                        <div
-                          onClick={() => downloadFile(file)}
-                          style={{
-                            cursor: "pointer",
-                          }}
-                          title={file?.name}
-                        >
-                          {file?.name.length > 23
-                            ? `${file?.name.slice(0, 23)}...`
-                            : file?.name}
-                        </div>
-                        {!props?.isView &&
-                        (file?.objectURL ||
-                          (file?.authorEmail === props?.loginUserEmail &&
-                            props?.data?.ProjectStatus !== "6")) ? (
-                          <div className={selfComponentStyles.filesIconDiv}>
-                            <i
-                              className="pi pi-times"
-                              onClick={() => removeFile(file?.name)}
-                            ></i>
-                          </div>
-                        ) : (
-                          ""
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className={selfComponentStyles.secondPage}>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Delivery head</Label>
                 <div
@@ -1294,6 +1343,7 @@ const ProjectFormPage = (props: any) => {
                         borderRadius: "6px",
                       },
                     }}
+                    inputProps={{ placeholder: "Select the person" }}
                     onResolveSuggestions={onFilterChanged}
                     pickerSuggestionsProps={{
                       suggestionsHeaderText: "DH Group Members",
@@ -1329,6 +1379,44 @@ const ProjectFormPage = (props: any) => {
                     disabled={
                       props?.isView ||
                       // isProjectManager ||
+                      (isProjectManager && !isPMOUser) ||
+                      (isDeliveryHead && !isPMOUser) ||
+                      props?.data?.ProjectStatus == "6"
+                    }
+                  />
+                </div>
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>APM/BA</Label>
+                <div
+                  className={`${selfComponentStyles.textField} ${selfComponentStyles.peoplePicker}`}
+                >
+                  <NormalPeoplePicker
+                    onResolveSuggestions={onFilterChangedBA}
+                    inputProps={{ placeholder: "Select the person" }}
+                    pickerSuggestionsProps={{
+                      suggestionsHeaderText: "BA Group Members",
+                      noResultsFoundText: "No BA member found",
+                    }}
+                    itemLimit={1}
+                    selectedItems={
+                      formData?.BA
+                        ? formData?.BA.map((u: any) => mapToPersona(u))
+                        : []
+                    }
+                    onChange={(items: IPersonaProps[]) => {
+                      const mapped = items.map((i) => ({
+                        id: i.key,
+                        name: i.text,
+                        email: i.secondaryText,
+                      }));
+                      setFormData({
+                        ...formData,
+                        BA: mapped,
+                      });
+                    }}
+                    disabled={
+                      props?.isView ||
                       (isProjectManager && !isPMOUser) ||
                       (isDeliveryHead && !isPMOUser) ||
                       props?.data?.ProjectStatus == "6"
@@ -1399,7 +1487,7 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Project status</Label>
+                <Label>Approval status</Label>
                 <Dropdown
                   options={
                     props?.initialCRMProjectsListDropContainer?.projectStaus
@@ -1523,8 +1611,6 @@ const ProjectFormPage = (props: any) => {
                   }
                 />
               </div>
-            </div>
-            <div className={selfComponentStyles.thirdPage}>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Currency</Label>
                 <Dropdown
@@ -1550,46 +1636,13 @@ const ProjectFormPage = (props: any) => {
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact name</Label>
-                <InputText
-                  // onChange={(e) =>
-                  //   handleOnChange("BillingContactName", e.target.value)
-                  // }
-                  value={formData?.BillingContactName}
-                  // disabled={
-                  //   props?.isView ||
-                  //   // isProjectManager ||
-                  //   (isProjectManager && !isPMOUser) ||
-                  //   (isDeliveryHead && !isPMOUser) ||
-                  //   props?.data?.ProjectStatus == "6"
-                  // }
-                  disabled
-                  // style={
-                  //   errorMessage["BillingContactName"]
-                  //     ? { border: "2px solid #ff0000" }
-                  //     : undefined
-                  // }
-                />
+                <InputText value={formData?.BillingContactName} disabled />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact email</Label>
                 <InputText
-                  // onChange={(e) =>
-                  //   handleOnChange("BillingContactEmail", e.target.value)
-                  // }
                   value={formData?.BillingContactEmail}
-                  // disabled={
-                  //   props?.isView ||
-                  //   // isProjectManager ||
-                  //   (isProjectManager && !isPMOUser) ||
-                  //   (isDeliveryHead && !isPMOUser) ||
-                  //   props?.data?.ProjectStatus == "6"
-                  // }
                   disabled
-                  // style={
-                  //   errorMessage["BillingContactEmail"]
-                  //     ? { border: "2px solid #ff0000" }
-                  //     : undefined
-                  // }
                   placeholder="e.g., abc@gmail.com"
                 />
               </div>
@@ -1614,22 +1667,11 @@ const ProjectFormPage = (props: any) => {
                   }
                 />
               </div>
-
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing address</Label>
                 <InputTextarea
-                  // onChange={(e) =>
-                  //   handleOnChange("BillingAddress", e.target.value)
-                  // }
                   value={formData?.BillingAddress}
                   disabled
-                  // disabled={
-                  //   props?.isView ||
-                  //   // isProjectManager ||
-                  //   (isProjectManager && !isPMOUser) ||
-                  //   (isDeliveryHead && !isPMOUser) ||
-                  //   props?.data?.ProjectStatus == "6"
-                  // }
                   maxLength={500}
                   autoResize
                 />
@@ -1648,7 +1690,6 @@ const ProjectFormPage = (props: any) => {
                   }
                 />
               </div>
-
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Remarks</Label>
                 <InputTextarea
@@ -1665,6 +1706,179 @@ const ProjectFormPage = (props: any) => {
                   autoResize
                 />
               </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Deal profit</Label>
+                <InputText
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow digits
+                    if (/^\d*$/.test(value)) {
+                      handleOnChange("DealProfit", value);
+                    }
+                  }}
+                  value={formData?.DealProfit}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Deal margin(%)</Label>
+                <InputText
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow digits
+                    if (/^\d*$/.test(value)) {
+                      handleOnChange("DealMargin", value);
+                    }
+                  }}
+                  value={formData?.DealMargin}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>FPM profit</Label>
+                <InputText
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow digits
+                    if (/^\d*$/.test(value)) {
+                      handleOnChange("FPMProfit", value);
+                    }
+                  }}
+                  value={formData?.FPMProfit}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>FPM margin(%)</Label>
+                <InputText
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow digits
+                    if (/^\d*$/.test(value)) {
+                      handleOnChange("FPMMargin", value);
+                    }
+                  }}
+                  value={formData?.FPMMargin}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Project Status</Label>
+                <Dropdown
+                  options={props?.initialCRMProjectsListDropContainer?.Status}
+                  optionLabel="name"
+                  value={props?.initialCRMProjectsListDropContainer?.Status.find(
+                    (item: any) => item.name === formData?.Status,
+                  )}
+                  onChange={(e) => handleOnChange("Status", e?.value?.name)}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>CR amount</Label>
+                <InputText value={crDetails.amount?.toString()} disabled />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>CR Hours</Label>
+                <InputText value={crDetails.hours} disabled />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                {files.length > 0 ||
+                (isPMOUser &&
+                  (files.length > 0 || props?.data?.ProjectStatus !== "6")) ||
+                (isProjectManager &&
+                  (files.length > 0 || props?.data?.ProjectStatus == "2")) ? (
+                  <Label>Attachment</Label>
+                ) : (
+                  ""
+                )}
+                {(!props?.isView &&
+                  isPMOUser &&
+                  props?.data?.ProjectStatus !== "6") ||
+                (!props?.isView &&
+                  isProjectManager &&
+                  props?.data?.ProjectStatus !== "6") ? (
+                  <>
+                    <FileUpload
+                      className="addFileButton"
+                      name="demo[]"
+                      mode="basic"
+                      onSelect={(e) =>
+                        handleFileSelection(e, files, setFiles, Config)
+                      }
+                      url="/api/upload"
+                      auto
+                      multiple
+                      maxFileSize={15 * 1024 * 1024}
+                      style={{ width: "14%" }}
+                      chooseLabel="Browse"
+                      chooseOptions={{ icon: "pi pi-upload" }}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.ppt,.pptx"
+                    />
+                  </>
+                ) : (
+                  ""
+                )}
+              </div>
+              {files.length > 0 && (
+                <ul className="fileContainer">
+                  {files.map((file: any, index) => (
+                    <li className={selfComponentStyles?.fileList} key={index}>
+                      <div className={selfComponentStyles.filNameTag}>
+                        <div
+                          onClick={() => downloadFile(file)}
+                          style={{
+                            cursor: "pointer",
+                          }}
+                          title={file?.name}
+                        >
+                          {file?.name.length > 23
+                            ? `${file?.name.slice(0, 23)}...`
+                            : file?.name}
+                        </div>
+                        {!props?.isView &&
+                        (file?.objectURL ||
+                          (file?.authorEmail === props?.loginUserEmail &&
+                            props?.data?.ProjectStatus !== "6")) ? (
+                          <div className={selfComponentStyles.filesIconDiv}>
+                            <i
+                              className="pi pi-times"
+                              onClick={() => removeFile(file?.name)}
+                            ></i>
+                          </div>
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           {formData.BillingModel && (
@@ -1704,6 +1918,7 @@ const ProjectFormPage = (props: any) => {
                   PlannedEndDate: null,
                   ProjectManager: [],
                   DeliveryHead: [],
+                  BA: [],
                   ProjectStatus: "0",
                   BillingModel: "",
                   Hours: "",
@@ -1718,6 +1933,11 @@ const ProjectFormPage = (props: any) => {
                   BillingContactMobile: "",
                   BillingAddress: "",
                   Remarks: "",
+                  FPMProfit: "",
+                  Status: "",
+                  FPMMargin: "",
+                  DealProfit: "",
+                  DealMargin: "",
                 });
                 props?.goBack();
                 sessionStorage.removeItem("billingsData");

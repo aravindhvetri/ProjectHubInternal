@@ -39,7 +39,7 @@ const BillingsForm = (props: any) => {
   });
   const [formData, setFormData] = useState<any>({});
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
-    {}
+    {},
   );
   const [tempBillingsFormArray, setTempBillingsFormArray] = useState<any[]>([]);
   const [loader, setLoader] = React.useState<boolean>(false);
@@ -64,7 +64,7 @@ const BillingsForm = (props: any) => {
           (prev: ICRMBillingsListDrop) => ({
             ...prev,
             Status: tempStatus,
-          })
+          }),
         );
         SPServices.SPGetChoices({
           Listname: Config.ListNames.CRMBillings,
@@ -83,7 +83,7 @@ const BillingsForm = (props: any) => {
               (prev: ICRMBillingsListDrop) => ({
                 ...prev,
                 Currency: tempCurrency,
-              })
+              }),
             );
             SPServices.SPGetChoices({
               Listname: Config.ListNames.CRMBillings,
@@ -102,13 +102,13 @@ const BillingsForm = (props: any) => {
                   (prev: ICRMBillingsListDrop) => ({
                     ...prev,
                     BillingFrequency: tempBillingFrequency,
-                  })
+                  }),
                 );
               })
               .catch((err) => {
                 console.log(
                   err,
-                  "Get BillingFrequency choice error from CRMBillings list"
+                  "Get BillingFrequency choice error from CRMBillings list",
                 );
               });
           })
@@ -207,7 +207,7 @@ const BillingsForm = (props: any) => {
         props.Notify(
           "error",
           "Validation Error",
-          "Due Date must be between Project Start Date and Planned End Date!"
+          "Due Date must be between Project Start Date and Planned End Date!",
         );
         errors.DueDate = true;
       }
@@ -292,7 +292,7 @@ const BillingsForm = (props: any) => {
     setLoader(true);
     if (props?.projectsFormAdd) {
       const oldData = JSON.parse(
-        sessionStorage.getItem("billingsData") || "[]"
+        sessionStorage.getItem("billingsData") || "[]",
       );
       const randomId = Math.floor(100000 + Math.random() * 900000);
       const newData = { ...json, ID: randomId };
@@ -318,7 +318,7 @@ const BillingsForm = (props: any) => {
           setLoader(false);
           console.log(
             err,
-            "Add Datas to CRMBillings err in BillingsFormPage.tsx component"
+            "Add Datas to CRMBillings err in BillingsFormPage.tsx component",
           );
         });
     }
@@ -329,10 +329,10 @@ const BillingsForm = (props: any) => {
     setLoader(true);
     if (props?.projectsFormAdd) {
       const oldData = JSON.parse(
-        sessionStorage.getItem("billingsData") || "[]"
+        sessionStorage.getItem("billingsData") || "[]",
       );
       const updatedArray = oldData.map((item: any) =>
-        item.ID === formData?.ID ? { ...item, ...json } : item
+        item.ID === formData?.ID ? { ...item, ...json } : item,
       );
       setTempBillingsFormArray(updatedArray);
       sessionStorage.setItem("billingsData", JSON.stringify(updatedArray));
@@ -355,7 +355,7 @@ const BillingsForm = (props: any) => {
         .catch((err) => {
           console.log(
             err,
-            "Update Datas to CRMBillings err in Billings FormPage.tsx component"
+            "Update Datas to CRMBillings err in Billings FormPage.tsx component",
           );
         });
     }
@@ -397,7 +397,7 @@ const BillingsForm = (props: any) => {
         <Loading />
       ) : (
         <div
-          style={{ margin: "0px", height: "490px" }}
+          style={{ margin: "0px", height: "350px" }}
           className={styles.viewFormMain}
         >
           <div className={styles.viewFormNavBar}>
@@ -405,8 +405,8 @@ const BillingsForm = (props: any) => {
               {props?.isAdd
                 ? "Add invoice"
                 : props?.isEdit
-                ? "Edit invoice"
-                : "View invoice"}
+                  ? "Edit invoice"
+                  : "View invoice"}
             </h2>
             {props?.isEdit || props?.isView ? (
               <span>{`(${props?.ProjectsFormData?.ProjectName} - ${props?.ProjectsFormData?.CustomerDisplayName})`}</span>
@@ -422,13 +422,16 @@ const BillingsForm = (props: any) => {
             )}
           </div>
           <div
-            style={{ height: "48vh" }}
+            style={{ height: "30vh" }}
             className={projectFormStyles.formPage}
           >
-            <div className={projectFormStyles.firstPage}>
+            <div className={projectFormStyles.fieldWraps}>
               {props?.BillingModel == "Milestone" && (
                 <>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Milestone name</Label>
                     <InputText
                       value={formData?.MileStoneName}
@@ -444,7 +447,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Milestone description</Label>
                     <InputTextarea
                       maxLength={500}
@@ -456,7 +462,10 @@ const BillingsForm = (props: any) => {
                       autoResize
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Completion percentage</Label>
                     <InputText
                       value={formData?.CompletionPercentage}
@@ -468,7 +477,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Amount</Label>
                     <InputText
                       value={formData?.Amount}
@@ -490,7 +502,10 @@ const BillingsForm = (props: any) => {
               )}
               {props?.BillingModel == "FixedMonthly" && (
                 <>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label> Start month</Label>
                     <DatePicker
                       value={
@@ -523,7 +538,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>End month</Label>
                     <DatePicker
                       value={
@@ -554,7 +572,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Monthly amount</Label>
                     <InputText
                       value={formData?.MonthlyAmount}
@@ -574,7 +595,10 @@ const BillingsForm = (props: any) => {
                 </>
               )}
               {props?.BillingModel == "T&M" && (
-                <div className={`${projectFormStyles.allField} dealFormPage`}>
+                <div
+                  style={{ width: "22%" }}
+                  className={`${projectFormStyles.allField} dealFormPage`}
+                >
                   <Label>Resource name</Label>
                   <InputText
                     value={formData?.ResourceType}
@@ -588,11 +612,14 @@ const BillingsForm = (props: any) => {
               )}
               {props?.BillingModel == "T&M" && (
                 <>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Billing frequency</Label>
                     <Dropdown
                       value={initialCRMBillingsListDropContainer?.BillingFrequency.find(
-                        (item: any) => item.name === formData?.BillingFrequency
+                        (item: any) => item.name === formData?.BillingFrequency,
                       )}
                       onChange={(e) =>
                         handleOnChange("BillingFrequency", e?.value?.name)
@@ -610,7 +637,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Rate</Label>
                     <InputText
                       value={formData?.Rate}
@@ -650,7 +680,10 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Hours</Label>
                     <InputText
                       value={formData?.Hours || ""}
@@ -697,17 +730,23 @@ const BillingsForm = (props: any) => {
                       disabled={props?.isView}
                     />
                   </div>
-                  <div className={`${projectFormStyles.allField} dealFormPage`}>
+                  <div
+                    style={{ width: "22%" }}
+                    className={`${projectFormStyles.allField} dealFormPage`}
+                  >
                     <Label>Amount</Label>
                     <InputText value={formData?.TMAmount || ""} disabled />
                   </div>
                 </>
               )}
-              <div className={`${projectFormStyles.allField} dealFormPage`}>
+              <div
+                style={{ width: "22%" }}
+                className={`${projectFormStyles.allField} dealFormPage`}
+              >
                 <Label>Currency</Label>
                 <Dropdown
                   value={initialCRMBillingsListDropContainer?.Currency.find(
-                    (item) => item.name === formData?.Currency
+                    (item) => item.name === formData?.Currency,
                   )}
                   onChange={(e) => handleOnChange("Currency", e?.value?.name)}
                   options={initialCRMBillingsListDropContainer?.Currency}
@@ -722,14 +761,17 @@ const BillingsForm = (props: any) => {
                 />
               </div>
               {props?.ProjectsFormData?.UpWork == true && (
-                <div className={`${projectFormStyles.allField} dealFormPage`}>
+                <div
+                  style={{ width: "22%" }}
+                  className={`${projectFormStyles.allField} dealFormPage`}
+                >
                   <Label>Status</Label>
                   <Dropdown
                     value={initialCRMBillingsListDropContainer?.Status.find(
                       (item) =>
                         item.name ===
                         (Config.statusLabelMap[formData?.Status] ||
-                          formData?.Status)
+                          formData?.Status),
                     )}
                     onChange={(e) => handleOnChange("Status", e?.value?.name)}
                     options={initialCRMBillingsListDropContainer?.Status}
@@ -743,9 +785,10 @@ const BillingsForm = (props: any) => {
                   />
                 </div>
               )}
-            </div>
-            <div className={projectFormStyles.secondPage}>
-              <div className={`${projectFormStyles.allField} dealFormPage`}>
+              <div
+                style={{ width: "22%" }}
+                className={`${projectFormStyles.allField} dealFormPage`}
+              >
                 <Label>Due date</Label>
                 <DatePicker
                   value={
@@ -766,7 +809,10 @@ const BillingsForm = (props: any) => {
                   disabled={props?.isView}
                 />
               </div>
-              <div className={`${projectFormStyles.allField} dealFormPage`}>
+              <div
+                style={{ width: "22%" }}
+                className={`${projectFormStyles.allField} dealFormPage`}
+              >
                 <Label>Reminder days before due</Label>
                 <InputText
                   value={formData?.ReminderDaysBeforeDue}
@@ -783,8 +829,10 @@ const BillingsForm = (props: any) => {
                   disabled={props?.isView}
                 />
               </div>
-
-              <div className={`${projectFormStyles.allField} dealFormPage`}>
+              <div
+                style={{ width: "22%" }}
+                className={`${projectFormStyles.allField} dealFormPage`}
+              >
                 <Label>Notes</Label>
                 <InputTextarea
                   maxLength={500}
