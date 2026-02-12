@@ -70,6 +70,7 @@ const Projects = (props: IProps): JSX.Element => {
     "sreedhar.sk@technorucs.com",
     "Chandru@technorucs.com",
     "Chandru@technorucs365.onmicrosoft.com",
+    "v.aravinthan@technorucs.com",
   ];
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
