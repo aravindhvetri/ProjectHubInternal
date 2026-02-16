@@ -66,32 +66,32 @@ const QuickLinks = (props: any) => {
   };
 
   //handle file download function:
-  const handleFileDownload = (url: string, fileName: string) => {
-    const finalUrl = getDirectDownloadUrl(url);
+  // const handleFileDownload = (url: string, fileName: string) => {
+  //   const finalUrl = getDirectDownloadUrl(url);
 
-    const a = document.createElement("a");
-    a.href = finalUrl;
-    a.download = fileName;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
+  //   const a = document.createElement("a");
+  //   a.href = finalUrl;
+  //   a.download = fileName;
+  //   a.style.display = "none";
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   document.body.removeChild(a);
+  // };
 
-  const getDirectDownloadUrl = (url: string) => {
-    if (url.includes("download=1")) return url;
+  // const getDirectDownloadUrl = (url: string) => {
+  //   if (url.includes("download=1")) return url;
 
-    // If already has query string
-    if (url.includes("?")) {
-      return url + "&download=1";
-    } else {
-      return url + "?download=1";
-    }
-  };
+  //   // If already has query string
+  //   if (url.includes("?")) {p '
+  //     return url + "&download=1";
+  //   } else {
+  //     return url + "?download=1";
+  //   }
+  // };
 
   //handle search functionality :
   const filteredLinks = projectQuickLinksData?.filter((item: any) =>
-    item.DisplayName?.toLowerCase().includes(searchText.toLowerCase())
+    item.DisplayName?.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   //Initial render:
@@ -156,9 +156,10 @@ const QuickLinks = (props: any) => {
                         src={downloadImage}
                         alt="no image"
                         style={{ width: "20px", height: "20px" }}
-                        onClick={() =>
-                          handleFileDownload(item.Link, item.DisplayName)
-                        }
+                        // onClick={() =>
+                        //   handleFileDownload(item.Link, item.DisplayName)
+                        // }
+                        onClick={() => window.open(item.Link, "_blank")}
                       />
                     </div>
                   </div>
