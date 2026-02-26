@@ -13,6 +13,10 @@ interface IList {
   CRMProjectRisks: string;
   QuickLinks: string;
   CRMProjectCRs: string;
+  DealSheetDirectCost: string;
+  SalaryRangeRoleWise: string;
+  DealSheetConfigurationList: string;
+  ProjectConfiguration: string;
 }
 interface ILibrary {
   ProjectFiles: string;
@@ -23,4 +27,5 @@ interface IGroup {
   DH: string;
   Leads: string;
   BA: string;
+  Finance: string;
 }

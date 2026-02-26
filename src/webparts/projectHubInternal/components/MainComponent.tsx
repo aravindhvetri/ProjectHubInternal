@@ -5,6 +5,7 @@ import Projects from "./Projects/Projects";
 import { useEffect, useState, useRef } from "react";
 import { Toast } from "primereact/toast";
 import ProjectsFormPage from "./Projects/ProjectsFormPage";
+import DealSheet from "./DealSheet/DealSheet";
 
 const MainComponent = (props: any) => {
   // States Variables
@@ -19,7 +20,7 @@ const MainComponent = (props: any) => {
   const Notify = (
     type: "info" | "success" | "warn" | "error" | "secondary" | "contrast",
     summary: string,
-    msg: string
+    msg: string,
   ) => {
     toast.current?.show({
       severity: type,

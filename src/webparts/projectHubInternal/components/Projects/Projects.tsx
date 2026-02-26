@@ -43,6 +43,7 @@ import ChangeLog from "../ChangeLog/ChangeLog";
 import { Dialog } from "primereact/dialog";
 import { sp } from "@pnp/sp";
 import ProjectFormAndTabs from "../ProjectFormAndTabsModule/ProjectFormAndTabs";
+import DealSheet from "../DealSheet/DealSheet";
 interface IProps {
   Notify: (
     type: "info" | "success" | "warn" | "error" | "secondary" | "contrast",
@@ -71,6 +72,7 @@ const Projects = (props: IProps): JSX.Element => {
     "Chandru@technorucs.com",
     "Chandru@technorucs365.onmicrosoft.com",
     "v.aravinthan@technorucs.com",
+    "Finance@technorucs.com",
   ];
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
@@ -84,7 +86,7 @@ const Projects = (props: IProps): JSX.Element => {
     IProjectData[]
   >([]);
   const [currentPage, setCurrentPage] = React.useState<
-    "list" | "form" | "BillingList"
+    "list" | "form" | "BillingList" | "DealSheet"
   >("list");
   const [selectedData, setSelectedData] = React.useState<IProjectData | null>(
     null,
@@ -105,6 +107,9 @@ const Projects = (props: IProps): JSX.Element => {
     AccountName: "",
     ProjectStatus: "",
     BillingModel: "",
+    Status: "",
+    Upwork: "",
+    ProjectManager: "",
   });
   const [
     initialCRMProjectsListDropContainer,
@@ -449,9 +454,9 @@ const Projects = (props: IProps): JSX.Element => {
   };
 
   //Render Account Manager Column function:
-  const renderAccountManagerColumn = (rowData: IProjectData) => {
-    return <div>{rowData?.AccountManager ? rowData?.AccountManager : "-"}</div>;
-  };
+  // const renderAccountManagerColumn = (rowData: IProjectData) => {
+  //   return <div>{rowData?.AccountManager ? rowData?.AccountManager : "-"}</div>;
+  // };
 
   //Render Delivery Heads Column function:
   const renderDeliveryHeadsColumn = (rowData: IProjectData) => {
@@ -473,6 +478,11 @@ const Projects = (props: IProps): JSX.Element => {
           rowData?.ProjectStatus}
       </div>
     );
+  };
+
+  //Render Upwork Column function:
+  const UpworkTemplate = (rowData: IProjectData) => {
+    return <div>{rowData?.UpWork ? "Yes" : "No"}</div>;
   };
 
   //handle all filters:
@@ -505,6 +515,11 @@ const Projects = (props: IProps): JSX.Element => {
   //apply filters in purticular columns:
   const applyFilters = () => {
     const filtered = masterProjectDetails.filter((item) => {
+      const managerNames =
+        item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
+          pm.name?.toLowerCase(),
+        ).join(" ") || "";
+
       const matchCustomerName =
         item?.CustomerDisplayName?.toLowerCase().includes(
           filterValues.CustomerDisplayName.toLowerCase(),
@@ -519,16 +534,30 @@ const Projects = (props: IProps): JSX.Element => {
         ? (Config.projectStatusMap[item?.ProjectStatus] ||
             item?.ProjectStatus) === filterValues.ProjectStatus
         : true;
+      const matchProjectStatus = filterValues.Status
+        ? item?.Status === filterValues.Status
+        : true;
       const matchBilling = filterValues.BillingModel
         ? item?.BillingModel === filterValues.BillingModel
         : true;
+      const matchProjectManager = filterValues.ProjectManager
+        ? managerNames.includes(filterValues.ProjectManager.toLowerCase())
+        : true;
+      const matchUpwork =
+        filterValues.Upwork === "" || filterValues.Upwork === null
+          ? true
+          : String(item?.UpWork).toLowerCase() ===
+            String(filterValues.Upwork).toLowerCase();
 
       return (
         matchCustomerName &&
         matchLead &&
         matchAccount &&
         matchStatus &&
-        matchBilling
+        matchBilling &&
+        matchProjectManager &&
+        matchProjectStatus &&
+        matchUpwork
       );
     });
 
@@ -557,6 +586,7 @@ const Projects = (props: IProps): JSX.Element => {
         item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectStatus?.toLowerCase().includes(val.toLowerCase()) ||
+        item?.Status?.toLowerCase().includes(val.toLowerCase()) ||
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
         managerNames.includes(val.toLowerCase()) ||
         deliveryHeadNames.includes(val.toLowerCase())
@@ -700,7 +730,8 @@ const Projects = (props: IProps): JSX.Element => {
               (bill: any) =>
                 bill?.ProjectId === rowData?.ID &&
                 (bill?.Status == "0" || bill?.Status == "4"),
-            )))) ||
+            )) ||
+          rowData?.ProjectStatus == "6")) ||
       (isDeliveryHead && rowData?.ProjectStatus == "3")
     );
   };
@@ -802,7 +833,10 @@ const Projects = (props: IProps): JSX.Element => {
                       AccountManager: "",
                       AccountName: "",
                       ProjectStatus: "",
+                      Status: "",
                       BillingModel: "",
+                      Upwork: "",
+                      ProjectManager: "",
                     });
                     setLoader(true);
                     getProjectDetails();
@@ -870,7 +904,7 @@ const Projects = (props: IProps): JSX.Element => {
                   placeholder="Enter here"
                 />
               </div>
-              <div className={styles.filterField}>
+              {/* <div className={styles.filterField}>
                 <label>Account manager</label>
                 <InputText
                   value={filterValues?.AccountManager}
@@ -879,7 +913,7 @@ const Projects = (props: IProps): JSX.Element => {
                   }
                   placeholder="Enter here"
                 />
-              </div>
+              </div> */}
               <div className={styles.filterField}>
                 <label>Account name</label>
                 <InputText
@@ -890,6 +924,17 @@ const Projects = (props: IProps): JSX.Element => {
                   placeholder="Enter here"
                 />
               </div>
+              <div className={styles.filterField}>
+                <label>Project Manager</label>
+                <InputText
+                  value={filterValues?.ProjectManager}
+                  onChange={(e) =>
+                    handleFilterChange("ProjectManager", e.target.value)
+                  }
+                  placeholder="Enter project manager name"
+                />
+              </div>
+
               <div className={`${styles.filterField} dropdown`}>
                 <label>Approval status</label>
                 <Dropdown
@@ -902,6 +947,18 @@ const Projects = (props: IProps): JSX.Element => {
                   onChange={(e) =>
                     handleFilterChange("ProjectStatus", e.value?.name)
                   }
+                />
+              </div>
+              <div className={`${styles.filterField} dropdown`}>
+                <label>Project status</label>
+                <Dropdown
+                  options={initialCRMProjectsListDropContainer?.Status}
+                  optionLabel="name"
+                  placeholder="Select a status"
+                  value={initialCRMProjectsListDropContainer?.Status.find(
+                    (item) => item.name === filterValues?.Status,
+                  )}
+                  onChange={(e) => handleFilterChange("Status", e.value?.name)}
                 />
               </div>
               <div className={`${styles.filterField} dropdown`}>
@@ -918,6 +975,19 @@ const Projects = (props: IProps): JSX.Element => {
                   }
                 />
               </div>
+              <div className={`${styles.filterField} dropdown`}>
+                <label>Upwork</label>
+                <Dropdown
+                  options={[
+                    { label: "Yes", value: true },
+                    { label: "No", value: false },
+                  ]}
+                  optionLabel="label"
+                  placeholder="Select"
+                  value={filterValues.Upwork}
+                  onChange={(e) => handleFilterChange("Upwork", e.value)}
+                />
+              </div>
               <div className={styles.filterField} style={{ width: "3%" }}>
                 <PrimaryButton
                   styles={RefreshButton}
@@ -930,7 +1000,10 @@ const Projects = (props: IProps): JSX.Element => {
                       AccountManager: "",
                       AccountName: "",
                       ProjectStatus: "",
+                      Status: "",
                       BillingModel: "",
+                      Upwork: "",
+                      ProjectManager: "",
                     });
                   }}
                 />
@@ -977,13 +1050,13 @@ const Projects = (props: IProps): JSX.Element => {
                 field="ClientName"
                 header="Account name"
               ></Column>
-              <Column
+              {/* <Column
                 style={{ width: "12%" }}
                 sortable
                 field="AccountManager"
                 header="Account manager"
                 body={renderAccountManagerColumn}
-              ></Column>
+              ></Column> */}
               <Column
                 style={{ width: "12%" }}
                 sortable
@@ -1033,7 +1106,7 @@ const Projects = (props: IProps): JSX.Element => {
                 }}
               ></Column> */}
               <Column
-                style={{ width: "10%" }}
+                style={{ width: "11%" }}
                 sortable
                 field="ProjectStatus"
                 header="Approval status"
@@ -1042,9 +1115,22 @@ const Projects = (props: IProps): JSX.Element => {
               <Column
                 style={{ width: "10%" }}
                 sortable
+                field="Status"
+                header="Project status"
+              ></Column>
+              <Column
+                style={{ width: "10%" }}
+                sortable
                 field="BillingModel"
                 header="Billing model"
               ></Column>
+              <Column
+                style={{ width: "8%" }}
+                sortable
+                field="UpWork"
+                header="Upwork"
+                body={UpworkTemplate}
+              />
               {/* <Column sortable field="Budget" header="Budget"></Column>
               <Column sortable field="Hours" header="Hours"></Column>
               <Column sortable field="Currency" header="Currency"></Column> */}
@@ -1146,22 +1232,6 @@ const Projects = (props: IProps): JSX.Element => {
 
       {currentPage === "form" && (
         <>
-          {/* <ProjectFormPage
-            loginUserEmail={props?.loginUserEmail}
-            initialCRMProjectsListDropContainer={
-              initialCRMProjectsListDropContainer
-            }
-            data={selectedData}
-            setLoader={setLoader}
-            isAdd={formMode === "add"}
-            isEdit={formMode === "edit"}
-            isView={formMode === "view"}
-            goBack={() => setCurrentPage("list")}
-            spfxContext={props.spfxContext}
-            Notify={props.Notify}
-            refresh={getProjectDetails}
-            setCurrentPage={setCurrentPage}
-          /> */}
           <ProjectFormAndTabs
             loginUserEmail={props?.loginUserEmail}
             initialCRMProjectsListDropContainer={
@@ -1184,6 +1254,14 @@ const Projects = (props: IProps): JSX.Element => {
         <Billings
           data={selectedData}
           goBack={() => setCurrentPage("list")}
+          goProjectFormPage={() => setCurrentPage("form")}
+          spfxContext={props.spfxContext}
+          Notify={props.Notify}
+        />
+      )}
+      {currentPage == "DealSheet" && (
+        <DealSheet
+          data={selectedData}
           goProjectFormPage={() => setCurrentPage("form")}
           spfxContext={props.spfxContext}
           Notify={props.Notify}

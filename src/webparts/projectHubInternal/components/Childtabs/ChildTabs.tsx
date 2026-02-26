@@ -16,9 +16,44 @@ import { Button } from "primereact/button";
 import ChangeRequest from "../CRModule/ChangeRequest";
 import Risk from "../RiskModule/Risk";
 import QuickLinks from "../QuickLinks/QuickLinks";
+import SPServices from "../../../../External/CommonServices/SPServices";
+import { Config } from "../../../../External/CommonServices/Config";
+import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface";
 
 const ChildTabs = (props: any) => {
   const [activeTab, setActiveTab] = React.useState("");
+  const [BAusers, setBAusers] = React.useState<IPeoplePickerDetails[]>([]);
+
+  //Initial load get BA group users:
+  React.useEffect(() => {
+    getBAGroupUsers();
+  }, []);
+
+  //Get BA Group members:
+  const getBAGroupUsers = () => {
+    SPServices.getSPGroupMember({
+      GroupName: Config.GroupNames.BA,
+    })
+      .then((res) => {
+        const tempBAusers: IPeoplePickerDetails[] = [];
+        res.forEach((items: any) => {
+          tempBAusers.push({
+            id: items?.Id,
+            email: items?.Email,
+            name: items?.Title,
+          });
+        });
+        setBAusers([...tempBAusers]);
+      })
+      .catch((err) => {
+        console.log(err, "Get BA group users errro in projectsFormPage.tsx");
+      });
+  };
+
+  const isBA = BAusers?.some(
+    (user) =>
+      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -26,6 +61,7 @@ const ChildTabs = (props: any) => {
         return (
           <div className={styles.tabContent}>
             <ChangeRequest
+              isBA={isBA}
               Notify={props.Notify}
               loginUserEmail={props?.loginUserEmail}
               rowDataID={props?.rowData?.ID}
@@ -40,6 +76,7 @@ const ChildTabs = (props: any) => {
         return (
           <div className={styles.tabContent}>
             <Risk
+              isBA={isBA}
               Notify={props.Notify}
               loginUserEmail={props?.loginUserEmail}
               rowDataID={props?.rowData?.ID}

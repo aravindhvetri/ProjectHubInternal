@@ -48,7 +48,7 @@ const Risk = (props: any) => {
   const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
   const isProjectManager = props?.Projectdata?.ProjectManager?.some(
     (pm: IPeoplePickerDetails) =>
-      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
   //Local states:
@@ -58,7 +58,7 @@ const Risk = (props: any) => {
   const [selectedData, setSelectedData] =
     React.useState<IProjectRisksDetails | null>(null);
   const [formMode, setFormMode] = React.useState<"add" | "edit" | "view">(
-    "add"
+    "add",
   );
   const [isDelModal, setIsDelModal] = React.useState<IDelModal>({
     isOpen: false,
@@ -181,7 +181,7 @@ const Risk = (props: any) => {
           (prev: ICRMProjectRisksListDrop) => ({
             ...prev,
             RiskCategory: tempRiskCategory,
-          })
+          }),
         );
         SPServices.SPGetChoices({
           Listname: Config.ListNames.CRMProjectRisks,
@@ -200,7 +200,7 @@ const Risk = (props: any) => {
               (prev: ICRMProjectRisksListDrop) => ({
                 ...prev,
                 Probability: tempProbability,
-              })
+              }),
             );
             SPServices.SPGetChoices({
               Listname: Config.ListNames.CRMProjectRisks,
@@ -219,7 +219,7 @@ const Risk = (props: any) => {
                   (prev: ICRMProjectRisksListDrop) => ({
                     ...prev,
                     Impact: tempImpact,
-                  })
+                  }),
                 );
                 SPServices.SPGetChoices({
                   Listname: Config.ListNames.CRMProjectRisks,
@@ -238,7 +238,7 @@ const Risk = (props: any) => {
                       (prev: ICRMProjectRisksListDrop) => ({
                         ...prev,
                         CurrentStatus: tempCurrentStatus,
-                      })
+                      }),
                     );
 
                     SPServices.SPGetChoices({
@@ -258,7 +258,7 @@ const Risk = (props: any) => {
                           (prev: ICRMProjectRisksListDrop) => ({
                             ...prev,
                             ResidualRisk: tempResidualRisk,
-                          })
+                          }),
                         );
 
                         SPServices.SPGetChoices({
@@ -278,42 +278,42 @@ const Risk = (props: any) => {
                               (prev: ICRMProjectRisksListDrop) => ({
                                 ...prev,
                                 RiskOccurred: tempRiskOccurred,
-                              })
+                              }),
                             );
                             setLoader(false);
                           })
                           .catch((err) => {
                             console.log(
                               err,
-                              "Error in getting choice fields options in Risk.tsx"
+                              "Error in getting choice fields options in Risk.tsx",
                             );
                           });
                       })
                       .catch((err) => {
                         console.log(
                           err,
-                          "Error in getting choice fields options in Risk.tsx"
+                          "Error in getting choice fields options in Risk.tsx",
                         );
                       });
                   })
                   .catch((err) => {
                     console.log(
                       err,
-                      "Error in getting choice fields options in Risk.tsx"
+                      "Error in getting choice fields options in Risk.tsx",
                     );
                   });
               })
               .catch((err) => {
                 console.log(
                   err,
-                  "Error in getting choice fields options in Risk.tsx"
+                  "Error in getting choice fields options in Risk.tsx",
                 );
               });
           })
           .catch((err) => {
             console.log(
               err,
-              "Error in getting choice fields options in Risk.tsx"
+              "Error in getting choice fields options in Risk.tsx",
             );
           });
       })
@@ -353,13 +353,13 @@ const Risk = (props: any) => {
   const applyFilters = () => {
     const filtered = masterProjectRisksDetails.filter((item) => {
       const matchRiskID = item?.RiskId?.toLowerCase().includes(
-        filterValues.RiskId.toLowerCase()
+        filterValues.RiskId.toLowerCase(),
       );
       const matchCategory = item?.RiskCategory?.toLowerCase().includes(
-        filterValues?.RiskCategory.toLowerCase()
+        filterValues?.RiskCategory.toLowerCase(),
       );
       const matchImpact = item?.Impact?.toLowerCase().includes(
-        filterValues?.Impact.toLowerCase()
+        filterValues?.Impact.toLowerCase(),
       );
       const matchStatus = filterValues.CurrentStatus
         ? item?.CurrentStatus === filterValues.CurrentStatus
@@ -517,7 +517,7 @@ const Risk = (props: any) => {
                   Filter
                 </div>
               </div>
-              {isProjectManager ? (
+              {isProjectManager || props?.isBA ? (
                 <div className={styles.btnAndText}>
                   <div
                     onClick={() => {
@@ -577,7 +577,7 @@ const Risk = (props: any) => {
                   optionLabel="name"
                   placeholder="Select a status"
                   value={initialCRMProjectsRisksListDropContainer?.CurrentStatus.find(
-                    (item) => item.name === filterValues?.CurrentStatus
+                    (item) => item.name === filterValues?.CurrentStatus,
                   )}
                   onChange={(e) =>
                     handleFilterChange("CurrentStatus", e.value?.name)
@@ -593,7 +593,7 @@ const Risk = (props: any) => {
                   optionLabel="name"
                   placeholder="Select a risk occurred"
                   value={initialCRMProjectsRisksListDropContainer?.RiskOccurred.find(
-                    (item) => item.name === filterValues?.RiskOccurred
+                    (item) => item.name === filterValues?.RiskOccurred,
                   )}
                   onChange={(e) =>
                     handleFilterChange("RiskOccurred", e.value?.name)
@@ -702,7 +702,7 @@ const Risk = (props: any) => {
                     <div>
                       {rowData?.TargetResolutionDate
                         ? moment(rowData?.TargetResolutionDate).format(
-                            "DD/MM/YYYY"
+                            "DD/MM/YYYY",
                           )
                         : ""}
                     </div>
@@ -715,7 +715,7 @@ const Risk = (props: any) => {
                 header="Residual risk"
               ></Column>
               */}
-              {isProjectManager ? (
+              {isProjectManager || props?.isBA ? (
                 <Column
                   field="Action"
                   header="Actions"

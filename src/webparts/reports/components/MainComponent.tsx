@@ -402,7 +402,7 @@ const MainComponent = (props: any) => {
     worksheet.columns = [
       { header: "Project ID", key: "ProjectID", width: 20 },
       { header: "Project Name", key: "ProjectName", width: 30 },
-      { header: "Account Name", key: "AccountName", width: 25 },
+      { header: "Client Name", key: "ClientName", width: 25 },
       { header: "AccountManager", key: "AccountManager", width: 20 },
       { header: "Project Manager", key: "ProjectManager", width: 35 },
       { header: "Start Date", key: "StartDate", width: 20 },
@@ -410,7 +410,7 @@ const MainComponent = (props: any) => {
       { header: "Milestone", key: "BillingMileStone", width: 25 },
       { header: "Due Date", key: "DueDate", width: 20 },
       { header: "Currency", key: "Currency", width: 15 },
-      { header: "Amount", key: "Amount", width: 15 },
+      { header: "Invoice Amount", key: "InvoiceAmount", width: 15 },
       { header: "Billing Model", key: "BillingModel", width: 25 },
       { header: "Status", key: "Status", width: 20 },
       { header: "Invoice Raised ?", key: "InvoiceTrigger", width: 25 },
@@ -422,10 +422,17 @@ const MainComponent = (props: any) => {
       const projectManagers =
         item?.ProjectManager?.map((pm: any) => pm?.name).join(", ") || "-";
 
+      const invoiceAmount =
+        item?.BillingModel == "Milestone"
+          ? item?.Amount
+          : item?.BillingModel == "T&M"
+            ? item?.TMAmount
+            : item?.MonthlyAmount || "-";
+
       const row = worksheet.addRow({
         ProjectID: item.ProjectID || "-",
         ProjectName: item.ProjectName || "-",
-        AccountName: item.AccountName || "-",
+        ClientName: item.ClientName || "-",
         AccountManager: item.AccountManager || "-",
         ProjectManager: projectManagers,
         StartDate: item.StartDate
@@ -437,7 +444,7 @@ const MainComponent = (props: any) => {
         BillingMileStone: item.BillingMileStone || "-",
         DueDate: item.DueDate ? moment(item.DueDate).format("DD/MM/YYYY") : "-",
         Currency: item.Currency || "-",
-        Amount: item.Amount || "-",
+        InvoiceAmount: invoiceAmount,
         BillingModel: item.BillingModel || "-",
         Status: Config.statusLabelMap[item.Status] || item.Status || "-",
         InvoiceTrigger: item.InvoiceTrigger ? "Yes" : "No",
@@ -713,7 +720,7 @@ const MainComponent = (props: any) => {
                 />
               </div>
               <div className={styles.filterField}>
-                <label>Account name</label>
+                <label>Client name</label>
                 <InputText
                   value={filterValues?.AccountName}
                   onChange={(e) =>
@@ -811,11 +818,7 @@ const MainComponent = (props: any) => {
                 field="ProjectName"
                 header="Project Name"
               ></Column>
-              <Column
-                sortable
-                field="AccountName"
-                header="Account Name"
-              ></Column>
+              <Column sortable field="ClientName" header="Client Name"></Column>
               <Column
                 sortable
                 field="AccountManager"
