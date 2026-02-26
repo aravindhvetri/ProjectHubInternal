@@ -62,6 +62,8 @@ const Billings = (props: any) => {
   const [loader, setLoader] = React.useState<boolean>(false);
   const [isFormModalOpen, setIsFormModalOpen] = React.useState(false);
 
+  console.log(props?.ProjectsFormData?.UpWork, "upwork value in billings");
+
   //Get BillingsListDetails:
   const getBillingsListDetails = () => {
     SPServices.SPReadItems({
@@ -532,7 +534,8 @@ const Billings = (props: any) => {
                           ) : (
                             ""
                           )}
-                          {props?.ProjectsFormData?.UpWork == false &&
+                          {(props?.ProjectsFormData?.UpWork === false ||
+                            props?.ProjectsFormData?.UpWork === null) &&
                           ((props?.data?.ProjectStatus == "6" &&
                             (props?.data?.ProjectManager?.some(
                               (user: any) =>

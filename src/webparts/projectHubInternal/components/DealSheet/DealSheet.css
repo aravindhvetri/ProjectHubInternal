@@ -1,0 +1,4 @@
+.p-disabled,
+.p-component:disabled {
+  background: #f3f2f1 !important;
+}

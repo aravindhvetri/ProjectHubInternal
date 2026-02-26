@@ -734,7 +734,6 @@ const ProjectFormPage = (props: any) => {
 
       // 3. Add new files to library
       if (files?.length > 0) {
-        debugger;
         const newFiles = files.filter((f: any) => f.objectURL);
 
         if (newFiles.length > 0) {
@@ -781,7 +780,6 @@ const ProjectFormPage = (props: any) => {
 
   //Add datas to CRMProjects List:
   const handleAdd = async (json: any) => {
-    debugger;
     try {
       const createItem: any = await SPServices.SPAddItem({
         Listname: Config.ListNames.CRMProjects,
@@ -1099,8 +1097,13 @@ const ProjectFormPage = (props: any) => {
     }
   };
 
-  //Check user is PMO,Project Manager and Delivery Head:
+  //Check user is PMO,BA,Project Manager and Delivery Head:
   const isPMOUser = PMOusers?.some(
+    (user) =>
+      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+  );
+
+  const isBA = BAusers?.some(
     (user) =>
       user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
@@ -1418,8 +1421,7 @@ const ProjectFormPage = (props: any) => {
                     disabled={
                       props?.isView ||
                       (isProjectManager && !isPMOUser) ||
-                      (isDeliveryHead && !isPMOUser) ||
-                      props?.data?.ProjectStatus == "6"
+                      (isDeliveryHead && !isPMOUser)
                     }
                   />
                 </div>
@@ -1450,8 +1452,7 @@ const ProjectFormPage = (props: any) => {
                     props?.isView ||
                     // isProjectManager ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
                   }
                 />
               </div>
@@ -1481,8 +1482,7 @@ const ProjectFormPage = (props: any) => {
                     props?.isView ||
                     // isProjectManager ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
                   }
                 />
               </div>
@@ -1538,31 +1538,33 @@ const ProjectFormPage = (props: any) => {
                   }
                 />
               </div>
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Budget</Label>
-                <InputText
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow digits
-                    if (/^\d*$/.test(value)) {
-                      handleOnChange("Budget", value);
+              {!isBA && (
+                <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                  <Label>Budget</Label>
+                  <InputText
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow digits
+                      if (/^\d*$/.test(value)) {
+                        handleOnChange("Budget", value);
+                      }
+                    }}
+                    value={formData?.Budget}
+                    disabled={
+                      props?.isView ||
+                      // isProjectManager ||
+                      (isProjectManager && !isPMOUser) ||
+                      (isDeliveryHead && !isPMOUser)
                     }
-                  }}
-                  value={formData?.Budget}
-                  disabled={
-                    props?.isView ||
-                    // isProjectManager ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                  style={
-                    errorMessage["Budget"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
-                  }
-                />
-              </div>
+                    style={
+                      errorMessage["Budget"]
+                        ? { border: "2px solid #ff0000" }
+                        : undefined
+                    }
+                  />
+                </div>
+              )}
+
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Hours</Label>
                 <InputText
@@ -1585,8 +1587,7 @@ const ProjectFormPage = (props: any) => {
                     props?.isView ||
                     // isProjectManager ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
                   }
                 />
               </div>
@@ -1676,20 +1677,102 @@ const ProjectFormPage = (props: any) => {
                   autoResize
                 />
               </div>
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Upwork project</Label>
-                <Checkbox
-                  inputId="upwork"
-                  checked={formData?.UpWork === true}
-                  onChange={(e) => handleOnChange("UpWork", e.checked)}
-                  disabled={
-                    props?.isView ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                />
-              </div>
+              {!isBA && (
+                <>
+                  <div
+                    className={`${selfComponentStyles.allField} dealFormPage`}
+                  >
+                    <Label>Deal profit</Label>
+                    <div className={selfComponentStyles.dealProfitWrapper}>
+                      <div className={selfComponentStyles.dealProfitInput}>
+                        <InputText
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Only allow digits
+                            if (/^\d*$/.test(value)) {
+                              handleOnChange("DealProfit", value);
+                            }
+                          }}
+                          value={formData?.DealProfit}
+                          disabled={
+                            props?.isView ||
+                            (isProjectManager && !isPMOUser) ||
+                            (isDeliveryHead && !isPMOUser)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <img
+                          src={require("../../../../External/Images/AddDealSheet.png")}
+                          onClick={() => props?.setCurrentPage("DealSheet")}
+                        ></img>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`${selfComponentStyles.allField} dealFormPage`}
+                  >
+                    <Label>Deal margin(%)</Label>
+                    <InputText
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow digits
+                        if (/^\d*$/.test(value)) {
+                          handleOnChange("DealMargin", value);
+                        }
+                      }}
+                      value={formData?.DealMargin}
+                      disabled={
+                        props?.isView ||
+                        (isProjectManager && !isPMOUser) ||
+                        (isDeliveryHead && !isPMOUser)
+                      }
+                    />
+                  </div>
+                  <div
+                    className={`${selfComponentStyles.allField} dealFormPage`}
+                  >
+                    <Label>FPM profit</Label>
+                    <InputText
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow digits
+                        if (/^\d*$/.test(value)) {
+                          handleOnChange("FPMProfit", value);
+                        }
+                      }}
+                      value={formData?.FPMProfit}
+                      disabled={
+                        props?.isView ||
+                        (isProjectManager && !isPMOUser) ||
+                        (isDeliveryHead && !isPMOUser)
+                      }
+                    />
+                  </div>
+                  <div
+                    className={`${selfComponentStyles.allField} dealFormPage`}
+                  >
+                    <Label>FPM margin(%)</Label>
+                    <InputText
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow digits
+                        if (/^\d*$/.test(value)) {
+                          handleOnChange("FPMMargin", value);
+                        }
+                      }}
+                      value={formData?.FPMMargin}
+                      disabled={
+                        props?.isView ||
+                        (isProjectManager && !isPMOUser) ||
+                        (isDeliveryHead && !isPMOUser)
+                      }
+                    />
+                  </div>
+                </>
+              )}
+
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Remarks</Label>
                 <InputTextarea
@@ -1707,73 +1790,11 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Deal profit</Label>
-                <InputText
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow digits
-                    if (/^\d*$/.test(value)) {
-                      handleOnChange("DealProfit", value);
-                    }
-                  }}
-                  value={formData?.DealProfit}
-                  disabled={
-                    props?.isView ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                />
-              </div>
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Deal margin(%)</Label>
-                <InputText
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow digits
-                    if (/^\d*$/.test(value)) {
-                      handleOnChange("DealMargin", value);
-                    }
-                  }}
-                  value={formData?.DealMargin}
-                  disabled={
-                    props?.isView ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                />
-              </div>
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>FPM profit</Label>
-                <InputText
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow digits
-                    if (/^\d*$/.test(value)) {
-                      handleOnChange("FPMProfit", value);
-                    }
-                  }}
-                  value={formData?.FPMProfit}
-                  disabled={
-                    props?.isView ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                />
-              </div>
-              <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>FPM margin(%)</Label>
-                <InputText
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow digits
-                    if (/^\d*$/.test(value)) {
-                      handleOnChange("FPMMargin", value);
-                    }
-                  }}
-                  value={formData?.FPMMargin}
+                <Label>Upwork project</Label>
+                <Checkbox
+                  inputId="upwork"
+                  checked={formData?.UpWork === true}
+                  onChange={(e) => handleOnChange("UpWork", e.checked)}
                   disabled={
                     props?.isView ||
                     (isProjectManager && !isPMOUser) ||
@@ -1794,8 +1815,7 @@ const ProjectFormPage = (props: any) => {
                   disabled={
                     props?.isView ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
                   }
                 />
               </div>
@@ -1820,9 +1840,7 @@ const ProjectFormPage = (props: any) => {
                 {(!props?.isView &&
                   isPMOUser &&
                   props?.data?.ProjectStatus !== "6") ||
-                (!props?.isView &&
-                  isProjectManager &&
-                  props?.data?.ProjectStatus !== "6") ? (
+                (!props?.isView && isProjectManager) ? (
                   <>
                     <FileUpload
                       className="addFileButton"
@@ -1863,8 +1881,7 @@ const ProjectFormPage = (props: any) => {
                         </div>
                         {!props?.isView &&
                         (file?.objectURL ||
-                          (file?.authorEmail === props?.loginUserEmail &&
-                            props?.data?.ProjectStatus !== "6")) ? (
+                          file?.authorEmail === props?.loginUserEmail) ? (
                           <div className={selfComponentStyles.filesIconDiv}>
                             <i
                               className="pi pi-times"
@@ -1881,7 +1898,7 @@ const ProjectFormPage = (props: any) => {
               )}
             </div>
           </div>
-          {formData.BillingModel && (
+          {formData.BillingModel && !isBA && (
             <Billings
               ProjectsFormData={formData}
               isPMOUser={isPMOUser}
@@ -1946,8 +1963,8 @@ const ProjectFormPage = (props: any) => {
               Cancel
             </PrimaryButton>
             {props?.isView == false &&
-            isPMOUser &&
-            props?.data?.ProjectStatus !== "6" ? (
+            (isPMOUser ||
+              (isProjectManager && formData?.ProjectStatus === "6")) ? (
               <PrimaryButton
                 className={styles.updateBtn}
                 iconProps={{ iconName: "Save" }}

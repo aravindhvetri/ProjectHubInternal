@@ -48,7 +48,7 @@ const ChangeRequest = (props: any) => {
   const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
   const isProjectManager = props?.Projectdata?.ProjectManager?.some(
     (pm: IPeoplePickerDetails) =>
-      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase()
+      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
   //Local states:
@@ -78,7 +78,7 @@ const ChangeRequest = (props: any) => {
   const [selectedData, setSelectedData] =
     React.useState<IChangeRequestDetails | null>(null);
   const [formMode, setFormMode] = React.useState<"add" | "edit" | "view">(
-    "add"
+    "add",
   );
   const [isDelModal, setIsDelModal] = React.useState<IDelModal>({
     isOpen: false,
@@ -186,7 +186,7 @@ const ChangeRequest = (props: any) => {
       .catch((err) => {
         console.log(
           err,
-          "Get All change request details error in ChangeRequest.tsx"
+          "Get All change request details error in ChangeRequest.tsx",
         );
       });
   };
@@ -210,7 +210,7 @@ const ChangeRequest = (props: any) => {
           (prev: ICRMProjectCRsListDrop) => ({
             ...prev,
             ChangeType: tempChangeType,
-          })
+          }),
         );
 
         SPServices.SPGetChoices({
@@ -230,7 +230,7 @@ const ChangeRequest = (props: any) => {
               (prev: ICRMProjectCRsListDrop) => ({
                 ...prev,
                 Severity: tempSeverity,
-              })
+              }),
             );
 
             SPServices.SPGetChoices({
@@ -250,7 +250,7 @@ const ChangeRequest = (props: any) => {
                   (prev: ICRMProjectCRsListDrop) => ({
                     ...prev,
                     Priority: tempPriority,
-                  })
+                  }),
                 );
 
                 SPServices.SPGetChoices({
@@ -270,7 +270,7 @@ const ChangeRequest = (props: any) => {
                       (prev: ICRMProjectCRsListDrop) => ({
                         ...prev,
                         ApprovalStatus: tempApprovalStatus,
-                      })
+                      }),
                     );
 
                     SPServices.SPGetChoices({
@@ -290,7 +290,7 @@ const ChangeRequest = (props: any) => {
                           (prev: ICRMProjectCRsListDrop) => ({
                             ...prev,
                             ImplementationStatus: tempImplementationStatus,
-                          })
+                          }),
                         );
 
                         SPServices.SPGetChoices({
@@ -310,42 +310,42 @@ const ChangeRequest = (props: any) => {
                               (prev: ICRMProjectCRsListDrop) => ({
                                 ...prev,
                                 BillingImpact: tempBillingImpact,
-                              })
+                              }),
                             );
                             setLoader(false);
                           })
                           .catch((err) => {
                             console.log(
                               err,
-                              "Get CRMProjectCRs Choices err in ChangeRequest.tsx"
+                              "Get CRMProjectCRs Choices err in ChangeRequest.tsx",
                             );
                           });
                       })
                       .catch((err) => {
                         console.log(
                           err,
-                          "Get CRMProjectCRs Choices err in ChangeRequest.tsx"
+                          "Get CRMProjectCRs Choices err in ChangeRequest.tsx",
                         );
                       });
                   })
                   .catch((err) => {
                     console.log(
                       err,
-                      "Get CRMProjectCRs Choices err in ChangeRequest.tsx"
+                      "Get CRMProjectCRs Choices err in ChangeRequest.tsx",
                     );
                   });
               })
               .catch((err) => {
                 console.log(
                   err,
-                  "Get CRMProjectCRs Choices err in ChangeRequest.tsx"
+                  "Get CRMProjectCRs Choices err in ChangeRequest.tsx",
                 );
               });
           })
           .catch((err) => {
             console.log(
               err,
-              "Get CRMProjectCRs Choices err in ChangeRequest.tsx"
+              "Get CRMProjectCRs Choices err in ChangeRequest.tsx",
             );
           });
       })
@@ -436,13 +436,13 @@ const ChangeRequest = (props: any) => {
   const applyFilters = () => {
     const filtered = masterProjectChangeRequestDetails.filter((item) => {
       const matchCRID = item?.CRId?.toLowerCase().includes(
-        filterValues.CRId.toLowerCase()
+        filterValues.CRId.toLowerCase(),
       );
       const matchCRDescription = item?.CRDescription?.toLowerCase().includes(
-        filterValues.CRDescription.toLowerCase()
+        filterValues.CRDescription.toLowerCase(),
       );
       const matchCRTitle = item?.CRTitle?.toLowerCase().includes(
-        filterValues.CRTitle.toLowerCase()
+        filterValues.CRTitle.toLowerCase(),
       );
       const matchChangeType = filterValues.ChangeType
         ? item?.ChangeType === filterValues.ChangeType
@@ -555,7 +555,7 @@ const ChangeRequest = (props: any) => {
                   Filter
                 </div>
               </div>
-              {isProjectManager ? (
+              {isProjectManager || props?.isBA ? (
                 <div className={styles.btnAndText}>
                   <div
                     onClick={() => {
@@ -615,7 +615,7 @@ const ChangeRequest = (props: any) => {
                   optionLabel="name"
                   placeholder="Select a status"
                   value={initialCRMProjectCRsListDropContainer?.ChangeType.find(
-                    (item) => item.name === filterValues?.ChangeType
+                    (item) => item.name === filterValues?.ChangeType,
                   )}
                   onChange={(e) =>
                     handleFilterChange("ChangeType", e.value?.name)
@@ -629,7 +629,7 @@ const ChangeRequest = (props: any) => {
                   optionLabel="name"
                   placeholder="Select a risk occurred"
                   value={initialCRMProjectCRsListDropContainer?.Severity.find(
-                    (item) => item.name === filterValues?.Severity
+                    (item) => item.name === filterValues?.Severity,
                   )}
                   onChange={(e) =>
                     handleFilterChange("Severity", e.value?.name)
@@ -724,7 +724,7 @@ const ChangeRequest = (props: any) => {
                 field="ApprovalStatus"
                 header="Approval status"
               ></Column>
-              {isProjectManager ? (
+              {isProjectManager || props?.isBA ? (
                 <Column
                   field="Action"
                   header="Actions"

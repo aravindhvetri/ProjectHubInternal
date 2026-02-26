@@ -32,6 +32,10 @@ export namespace Config {
     CRMProjectRisks: "CRMProjectRisks",
     QuickLinks: "QuickLinks",
     CRMProjectCRs: "CRMProjectCRs",
+    DealSheetDirectCost: "DealSheetDirectCost",
+    SalaryRangeRoleWise: "SalaryRangeRoleWise",
+    DealSheetConfigurationList: "DealSheetConfigurationList",
+    ProjectConfiguration: "ProjectConfiguration",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -42,6 +46,7 @@ export namespace Config {
     DH: "DH",
     Leads: "Leads",
     BA: "BA",
+    Finance: "Finance",
   };
   export const CRMOwners: string = "Admins";
   export const CRMManagersGroup: string = "Managers";

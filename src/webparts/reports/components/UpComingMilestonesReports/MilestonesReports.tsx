@@ -54,6 +54,7 @@ const MilestonesReports = (props: any) => {
     ProjectManager: "",
     BillingModel: "",
     InvoiceTrigger: "",
+    DueStatus: "",
   });
   const [searchVal, setSearchVal] = React.useState<string>("");
   const [
@@ -137,6 +138,8 @@ const MilestonesReports = (props: any) => {
               BillingMileStone: billing.MileStoneName || "",
               DueDate: billing.DueDate,
               Amount: billing.Amount,
+              TMAmount: billing.TMAmount || "",
+              MonthlyAmount: billing.MonthlyAmount || "",
               InvoiceTrigger: billing.InvoiceTrigger,
               InvoiceID: billing.InvoiceID || "",
               Status: billing.Status,
@@ -160,6 +163,8 @@ const MilestonesReports = (props: any) => {
             BillingMileStone: "",
             DueDate: "",
             Amount: "",
+            TMAmount: "",
+            MonthlyAmount: "",
             InvoiceTrigger: "",
             InvoiceID: "",
             Status: "",
@@ -257,6 +262,33 @@ const MilestonesReports = (props: any) => {
     return <div>{diffDays} days</div>;
   };
 
+  // Status Template
+  const StatusTemplate = (rowData: any) => {
+    if (!rowData.DueDate) return "-";
+    const today = new Date();
+    const dueDate = new Date(rowData.DueDate);
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) {
+      return <div style={{ color: "red" }}>Overdue</div>;
+    } else {
+      return <div style={{ color: "blue" }}>Due</div>;
+    }
+  };
+
+  // Amount column template
+  const renderAmountTemplate = (rowData: any) => {
+    return (
+      <div>
+        {rowData?.BillingModel == "Milestone"
+          ? rowData?.Amount
+          : rowData?.BillingModel == "T&M"
+            ? rowData?.TMAmount
+            : rowData?.MonthlyAmount || "-"}
+      </div>
+    );
+  };
+
   //handle all filters:
   const handleFilterChange = (field: string, value: string) => {
     setFilterValues((prev) => ({
@@ -274,12 +306,12 @@ const MilestonesReports = (props: any) => {
     worksheet.columns = [
       { header: "Project ID", key: "ProjectID", width: 15 },
       { header: "Project Name", key: "ProjectName", width: 30 },
-      { header: "Account Name", key: "AccountName", width: 30 },
+      { header: "Client Name", key: "ClientName", width: 25 },
       { header: "Project Manager", key: "ProjectManager", width: 30 },
       { header: "Billing Model", key: "BillingModel", width: 20 },
       { header: "Milestone Name", key: "BillingMileStone", width: 30 },
       { header: "Milestone Due Date", key: "DueDate", width: 20 },
-      { header: "Amount", key: "Amount", width: 15 },
+      { header: "Invoice Amount", key: "InvoiceAmount", width: 15 },
       { header: "Days to Due Date", key: "DaysToDueDate", width: 20 },
       { header: "Invoice Raised?", key: "InvoiceTrigger", width: 15 },
       { header: "Remarks", key: "Remarks", width: 30 },
@@ -290,6 +322,13 @@ const MilestonesReports = (props: any) => {
     items.forEach((item) => {
       const projectManagers =
         item?.ProjectManager?.map((pm: any) => pm?.name).join(", ") || "-";
+
+      const invoiceAmount =
+        item?.BillingModel == "Milestone"
+          ? item?.Amount
+          : item?.BillingModel == "T&M"
+            ? item?.TMAmount
+            : item?.MonthlyAmount || "-";
 
       let daysToDueDate = "-";
       if (item?.DueDate) {
@@ -302,12 +341,12 @@ const MilestonesReports = (props: any) => {
       const row = worksheet.addRow({
         ProjectID: item.ProjectID || "-",
         ProjectName: item.ProjectName || "-",
-        AccountName: item.AccountName || "-",
+        ClientName: item.ClientName || "-",
         ProjectManager: projectManagers,
         BillingModel: item.BillingModel || "-",
         BillingMileStone: item.BillingMileStone || "-",
         DueDate: item.DueDate ? moment(item.DueDate).format("DD/MM/YYYY") : "-",
-        Amount: item.Amount || "-",
+        InvoiceAmount: invoiceAmount,
         DaysToDueDate: daysToDueDate,
         InvoiceTrigger: item.InvoiceTrigger ? "Yes" : "No",
         Remarks: item.Remarks || "-",
@@ -422,13 +461,30 @@ const MilestonesReports = (props: any) => {
         ? item?.BillingModel === filterValues?.BillingModel
         : true;
 
+      const matchDueStatus = (() => {
+        if (!filterValues.DueStatus) return true;
+
+        if (!item.DueDate) return false;
+
+        const today = new Date();
+        const dueDate = new Date(item.DueDate);
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (filterValues.DueStatus === "Overdue") return diffDays < 0;
+        if (filterValues.DueStatus === "Due") return diffDays >= 0;
+
+        return true;
+      })();
+
       return (
         matchProjectID &&
         matchAccount &&
         matchProjectName &&
         matchProjectManager &&
         matchInvoiceTrigger &&
-        matchBillingModel
+        matchBillingModel &&
+        matchDueStatus
       );
     });
 
@@ -546,7 +602,7 @@ const MilestonesReports = (props: any) => {
             />
           </div>
           <div className={styles.filterField}>
-            <label>Account name</label>
+            <label>Client name</label>
             <InputText
               value={filterValues?.AccountName}
               onChange={(e) =>
@@ -582,6 +638,20 @@ const MilestonesReports = (props: any) => {
               onChange={(e) => handleFilterChange("InvoiceTrigger", e.value)}
             />
           </div>
+          <div className={`${styles.filterField} dropdown`}>
+            <label>Due Status</label>
+            <Dropdown
+              options={[
+                { label: "Due", value: "Due" },
+                { label: "Overdue", value: "Overdue" },
+              ]}
+              optionLabel="label"
+              placeholder="Select Status"
+              value={filterValues.DueStatus}
+              onChange={(e) => handleFilterChange("DueStatus", e.value)}
+            />
+          </div>
+
           <div className={styles.filterField} style={{ width: "3%" }}>
             <PrimaryButton
               styles={RefreshButton}
@@ -596,6 +666,7 @@ const MilestonesReports = (props: any) => {
                   ProjectManager: "",
                   BillingModel: "",
                   InvoiceTrigger: "",
+                  DueStatus: "",
                 });
               }}
             />
@@ -620,7 +691,7 @@ const MilestonesReports = (props: any) => {
         >
           <Column sortable field="ProjectID" header="Project ID" />
           <Column sortable field="ProjectName" header="Project Name" />
-          <Column sortable field="AccountName" header="Account Name" />
+          <Column sortable field="ClientName" header="Client Name" />
           <Column
             sortable
             field="ProjectManager"
@@ -648,12 +719,23 @@ const MilestonesReports = (props: any) => {
               );
             }}
           />
-          <Column sortable field="Amount" header="Amount" />
+          <Column
+            sortable
+            field="Amount"
+            header="Invoice amount"
+            body={renderAmountTemplate}
+          />
           <Column
             sortable
             field="DueDate"
             header="Days to Due Date"
             body={dueDateDiffTemplate}
+          />
+          <Column
+            sortable
+            field="Due/Overdue"
+            header="Due/Overdue"
+            body={StatusTemplate}
           />
           <Column
             sortable
