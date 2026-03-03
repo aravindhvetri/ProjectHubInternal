@@ -47,9 +47,9 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 
 const ProjectFormPage = (props: any) => {
-  // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
-  const TARGET_SITE_URL =
-    "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
+  const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
+  // const TARGET_SITE_URL =
+  //   "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
 
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
@@ -57,6 +57,11 @@ const ProjectFormPage = (props: any) => {
     amount: 0,
     hours: "",
   });
+  const [configurationData, setConfigurationData] = useState<any>({
+    ID: null,
+    TotalExecutionCost: null,
+  });
+  console.log(configurationData, "configurationData in projects form page");
   const [formData, setFormData] = useState<any>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -147,10 +152,40 @@ const ProjectFormPage = (props: any) => {
         getBillingsListDetails();
         getCustomerDisplayName();
         getChangeRequestDetails();
+        getConfigurationData();
         props?.setLoader(false);
       })
       .catch((err) => {
         console.log("Error fetching Leads group members:", err);
+      });
+  };
+
+  const getConfigurationData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.DealSheetConfigurationList,
+      Select: "*,Project/Id",
+      Expand: "Project",
+      Filter: [
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.data?.ID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        if (res && res.length > 0) {
+          const item = res[0];
+
+          setConfigurationData({
+            ID: item.ID,
+            TotalExecutionCost: item.TotalExecutionCost || 0,
+            USDRupees: item.USDRupees || "",
+          });
+        }
+      })
+      .catch((err) => {
+        console.log("Error fetching configuration data", err);
       });
   };
 
@@ -434,6 +469,26 @@ const ProjectFormPage = (props: any) => {
       }
     }
   }, [customers, formData?.CustomerDisplayName]);
+
+  //Deal margin and profit calculation:
+  React.useEffect(() => {
+    const budget = Number(formData?.Budget) || 0;
+    const totalExecutionCost =
+      Number(configurationData?.TotalExecutionCost) || 0;
+    const dealProfit = budget - totalExecutionCost;
+    const dealMargin =
+      budget > 0 ? ((dealProfit / budget) * 100).toFixed(2) : "0";
+
+    setFormData((prev: any) => ({
+      ...prev,
+      DealProfit: dealProfit,
+      DealMargin: dealMargin,
+    }));
+  }, [
+    formData?.Budget,
+    configurationData?.TotalExecutionCost,
+    configurationData?.USDRupees,
+  ]);
 
   //LoadExistingFiles in Library:
   const LoadExistingFiles = async (id: number) => {
@@ -854,7 +909,6 @@ const ProjectFormPage = (props: any) => {
     ProjectID: number,
     uploadFiles: File[],
   ) => {
-    debugger;
     try {
       for (const file of uploadFiles) {
         const fileBuffer = await file.arrayBuffer();
@@ -929,7 +983,6 @@ const ProjectFormPage = (props: any) => {
 
       // 4. Add new files (Project Manager only)
       if (isProjectManager) {
-        debugger;
         if (files?.length > 0) {
           const newFiles = files.filter((f: any) => f.objectURL);
 
@@ -1226,28 +1279,10 @@ const ProjectFormPage = (props: any) => {
                     (isDeliveryHead && !isPMOUser) ||
                     props?.data?.ProjectStatus == "6"
                   }
-                  // style={
-                  //   errorMessage["AccountName"]
-                  //     ? { border: "2px solid #ff0000" }
-                  //     : undefined
-                  // }
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Client Name</Label>
-                {/* <InputText
-                  onChange={(e) =>
-                    handleOnChange("CustomerDisplayName", e.target.value)
-                  }
-                  value={formData?.CustomerDisplayName}
-                  disabled={
-                    props?.isView ||
-                    // isProjectManager ||
-                    (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
-                  }
-                /> */}
                 <Dropdown
                   value={selectedCustomer}
                   options={customers}
@@ -1686,48 +1721,41 @@ const ProjectFormPage = (props: any) => {
                     <div className={selfComponentStyles.dealProfitWrapper}>
                       <div className={selfComponentStyles.dealProfitInput}>
                         <InputText
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Only allow digits
-                            if (/^\d*$/.test(value)) {
-                              handleOnChange("DealProfit", value);
-                            }
-                          }}
+                          // onChange={(e) => {
+                          //   const value = e.target.value;
+                          //   // Only allow digits
+                          //   if (/^\d*$/.test(value)) {
+                          //     handleOnChange("DealProfit", value);
+                          //   }
+                          // }}
                           value={formData?.DealProfit}
-                          disabled={
-                            props?.isView ||
-                            (isProjectManager && !isPMOUser) ||
-                            (isDeliveryHead && !isPMOUser)
-                          }
+                          disabled
                         />
                       </div>
-                      <div>
-                        <img
-                          src={require("../../../../External/Images/AddDealSheet.png")}
-                          onClick={() => props?.setCurrentPage("DealSheet")}
-                        ></img>
-                      </div>
+                      {(props?.isView || props?.isEdit) && (
+                        <div>
+                          <img
+                            src={require("../../../../External/Images/AddDealSheet.png")}
+                            onClick={() => props?.setCurrentPage("DealSheet")}
+                          ></img>
+                        </div>
+                      )}
                     </div>
                   </div>
-
                   <div
                     className={`${selfComponentStyles.allField} dealFormPage`}
                   >
                     <Label>Deal margin(%)</Label>
                     <InputText
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow digits
-                        if (/^\d*$/.test(value)) {
-                          handleOnChange("DealMargin", value);
-                        }
-                      }}
+                      // onChange={(e) => {
+                      //   const value = e.target.value;
+                      //   // Only allow digits
+                      //   if (/^\d*$/.test(value)) {
+                      //     handleOnChange("DealMargin", value);
+                      //   }
+                      // }}
                       value={formData?.DealMargin}
-                      disabled={
-                        props?.isView ||
-                        (isProjectManager && !isPMOUser) ||
-                        (isDeliveryHead && !isPMOUser)
-                      }
+                      disabled
                     />
                   </div>
                   <div

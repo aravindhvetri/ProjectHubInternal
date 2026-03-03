@@ -1,7 +1,8 @@
 import * as React from "react";
 import styles from "../DealSheet.module.scss";
+import projectStyles from "../../Projects/Projects.module.scss";
 import { InputText } from "primereact/inputtext";
-import { Label } from "@fluentui/react";
+import { DatePicker, Label } from "@fluentui/react";
 import { useState, useEffect } from "react";
 import SPServices from "../../../../../External/CommonServices/SPServices";
 import { Config } from "../../../../../External/CommonServices/Config";
@@ -25,6 +26,9 @@ const Configuration = (props: any) => {
     MiscContigencyCosts: null,
     IndirectMisCost: null,
     TotalExecutionCost: null,
+  });
+  const [errors, setErrors] = useState<any>({
+    USDRupees: "",
   });
 
   //Direct cost calculation:
@@ -50,6 +54,12 @@ const Configuration = (props: any) => {
 
   const totalExecutionCost =
     directCost + indirectCost + travel + badge + indirectMisc;
+
+  //net profit and gross margin % calculation:
+  const budget = Number(props?.data?.Budget) || 0;
+  const netProfit = budget - totalExecutionCost;
+  const grossMargin =
+    budget > 0 ? ((netProfit / budget) * 100).toFixed(2) : "0.00";
 
   //Get project configuration data:
   const getProjectConfigurationData = () => {
@@ -125,13 +135,44 @@ const Configuration = (props: any) => {
       [name]: numericValue,
     }));
 
+    //Real-time validation clear / show:
+    if (name === "USDRupees") {
+      if (numericValue && numericValue > 0) {
+        setErrors((prev: any) => ({
+          ...prev,
+          USDRupees: "",
+        }));
+      } else {
+        setErrors((prev: any) => ({
+          ...prev,
+          USDRupees: "USD to Rupees is required",
+        }));
+      }
+    }
+
     if (name === "USDRupees" && props?.USDRuppes) {
       props.USDRuppes(numericValue);
     }
   };
 
+  //Validations and save data:
+  const validateForm = () => {
+    let newErrors: any = { USDRupees: "" };
+    let isValid = true;
+
+    if (!formData.USDRupees || formData.USDRupees <= 0) {
+      newErrors.USDRupees = "USD to Rupees is required";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   //Handle Save:
   const handleSave = () => {
+    if (!validateForm()) return;
+
     const json = {
       ProjectId: props?.data?.ID,
       USDRupees: formData.USDRupees,
@@ -198,112 +239,163 @@ const Configuration = (props: any) => {
   }, []);
 
   return (
-    <div className={styles.ConfigurationWrapper}>
-      <div className={styles.ConfigBody}>
-        <div className={styles.DirectCostWrapper}>
-          <div className={`${styles.allField} `}>
-            <Label>1 USD to rupees</Label>
-            <InputText
-              name="USDRupees"
-              value={formData.USDRupees}
-              onChange={handleOnChange}
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Training cost</Label>
-            <InputText
-              name="TrainingCost"
-              value={formData.TrainingCost}
-              onChange={handleOnChange}
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Hardware costs</Label>
-            <InputText
-              name="HSLCosts"
-              value={formData.HSLCosts}
-              onChange={handleOnChange}
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Misc/contingency costs</Label>
-            <InputText
-              name="MiscContigencyCosts"
-              value={formData.MiscContigencyCosts}
-              onChange={handleOnChange}
-            />
-          </div>
+    <>
+      <div className={styles.dealSheetContentWrapper}>
+        <div className={`${styles.allField} `}>
+          <Label>
+            1 USD to rupees{" "}
+            <a
+              className={styles.xeLink}
+              href="https://www.xe.com"
+              target="_blank"
+            >
+              Refer XE.com
+            </a>
+          </Label>
+          <InputText
+            name="USDRupees"
+            value={formData.USDRupees}
+            onChange={handleOnChange}
+          />
+          {errors.USDRupees && (
+            <span className={styles.errorText}>{errors.USDRupees}</span>
+          )}
         </div>
-        <div className={styles.DirectCostWrapper}>
-          <div className={`${styles.allField}`}>
-            <Label>Travel visa costs</Label>
-            <InputText
-              name="TravelVisaCosts"
-              value={formData.TravelVisaCosts}
-              onChange={handleOnChange}
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Badge costs</Label>
-            <InputText
-              name="BadgeCosts"
-              value={formData.BadgeCosts}
-              onChange={handleOnChange}
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Indirect misc costs</Label>
-            <InputText
-              name="IndirectMisCost"
-              value={formData.IndirectMisCost}
-              onChange={handleOnChange}
-            />
-          </div>
+        <div className={`${projectStyles.allField}`}>
+          <Label>Project start date</Label>
+          <DatePicker
+            value={
+              props?.data?.StartDate
+                ? new Date(props.data.StartDate)
+                : undefined
+            }
+            disabled
+          />
         </div>
-        <div className={styles.DirectCostWrapper}>
-          <div className={`${styles.allField}`}>
-            <Label>Direct cost</Label>
-            <InputText value={directCost.toString()} disabled />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Indirect cost</Label>
-            <InputText
-              value={(
-                (Number(
-                  projectConfigurationData.find(
-                    (item) => item.Key === "CostPerPersonPerMonth",
-                  )?.Value,
-                ) || 0) * (Number(props?.totalAllocation) || 1)
-              ).toFixed(2)}
-              disabled
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Cost per person per month</Label>
-            <InputText
-              value={
-                projectConfigurationData.find(
-                  (item) => item.Key === "CostPerPersonPerMonth",
-                )?.Value || ""
-              }
-              disabled
-            />
-          </div>
-          <div className={`${styles.allField}`}>
-            <Label>Total Execution cost</Label>
-            <InputText value={totalExecutionCost.toFixed(2)} disabled />
-          </div>
+        <div className={`${projectStyles.allField}`}>
+          <Label>Project end date</Label>
+          <DatePicker
+            value={
+              props?.data?.PlannedEndDate
+                ? new Date(props.data.PlannedEndDate)
+                : undefined
+            }
+            disabled
+          />
+        </div>
+        <div className={`${styles.allField}`}>
+          <Label>Cost/person/month</Label>
+          <InputText
+            value={
+              projectConfigurationData.find(
+                (item) => item.Key === "CostPerPersonPerMonth",
+              )?.Value || ""
+            }
+            disabled
+          />
+        </div>
+        <div className={`${projectStyles.allField}`}>
+          <Label>Budget</Label>
+          <InputText value={props?.data?.Budget} disabled />
+        </div>
+        <div className={`${projectStyles.allField}`}>
+          <Label>Net profit</Label>
+          <InputText value={"$" + netProfit.toFixed(2)} disabled />
+        </div>
+        <div className={`${projectStyles.allField}`}>
+          <Label>Gross margin %</Label>
+          <InputText value={grossMargin + "%"} disabled />
         </div>
       </div>
-      <div className={styles.buttonWrapper}>
-        <Button className={styles.saveBtn} onClick={handleSave}>
-          {formData.ID ? "Update" : "Save"}
-        </Button>
-        <Button className={styles.cancelBtn} onClick={handleCancel}>
-          Cancel
-        </Button>
+
+      <div className={styles.ConfigurationWrapper}>
+        <div className={styles.ConfigBody}>
+          <div className={styles.DirectCostWrapper}>
+            <div className={`${styles.allField}`}>
+              <Label>Training cost</Label>
+              <InputText
+                name="TrainingCost"
+                value={formData.TrainingCost}
+                onChange={handleOnChange}
+              />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Hardware costs</Label>
+              <InputText
+                name="HSLCosts"
+                value={formData.HSLCosts}
+                onChange={handleOnChange}
+              />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Misc/contingency costs</Label>
+              <InputText
+                name="MiscContigencyCosts"
+                value={formData.MiscContigencyCosts}
+                onChange={handleOnChange}
+              />
+            </div>
+          </div>
+          <div className={styles.DirectCostWrapper}>
+            <div className={`${styles.allField}`}>
+              <Label>Travel visa costs</Label>
+              <InputText
+                name="TravelVisaCosts"
+                value={formData.TravelVisaCosts}
+                onChange={handleOnChange}
+              />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Badge costs</Label>
+              <InputText
+                name="BadgeCosts"
+                value={formData.BadgeCosts}
+                onChange={handleOnChange}
+              />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Indirect misc costs</Label>
+              <InputText
+                name="IndirectMisCost"
+                value={formData.IndirectMisCost}
+                onChange={handleOnChange}
+              />
+            </div>
+          </div>
+          <div className={styles.DirectCostWrapper}>
+            <div className={`${styles.allField}`}>
+              <Label>Direct cost</Label>
+              <InputText value={directCost.toString()} disabled />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Indirect cost</Label>
+              <InputText
+                value={(
+                  (Number(
+                    projectConfigurationData.find(
+                      (item) => item.Key === "CostPerPersonPerMonth",
+                    )?.Value,
+                  ) || 0) * (Number(props?.totalAllocation) || 1)
+                ).toFixed(2)}
+                disabled
+              />
+            </div>
+            <div className={`${styles.allField}`}>
+              <Label>Total Execution cost</Label>
+              <InputText value={totalExecutionCost.toFixed(2)} disabled />
+            </div>
+          </div>
+        </div>
+        <div className={styles.buttonWrapper}>
+          <Button className={styles.saveBtn} onClick={handleSave}>
+            {formData.ID ? "Update" : "Save"}
+          </Button>
+          <Button className={styles.cancelBtn} onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

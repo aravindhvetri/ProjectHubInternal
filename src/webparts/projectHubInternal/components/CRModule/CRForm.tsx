@@ -30,11 +30,9 @@ import { sp } from "@pnp/sp";
 import crStyles from "./ChangeRequest.module.scss";
 
 const CRForm = (props: any) => {
-  console.log(props?.initialCRMProjectCRsListDropContainer, "aari");
   //Local states:
   const [loader, setLoader] = useState<boolean>(false);
   const [formData, setFormData] = useState<any>({});
-  console.log(formData, "formData");
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
     {},
   );

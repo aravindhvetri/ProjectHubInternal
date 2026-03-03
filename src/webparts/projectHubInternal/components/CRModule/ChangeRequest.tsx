@@ -108,7 +108,6 @@ const ChangeRequest = (props: any) => {
       ],
     })
       .then((res: any) => {
-        console.log(res, "res");
         let projectChangeRequestDatas: IChangeRequestDetails[] = [];
         res?.forEach((items: any) => {
           let _RequestedBy: IPeoplePickerDetails[] = [];
