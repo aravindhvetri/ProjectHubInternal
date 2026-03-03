@@ -33,7 +33,6 @@ const DealSheet = (props: any) => {
   const [monthColumns, setMonthColumns] = useState<string[]>([]);
   const [newRows, setNewRows] = useState<Record<number, any>>({});
   const [USD, setUSD] = useState<number>(0);
-  console.log(USD, "USD in deal sheet");
   const [conversionRates, setConversionRates] = useState<
     Record<number, number | null>
   >({});
@@ -314,6 +313,111 @@ const DealSheet = (props: any) => {
   };
 
   //Unified Save (Add + Update):
+  // const handleSave = (rowData: any) => {
+  //   const rateToUse = usdRupees > 0 ? usdRupees : USD;
+  //   if (!rateToUse || rateToUse <= 0) {
+  //     props?.Notify?.(
+  //       "warn",
+  //       "Warning",
+  //       "Please enter 'USD to Rupees' value in Configuration before saving this row.",
+  //     );
+  //     return;
+  //   }
+
+  //   editingLockRef.current = null;
+  //   const isNewRow = rowData.isNewRow;
+  //   const id = rowData.ID;
+  //   const row = isNewRow ? newRows[id] : editDraftRows[id];
+  //   const allocationJson = monthColumns.map((m) => {
+  //     const found = row.AllocationJson?.find((a: any) => a.month === m);
+  //     return { month: m, value: found ? found.value : 0 };
+  //   });
+  //   const allocation = allocationJson.reduce(
+  //     (sum: number, m: any) => sum + m.value,
+  //     0,
+  //   );
+  //   const cost = allocation * row.MonthlySalaryUSD;
+  //   const json = {
+  //     Role: row.Role,
+  //     MonthlySalaryINR: row.MonthlySalaryINR,
+  //     MonthlySalaryUSD: row.MonthlySalaryUSD,
+  //     AllocationJson: JSON.stringify(allocationJson),
+  //     Allocation: allocation,
+  //     Cost: cost,
+  //     ProjectId: props?.data?.ID,
+  //   };
+
+  //   const finalRow = {
+  //     ID: id,
+  //     isNewRow: false,
+  //     isEditing: false,
+  //     Role: row.Role,
+  //     MonthlySalaryINR: row.MonthlySalaryINR,
+  //     MonthlySalaryUSD: row.MonthlySalaryUSD,
+  //     AllocationJson: allocationJson,
+  //     Allocation: allocation,
+  //     Cost: cost,
+  //   };
+
+  //   if (isNewRow) {
+  //     SPServices.SPAddItem({
+  //       Listname: Config.ListNames.DealSheetDirectCost,
+  //       RequestJSON: json,
+  //     })
+  //       .then((res: any) => {
+  //         const savedID = res?.data?.ID;
+  //         setDealSheetData((prev) =>
+  //           prev.map((r) => (r.ID === id ? { ...finalRow, ID: savedID } : r)),
+  //         );
+  //         setNewRows((prev) => {
+  //           const next = { ...prev };
+  //           delete next[id];
+  //           return next;
+  //         });
+  //         setConversionRates((prev) => {
+  //           const next = { ...prev };
+  //           delete next[id];
+  //           return next;
+  //         });
+  //         props?.Notify?.("success", "Success", "Row added successfully.");
+  //       })
+  //       .catch((err: any) => {
+  //         console.error("SPAddItem error:", err);
+  //         props?.Notify?.("error", "Error", "Failed to add row.");
+  //       });
+  //   } else {
+  //     SPServices.SPUpdateItem({
+  //       Listname: Config.ListNames.DealSheetDirectCost,
+  //       RequestJSON: json,
+  //       ID: id,
+  //     })
+  //       .then(() => {
+  //         setDealSheetData((prev) =>
+  //           prev.map((r) => (r.ID === id ? { ...finalRow } : r)),
+  //         );
+  //         setEditingRows((prev) => {
+  //           const next = { ...prev };
+  //           delete next[id];
+  //           return next;
+  //         });
+  //         setEditDraftRows((prev) => {
+  //           const next = { ...prev };
+  //           delete next[id];
+  //           return next;
+  //         });
+  //         setConversionRates((prev) => {
+  //           const next = { ...prev };
+  //           delete next[id];
+  //           return next;
+  //         });
+  //         props?.Notify?.("success", "Success", "Row updated successfully.");
+  //       })
+  //       .catch((err: any) => {
+  //         console.error("SPUpdateItem error:", err);
+  //         props?.Notify?.("error", "Error", "Failed to update row.");
+  //       });
+  //   }
+  // };
   const handleSave = (rowData: any) => {
     const rateToUse = usdRupees > 0 ? usdRupees : USD;
     if (!rateToUse || rateToUse <= 0) {
@@ -337,11 +441,15 @@ const DealSheet = (props: any) => {
       (sum: number, m: any) => sum + m.value,
       0,
     );
-    const cost = allocation * row.MonthlySalaryUSD;
+
+    const usdSalary =
+      rateToUse > 0 ? Number(row.MonthlySalaryINR || 0) / rateToUse : 0;
+    const cost = allocation * usdSalary;
+
     const json = {
       Role: row.Role,
       MonthlySalaryINR: row.MonthlySalaryINR,
-      MonthlySalaryUSD: row.MonthlySalaryUSD,
+      MonthlySalaryUSD: usdSalary,
       AllocationJson: JSON.stringify(allocationJson),
       Allocation: allocation,
       Cost: cost,
@@ -354,7 +462,7 @@ const DealSheet = (props: any) => {
       isEditing: false,
       Role: row.Role,
       MonthlySalaryINR: row.MonthlySalaryINR,
-      MonthlySalaryUSD: row.MonthlySalaryUSD,
+      MonthlySalaryUSD: usdSalary,
       AllocationJson: allocationJson,
       Allocation: allocation,
       Cost: cost,
@@ -566,11 +674,29 @@ const DealSheet = (props: any) => {
     );
   };
 
+  // const costBody = (rowData: any) => {
+  //   const val = isRowEditable(rowData)
+  //     ? getRowState(rowData)?.Cost
+  //     : rowData.Cost;
+  //   return <span>{Number(val || 0).toFixed(2)}</span>;
+  // };
   const costBody = (rowData: any) => {
-    const val = isRowEditable(rowData)
-      ? getRowState(rowData)?.Cost
-      : rowData.Cost;
-    return <span>{Number(val || 0).toFixed(2)}</span>;
+    if (!isRowEditable(rowData)) {
+      return <span>$ {Number(rowData.Cost || 0).toFixed(2)}</span>;
+    }
+
+    const row = getRowState(rowData);
+    const rateToUse = usdRupees > 0 ? usdRupees : USD;
+    const inr = Number(row?.MonthlySalaryINR || 0);
+    const usdSalary = rateToUse > 0 ? inr / rateToUse : 0;
+    const allocation =
+      row?.AllocationJson?.reduce(
+        (sum: number, m: any) => sum + (m.value || 0),
+        0,
+      ) ?? 0;
+    const liveCost = allocation * usdSalary;
+
+    return <span>$ {liveCost.toFixed(2)}</span>;
   };
 
   const actionBody = (rowData: any) => {
@@ -612,10 +738,25 @@ const DealSheet = (props: any) => {
     (sum, row) => sum + (Number(row.Allocation) || 0),
     0,
   );
-  const totalCost = dealSheetData.reduce(
-    (sum, row) => sum + (Number(row.Cost) || 0),
-    0,
-  );
+  // const totalCost = dealSheetData.reduce(
+  //   (sum, row) => sum + (Number(row.Cost) || 0),
+  //   0,
+  // );
+  const totalCost = dealSheetData.reduce((sum, row) => {
+    if (row.isNewRow || row.isEditing) {
+      const liveRow = row.isNewRow ? newRows[row.ID] : editDraftRows[row.ID];
+      const rateToUse = usdRupees > 0 ? usdRupees : USD;
+      const inr = Number(liveRow?.MonthlySalaryINR || 0);
+      const usdSalary = rateToUse > 0 ? inr / rateToUse : 0;
+      const allocation =
+        liveRow?.AllocationJson?.reduce(
+          (s: number, m: any) => s + (m.value || 0),
+          0,
+        ) ?? 0;
+      return sum + allocation * usdSalary;
+    }
+    return sum + (Number(row.Cost) || 0);
+  }, 0);
 
   return (
     <>
@@ -644,7 +785,7 @@ const DealSheet = (props: any) => {
           </div>
         </div>
       </div>
-      <div className={styles.dealSheetContentWrapper}>
+      {/* <div className={styles.dealSheetContentWrapper}>
         <div className={`${projectStyles.allField} dealFormPage`}>
           <Label>Budget</Label>
           <InputText value={props?.data?.Budget} disabled />
@@ -671,7 +812,7 @@ const DealSheet = (props: any) => {
             disabled
           />
         </div>
-      </div>
+      </div> */}
       <Configuration
         USDRuppes={USDRuppes}
         goProjectFormPage={props?.goProjectFormPage}

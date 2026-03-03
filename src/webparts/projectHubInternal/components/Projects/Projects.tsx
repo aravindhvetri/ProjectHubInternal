@@ -61,7 +61,7 @@ const commentsImage: string = require("../../../../External/Images/comment.png")
 const DeleteImage: string = require("../../../../External/Images/trashcan.png");
 const EditImage: string = require("../../../../External/Images/Edit.png");
 const VersionHistoryImage: string = require("../../../../External/Images/versionHistory.png");
-const FolderImage: string = require("../../../../External/Images/folder.png");
+const FolderImage: string = require("../../../../External/Images/openFolder.png");
 const FilterImage: string = require("../../../../External/Images/filter.png");
 const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
 
