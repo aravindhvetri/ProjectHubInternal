@@ -1,4 +1,13 @@
+/* eslint-disable react/jsx-no-target-blank */
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable eqeqeq */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @rushstack/no-new-null */
 /* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   IButtonStyles,
   IDatePickerStyles,
@@ -15,6 +24,9 @@ import {
   IProjectRisksDetails,
 } from "./interface";
 import { IModalStyles } from "office-ui-fabric-react";
+import * as moment from "moment";
+import * as FileSaver from "file-saver";
+import * as Excel from "exceljs";
 
 /* eslint-disable @typescript-eslint/no-namespace */
 export namespace Config {
@@ -36,6 +48,7 @@ export namespace Config {
     SalaryRangeRoleWise: "SalaryRangeRoleWise",
     DealSheetConfigurationList: "DealSheetConfigurationList",
     ProjectConfiguration: "ProjectConfiguration",
+    EmployeePartialAllocation: "EmployeePartialAllocation",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -47,6 +60,7 @@ export namespace Config {
     Leads: "Leads",
     BA: "BA",
     Finance: "Finance",
+    PM: "PM",
   };
   export const CRMOwners: string = "Admins";
   export const CRMManagersGroup: string = "Managers";
@@ -231,6 +245,234 @@ export namespace Config {
     Low: 1,
     Medium: 2,
     High: 3,
+  };
+
+  //Month maps:
+  export const monthMap: any = {
+    JAN: "January",
+    FEB: "February",
+    MAR: "March",
+    APR: "April",
+    MAY: "Maymonth",
+    JUN: "June",
+    JUL: "July",
+    AUG: "August",
+    SEP: "September",
+    OCT: "Octobar",
+    NOV: "November",
+    DEC: "December",
+  };
+
+  export const monthIndexMap: any = {
+    JAN: 0,
+    FEB: 1,
+    MAR: 2,
+    APR: 3,
+    MAY: 4,
+    JUN: 5,
+    JUL: 6,
+    AUG: 7,
+    SEP: 8,
+    OCT: 9,
+    NOV: 10,
+    DEC: 11,
+  };
+
+  export const monthKeys = [
+    "APR2025",
+    "MAY2025",
+    "JUN2025",
+    "JUL2025",
+    "AUG2025",
+    "SEP2025",
+    "OCT2025",
+    "NOV2025",
+    "DEC2025",
+    "JAN2026",
+    "FEB2026",
+    "MAR2026",
+    "APR2026",
+    "MAY2026",
+    "JUN2026",
+  ];
+
+  export const MONTH_KEYS = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ];
+
+  export const MONTH_ABBRS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  export const benchProject = "PRJ-2026-128";
+
+  export const getDefaultFromTo = (cols: string[]) => {
+    if (!cols.length) return { from: "", to: "" };
+    const now = new Date();
+    const toKey = `${Config.MONTH_KEYS[now.getMonth()]}${now.getFullYear()}`;
+    const fromDate = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+    const fromKey = `${Config.MONTH_KEYS[fromDate.getMonth()]}${fromDate.getFullYear()}`;
+
+    const colDates = cols.map((c) => colKeyToDate(c).getTime());
+    const minAvailable = cols[colDates.indexOf(Math.min(...colDates))];
+    const maxAvailable = cols[colDates.indexOf(Math.max(...colDates))];
+
+    const clamp = (key: string) => {
+      const d = colKeyToDate(key).getTime();
+      if (d < colKeyToDate(minAvailable).getTime()) return minAvailable;
+      if (d > colKeyToDate(maxAvailable).getTime()) return maxAvailable;
+      if (cols.includes(key)) return key;
+      return [...cols].sort(
+        (a, b) =>
+          Math.abs(colKeyToDate(a).getTime() - d) -
+          Math.abs(colKeyToDate(b).getTime() - d),
+      )[0];
+    };
+
+    return { from: clamp(fromKey), to: clamp(toKey) };
+  };
+
+  export const getCurrentMonthKey = (): string => {
+    const now = new Date();
+    return `${Config.MONTH_KEYS[now.getMonth()]}${now.getFullYear()}`;
+  };
+
+  export const parseColumnKey = (
+    key: string,
+  ): { month: number; year: number } => {
+    const monthAbbr = key.slice(0, 3).toUpperCase();
+    const year = parseInt(key.slice(3), 10);
+    return { month: Config.MONTH_KEYS.indexOf(monthAbbr), year };
+  };
+
+  export const colKeyToDate = (key: string): Date => {
+    const { month, year } = parseColumnKey(key);
+    return new Date(year, month, 1);
+  };
+
+  export const formatColLabel = (key: string): string => {
+    const monthName = key.slice(0, 3);
+    const year = key.slice(3);
+    return `${monthName.charAt(0) + monthName.slice(1).toLowerCase()}-${year}`;
+  };
+
+  export const generateExcel = async (
+    items: any[],
+    monthColumns: any,
+    sheetName: string,
+  ) => {
+    const workbook: any = new Excel.Workbook();
+    const worksheet: any = workbook.addWorksheet(sheetName);
+
+    // Static columns
+    const staticColumns = [
+      { header: "Project ID", key: "ProjectID", width: 20 },
+      { header: "Employee ID", key: "EmployeeID", width: 20 },
+      { header: "Employee Name", key: "EmployeeName", width: 25 },
+    ];
+
+    // Dynamic month columns
+    const dynamicColumns = monthColumns.map((month: any) => {
+      const monthName = month.slice(0, 3);
+      const year = month.slice(3);
+
+      return {
+        header: `${monthName}-${year}`,
+        key: month,
+        width: 15,
+      };
+    });
+
+    worksheet.columns = [...staticColumns, ...dynamicColumns];
+
+    // Add rows
+    items.forEach((item) => {
+      let rowObj: any = {
+        ProjectID: item.ProjectID || "-",
+        EmployeeID: item.EmployeeID || "-",
+        EmployeeName: item.EmployeeName || "-",
+      };
+
+      monthColumns.forEach((month: any) => {
+        rowObj[month] = item[month] ?? 0;
+      });
+
+      const row = worksheet.addRow(rowObj);
+
+      // borders
+      row.eachCell((cell: any) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+        cell.alignment = { horizontal: "center" };
+      });
+    });
+
+    // Header style
+    worksheet.getRow(1).eachCell((cell: any) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "00a99d" },
+      };
+
+      cell.font = {
+        bold: true,
+        color: { argb: "FFFFFF" },
+      };
+
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    // File name
+    const now = new Date();
+    const fileName = `${sheetName}_${moment(now).format(
+      "DD_MM_YYYY_HH_mm",
+    )}.xlsx`;
+
+    workbook.xlsx
+      .writeBuffer()
+      .then((buffer: any) => {
+        FileSaver.saveAs(new Blob([buffer]), fileName);
+      })
+      .catch((err: any) => {
+        console.log("Excel export error", err);
+      });
   };
 }
 

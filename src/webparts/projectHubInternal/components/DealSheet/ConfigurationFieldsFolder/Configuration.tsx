@@ -37,7 +37,8 @@ const Configuration = (props: any) => {
   const hardware = Number(formData.HSLCosts) || 0;
   const misc = Number(formData.MiscContigencyCosts) || 0;
 
-  const directCost = baseCost + training + hardware + misc;
+  // const directCost = baseCost + training + hardware + misc;
+  const directCost = Number((baseCost + training + hardware + misc).toFixed(2));
 
   // total Execution cost calculation:
   const costPerPerson =
@@ -52,8 +53,11 @@ const Configuration = (props: any) => {
   const badge = Number(formData.BadgeCosts) || 0;
   const indirectMisc = Number(formData.IndirectMisCost) || 0;
 
-  const totalExecutionCost =
-    directCost + indirectCost + travel + badge + indirectMisc;
+  // const totalExecutionCost =
+  //   directCost + indirectCost + travel + badge + indirectMisc;
+  const totalExecutionCost = Number(
+    (directCost + indirectCost + travel + badge + indirectMisc).toFixed(2),
+  );
 
   //net profit and gross margin % calculation:
   const budget = Number(props?.data?.Budget) || 0;
@@ -240,27 +244,9 @@ const Configuration = (props: any) => {
 
   return (
     <>
-      <div className={styles.dealSheetContentWrapper}>
-        <div className={`${styles.allField} `}>
-          <Label>
-            1 USD to rupees{" "}
-            <a
-              className={styles.xeLink}
-              href="https://www.xe.com"
-              target="_blank"
-            >
-              Refer XE.com
-            </a>
-          </Label>
-          <InputText
-            name="USDRupees"
-            value={formData.USDRupees}
-            onChange={handleOnChange}
-          />
-          {errors.USDRupees && (
-            <span className={styles.errorText}>{errors.USDRupees}</span>
-          )}
-        </div>
+      <div
+        className={`${styles.dealSheetContentWrapper} dealSheetContentWrapper`}
+      >
         <div className={`${projectStyles.allField}`}>
           <Label>Project start date</Label>
           <DatePicker
@@ -298,6 +284,27 @@ const Configuration = (props: any) => {
           <Label>Budget</Label>
           <InputText value={props?.data?.Budget} disabled />
         </div>
+        <div className={`${styles.allField}`}>
+          <Label>Direct cost</Label>
+          <InputText value={directCost.toString()} disabled />
+        </div>
+        <div className={`${styles.allField}`}>
+          <Label>Indirect cost</Label>
+          <InputText
+            value={(
+              (Number(
+                projectConfigurationData.find(
+                  (item) => item.Key === "CostPerPersonPerMonth",
+                )?.Value,
+              ) || 0) * (Number(props?.totalAllocation) || 1)
+            ).toFixed(2)}
+            disabled
+          />
+        </div>
+        <div className={`${styles.allField}`}>
+          <Label>Total Execution cost</Label>
+          <InputText value={totalExecutionCost.toFixed(2)} disabled />
+        </div>
         <div className={`${projectStyles.allField}`}>
           <Label>Net profit</Label>
           <InputText value={"$" + netProfit.toFixed(2)} disabled />
@@ -310,89 +317,82 @@ const Configuration = (props: any) => {
 
       <div className={styles.ConfigurationWrapper}>
         <div className={styles.ConfigBody}>
-          <div className={styles.DirectCostWrapper}>
-            <div className={`${styles.allField}`}>
-              <Label>Training cost</Label>
-              <InputText
-                name="TrainingCost"
-                value={formData.TrainingCost}
-                onChange={handleOnChange}
-              />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Hardware costs</Label>
-              <InputText
-                name="HSLCosts"
-                value={formData.HSLCosts}
-                onChange={handleOnChange}
-              />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Misc/contingency costs</Label>
-              <InputText
-                name="MiscContigencyCosts"
-                value={formData.MiscContigencyCosts}
-                onChange={handleOnChange}
-              />
-            </div>
+          <div className={`${styles.allField} `}>
+            <Label>
+              1 USD to INR{" "}
+              <a
+                className={styles.xeLink}
+                href="https://www.xe.com"
+                target="_blank"
+              >
+                Refer XE.com
+              </a>
+            </Label>
+            <InputText
+              name="USDRupees"
+              value={formData.USDRupees}
+              onChange={handleOnChange}
+            />
+            {errors.USDRupees && (
+              <span className={styles.errorText}>{errors.USDRupees}</span>
+            )}
           </div>
-          <div className={styles.DirectCostWrapper}>
-            <div className={`${styles.allField}`}>
-              <Label>Travel visa costs</Label>
-              <InputText
-                name="TravelVisaCosts"
-                value={formData.TravelVisaCosts}
-                onChange={handleOnChange}
-              />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Badge costs</Label>
-              <InputText
-                name="BadgeCosts"
-                value={formData.BadgeCosts}
-                onChange={handleOnChange}
-              />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Indirect misc costs</Label>
-              <InputText
-                name="IndirectMisCost"
-                value={formData.IndirectMisCost}
-                onChange={handleOnChange}
-              />
-            </div>
+          <div className={`${styles.allField}`}>
+            <Label>Training cost</Label>
+            <InputText
+              name="TrainingCost"
+              value={formData.TrainingCost}
+              onChange={handleOnChange}
+            />
           </div>
-          <div className={styles.DirectCostWrapper}>
-            <div className={`${styles.allField}`}>
-              <Label>Direct cost</Label>
-              <InputText value={directCost.toString()} disabled />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Indirect cost</Label>
-              <InputText
-                value={(
-                  (Number(
-                    projectConfigurationData.find(
-                      (item) => item.Key === "CostPerPersonPerMonth",
-                    )?.Value,
-                  ) || 0) * (Number(props?.totalAllocation) || 1)
-                ).toFixed(2)}
-                disabled
-              />
-            </div>
-            <div className={`${styles.allField}`}>
-              <Label>Total Execution cost</Label>
-              <InputText value={totalExecutionCost.toFixed(2)} disabled />
-            </div>
+          <div className={`${styles.allField}`}>
+            <Label>Hardware costs</Label>
+            <InputText
+              name="HSLCosts"
+              value={formData.HSLCosts}
+              onChange={handleOnChange}
+            />
           </div>
-        </div>
-        <div className={styles.buttonWrapper}>
-          <Button className={styles.saveBtn} onClick={handleSave}>
-            {formData.ID ? "Update" : "Save"}
-          </Button>
-          <Button className={styles.cancelBtn} onClick={handleCancel}>
-            Cancel
-          </Button>
+          <div className={`${styles.allField}`}>
+            <Label>Misc/contingency costs</Label>
+            <InputText
+              name="MiscContigencyCosts"
+              value={formData.MiscContigencyCosts}
+              onChange={handleOnChange}
+            />
+          </div>
+          <div className={`${styles.allField}`}>
+            <Label>Travel visa costs</Label>
+            <InputText
+              name="TravelVisaCosts"
+              value={formData.TravelVisaCosts}
+              onChange={handleOnChange}
+            />
+          </div>
+          <div className={`${styles.allField}`}>
+            <Label>Badge costs</Label>
+            <InputText
+              name="BadgeCosts"
+              value={formData.BadgeCosts}
+              onChange={handleOnChange}
+            />
+          </div>
+          <div className={`${styles.allField}`}>
+            <Label>Indirect misc costs</Label>
+            <InputText
+              name="IndirectMisCost"
+              value={formData.IndirectMisCost}
+              onChange={handleOnChange}
+            />
+          </div>
+          <div className={styles.buttonWrapper}>
+            <Button className={styles.saveBtn} onClick={handleSave}>
+              {formData.ID ? "Update" : "Save"}
+            </Button>
+            <Button className={styles.cancelBtn} onClick={handleCancel}>
+              Cancel
+            </Button>
+          </div>
         </div>
       </div>
     </>

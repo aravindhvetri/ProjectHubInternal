@@ -152,3 +152,596 @@ $ThemePrimeryColor: #00a99d;
 
   padding: 10px 0px 0px 10px;
 }
+
+/*Filter Button Active Dot */
+.filterBtnWrapper {
+  position: relative;
+
+  .filterActiveDot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 2px solid #00a99d;
+  }
+}
+
+/*Filter Modal......... */
+.modalHeader {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00a99d;
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 0;
+
+  .filterField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+
+    .filterFieldLabel {
+      font-size: 13px;
+      font-weight: 600;
+      color: #323130;
+      margin-bottom: 0;
+    }
+
+    .filterFieldInput {
+      width: 100%;
+      height: 32px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: 1px solid #00a99d;
+      padding: 0 10px;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+        border-color: #00a99d;
+      }
+    }
+  }
+
+  .modalDivider {
+    height: 1px;
+    background-color: #ebebeb;
+  }
+
+  .datePickerRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    .datePickerCol {
+      flex: 1;
+    }
+
+    .dateArrow {
+      padding-top: 38px;
+      color: #aaa;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+  }
+
+  .dateError {
+    display: block;
+    color: #d13438;
+    font-size: 12px;
+    margin-top: -8px;
+  }
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  .modalSaveBtn {
+    background-color: #00a99d !important;
+    border-color: #00a99d !important;
+    color: #fff !important;
+
+    &:hover {
+      background-color: #008f84 !important;
+      border-color: #008f84 !important;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/*Tag Input........... */
+.tagInputWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .tagHint {
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
+  }
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #00a99d;
+    color: #231313c7;
+    border-radius: 20px;
+    padding: 2px 10px 2px 12px;
+    font-size: 12px;
+    font-weight: 500;
+
+    .tagRemoveBtn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #00a99d;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+
+      &:hover {
+        background-color: #00a99d;
+        color: #fff;
+      }
+    }
+  }
+}
+
+/* Month Picker */
+.monthPickerWrap {
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background-color: #fafafa;
+  width: 100%;
+
+  .monthPickerLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #00a99d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .yearNav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    .yearText {
+      font-weight: 600;
+      font-size: 14px;
+      color: #323130;
+    }
+
+    .yearNavBtn {
+      background: #fff;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      padding: 0;
+
+      &:hover:not(:disabled) {
+        border-color: #00a99d;
+        color: #00a99d;
+      }
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .monthGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+
+    .monthCell {
+      padding: 6px 0;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      background-color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      transition:
+        background-color 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+
+      &.monthCellSelected {
+        background-color: #00a99d;
+        color: #fff;
+        border-color: #00a99d;
+      }
+
+      &.monthCellDisabled {
+        color: #c0c0c0;
+        background-color: #f4f4f4;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+/* ─── Fixed Month Display (Utilization "To" field) ─────────────────── */
+.fixedMonthDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f0fafa;
+  border: 1px solid #b2e0dc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+
+  .fixedMonthValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00a99d;
+  }
+
+  .fixedMonthBadge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background-color: #00a99d;
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+}
+
+/* ─── Filter Field Row (two columns side by side in modal) ─────────── */
+.filterFieldRow {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  label {
+    font-size: 13px;
+  }
+  input {
+    font-size: 12px;
+  }
+  .filterFieldHalf {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* ─── Filter Button Active Dot ─────────────────────────────────────── */
+.filterBtnWrapper {
+  position: relative;
+
+  .filterActiveDot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 2px solid #00a99d;
+  }
+}
+
+/* ─── Filter Modal ─────────────────────────────────────────────────── */
+.modalHeader {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00a99d;
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 0;
+
+  .filterField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+
+    .filterFieldLabel {
+      font-size: 13px;
+      font-weight: 600;
+      color: #323130;
+      margin-bottom: 0;
+    }
+
+    .filterFieldInput {
+      width: 100%;
+      height: 32px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: 1px solid #00a99d;
+      padding: 0 10px;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+        border-color: #00a99d;
+      }
+    }
+  }
+
+  .modalDivider {
+    height: 1px;
+    background-color: #ebebeb;
+  }
+
+  .datePickerRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    .datePickerCol {
+      flex: 1;
+    }
+
+    .dateArrow {
+      padding-top: 38px;
+      color: #aaa;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+  }
+
+  .dateError {
+    display: block;
+    color: #d13438;
+    font-size: 12px;
+    margin-top: -8px;
+  }
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  .modalSaveBtn {
+    background-color: #00a99d !important;
+    border-color: #00a99d !important;
+    color: #fff !important;
+
+    &:hover {
+      background-color: #008f84 !important;
+      border-color: #008f84 !important;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* ─── Tag Input ────────────────────────────────────────────────────── */
+.tagInputWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .tagHint {
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
+  }
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: rgba(0, 169, 157, 0.1);
+    border: 1px solid #00a99d;
+    color: #00a99d;
+    border-radius: 20px;
+    padding: 2px 10px 2px 12px;
+    font-size: 12px;
+    font-weight: 500;
+
+    .tagRemoveBtn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #00a99d;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+
+      &:hover {
+        background-color: #00a99d;
+        color: #fff;
+      }
+    }
+  }
+}
+
+/* ─── Fixed Month Display (Utilization "To" field) ─────────────────── */
+.fixedMonthDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f0fafa;
+  border: 1px solid #b2e0dc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+
+  .fixedMonthValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00a99d;
+  }
+
+  .fixedMonthBadge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background-color: #00a99d;
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+}
+
+/* ─── Month Picker ─────────────────────────────────────────────────── */
+.monthPickerWrap {
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background-color: #fafafa;
+  width: 100%;
+
+  .monthPickerLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #00a99d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .yearNav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    .yearText {
+      font-weight: 600;
+      font-size: 14px;
+      color: #323130;
+    }
+
+    .yearNavBtn {
+      background: #fff;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      padding: 0;
+
+      &:hover:not(:disabled) {
+        border-color: #00a99d;
+        color: #00a99d;
+      }
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .monthGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+
+    .monthCell {
+      padding: 6px 0;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      background-color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      transition:
+        background-color 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+
+      &:hover:not(:disabled) {
+        border-color: #00a99d;
+        color: #00a99d;
+      }
+
+      &.monthCellSelected {
+        background-color: #00a99d;
+        color: #fff;
+        border-color: #00a99d;
+      }
+
+      &.monthCellDisabled {
+        color: #c0c0c0;
+        background-color: #f4f4f4;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

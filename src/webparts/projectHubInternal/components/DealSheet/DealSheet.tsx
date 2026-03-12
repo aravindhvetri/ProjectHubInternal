@@ -11,6 +11,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import styles from "./DealSheet.module.scss";
+import "./DealSheet.css";
 import projectStyles from "../Projects/Projects.module.scss";
 import commonStyles from "../CommonStyles/CommonStyle.module.scss";
 import { DataTable } from "primereact/datatable";
@@ -20,8 +21,6 @@ import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import { Config } from "../../../../External/CommonServices/Config";
-import { InputText } from "primereact/inputtext";
-import { DatePicker, Label } from "@fluentui/react";
 import Configuration from "./ConfigurationFieldsFolder/Configuration";
 
 let tempIdCounter = -1;
@@ -92,7 +91,7 @@ const DealSheet = (props: any) => {
       Listname: Config.ListNames.DealSheetDirectCost,
       Select: "*,Project/Id",
       Expand: "Project",
-      Orderby: "Modified",
+      Orderby: "Role",
       Orderbydecorasc: true,
       Filter: [
         {
@@ -123,6 +122,7 @@ const DealSheet = (props: any) => {
             Cost: item?.Cost || 0,
           });
         });
+        rows.sort((a, b) => (a.Role || "").localeCompare(b.Role || ""));
         setDealSheetData([...rows]);
         getDatasFromSalaryRangeRoleWise();
       })
@@ -313,111 +313,6 @@ const DealSheet = (props: any) => {
   };
 
   //Unified Save (Add + Update):
-  // const handleSave = (rowData: any) => {
-  //   const rateToUse = usdRupees > 0 ? usdRupees : USD;
-  //   if (!rateToUse || rateToUse <= 0) {
-  //     props?.Notify?.(
-  //       "warn",
-  //       "Warning",
-  //       "Please enter 'USD to Rupees' value in Configuration before saving this row.",
-  //     );
-  //     return;
-  //   }
-
-  //   editingLockRef.current = null;
-  //   const isNewRow = rowData.isNewRow;
-  //   const id = rowData.ID;
-  //   const row = isNewRow ? newRows[id] : editDraftRows[id];
-  //   const allocationJson = monthColumns.map((m) => {
-  //     const found = row.AllocationJson?.find((a: any) => a.month === m);
-  //     return { month: m, value: found ? found.value : 0 };
-  //   });
-  //   const allocation = allocationJson.reduce(
-  //     (sum: number, m: any) => sum + m.value,
-  //     0,
-  //   );
-  //   const cost = allocation * row.MonthlySalaryUSD;
-  //   const json = {
-  //     Role: row.Role,
-  //     MonthlySalaryINR: row.MonthlySalaryINR,
-  //     MonthlySalaryUSD: row.MonthlySalaryUSD,
-  //     AllocationJson: JSON.stringify(allocationJson),
-  //     Allocation: allocation,
-  //     Cost: cost,
-  //     ProjectId: props?.data?.ID,
-  //   };
-
-  //   const finalRow = {
-  //     ID: id,
-  //     isNewRow: false,
-  //     isEditing: false,
-  //     Role: row.Role,
-  //     MonthlySalaryINR: row.MonthlySalaryINR,
-  //     MonthlySalaryUSD: row.MonthlySalaryUSD,
-  //     AllocationJson: allocationJson,
-  //     Allocation: allocation,
-  //     Cost: cost,
-  //   };
-
-  //   if (isNewRow) {
-  //     SPServices.SPAddItem({
-  //       Listname: Config.ListNames.DealSheetDirectCost,
-  //       RequestJSON: json,
-  //     })
-  //       .then((res: any) => {
-  //         const savedID = res?.data?.ID;
-  //         setDealSheetData((prev) =>
-  //           prev.map((r) => (r.ID === id ? { ...finalRow, ID: savedID } : r)),
-  //         );
-  //         setNewRows((prev) => {
-  //           const next = { ...prev };
-  //           delete next[id];
-  //           return next;
-  //         });
-  //         setConversionRates((prev) => {
-  //           const next = { ...prev };
-  //           delete next[id];
-  //           return next;
-  //         });
-  //         props?.Notify?.("success", "Success", "Row added successfully.");
-  //       })
-  //       .catch((err: any) => {
-  //         console.error("SPAddItem error:", err);
-  //         props?.Notify?.("error", "Error", "Failed to add row.");
-  //       });
-  //   } else {
-  //     SPServices.SPUpdateItem({
-  //       Listname: Config.ListNames.DealSheetDirectCost,
-  //       RequestJSON: json,
-  //       ID: id,
-  //     })
-  //       .then(() => {
-  //         setDealSheetData((prev) =>
-  //           prev.map((r) => (r.ID === id ? { ...finalRow } : r)),
-  //         );
-  //         setEditingRows((prev) => {
-  //           const next = { ...prev };
-  //           delete next[id];
-  //           return next;
-  //         });
-  //         setEditDraftRows((prev) => {
-  //           const next = { ...prev };
-  //           delete next[id];
-  //           return next;
-  //         });
-  //         setConversionRates((prev) => {
-  //           const next = { ...prev };
-  //           delete next[id];
-  //           return next;
-  //         });
-  //         props?.Notify?.("success", "Success", "Row updated successfully.");
-  //       })
-  //       .catch((err: any) => {
-  //         console.error("SPUpdateItem error:", err);
-  //         props?.Notify?.("error", "Error", "Failed to update row.");
-  //       });
-  //   }
-  // };
   const handleSave = (rowData: any) => {
     const rateToUse = usdRupees > 0 ? usdRupees : USD;
     if (!rateToUse || rateToUse <= 0) {
@@ -596,7 +491,17 @@ const DealSheet = (props: any) => {
   const getRowState = (rowData: any) =>
     rowData.isNewRow ? newRows[rowData.ID] : editDraftRows[rowData.ID];
   const roleBody = (rowData: any) => {
-    if (!isRowEditable(rowData)) return <span>{rowData.Role || "-"}</span>;
+    if (!isRowEditable(rowData)) {
+      const text = rowData.Role || "-";
+      const truncated = text.length > 20 ? text.substring(0, 20) + "..." : text;
+
+      return (
+        <span title={text} className={styles.roleText}>
+          {truncated}
+        </span>
+      );
+    }
+
     const row = getRowState(rowData);
     return (
       <Dropdown
@@ -609,7 +514,7 @@ const DealSheet = (props: any) => {
           handleRoleChange(rowData.ID, rowData.isNewRow, e.value)
         }
         placeholder="Select role"
-        className={styles.cellDropdown}
+        className={`${styles.cellDropdown} cellDropdown`}
       />
     );
   };
@@ -642,6 +547,27 @@ const DealSheet = (props: any) => {
     return (
       <InputNumber
         value={alloc ? alloc.value : 0}
+        onKeyDown={(e) => {
+          const input = e.currentTarget as HTMLInputElement;
+          const nextValue = input.value + e.key;
+          // Allow only numbers
+          if (
+            !/^\d$/.test(e.key) &&
+            e.key !== "Backspace" &&
+            e.key !== "Delete" &&
+            e.key !== "ArrowLeft" &&
+            e.key !== "ArrowRight" &&
+            e.key !== "Tab"
+          ) {
+            e.preventDefault();
+            return;
+          }
+
+          // Prevent value > 100
+          if (Number(nextValue) > 100) {
+            e.preventDefault();
+          }
+        }}
         onValueChange={(e) =>
           handleMonthValueChange(
             rowData.ID,
@@ -653,8 +579,10 @@ const DealSheet = (props: any) => {
         className={styles.cellInput}
         inputClassName={styles.cellInputField}
         min={0}
+        max={100}
         minFractionDigits={0}
-        maxFractionDigits={2}
+        maxFractionDigits={0}
+        useGrouping={false}
       />
     );
   };
@@ -674,12 +602,6 @@ const DealSheet = (props: any) => {
     );
   };
 
-  // const costBody = (rowData: any) => {
-  //   const val = isRowEditable(rowData)
-  //     ? getRowState(rowData)?.Cost
-  //     : rowData.Cost;
-  //   return <span>{Number(val || 0).toFixed(2)}</span>;
-  // };
   const costBody = (rowData: any) => {
     if (!isRowEditable(rowData)) {
       return <span>$ {Number(rowData.Cost || 0).toFixed(2)}</span>;
@@ -734,29 +656,25 @@ const DealSheet = (props: any) => {
   };
 
   //Footer Totals:
-  const totalAllocation = dealSheetData.reduce(
-    (sum, row) => sum + (Number(row.Allocation) || 0),
-    0,
-  );
-  // const totalCost = dealSheetData.reduce(
-  //   (sum, row) => sum + (Number(row.Cost) || 0),
-  //   0,
-  // );
-  const totalCost = dealSheetData.reduce((sum, row) => {
-    if (row.isNewRow || row.isEditing) {
-      const liveRow = row.isNewRow ? newRows[row.ID] : editDraftRows[row.ID];
-      const rateToUse = usdRupees > 0 ? usdRupees : USD;
-      const inr = Number(liveRow?.MonthlySalaryINR || 0);
-      const usdSalary = rateToUse > 0 ? inr / rateToUse : 0;
-      const allocation =
-        liveRow?.AllocationJson?.reduce(
-          (s: number, m: any) => s + (m.value || 0),
-          0,
-        ) ?? 0;
-      return sum + allocation * usdSalary;
-    }
-    return sum + (Number(row.Cost) || 0);
-  }, 0);
+  const totalAllocation =
+    dealSheetData.reduce((sum, row) => sum + (Number(row.Allocation) || 0), 0) /
+    100;
+  const totalCost =
+    dealSheetData.reduce((sum, row) => {
+      if (row.isNewRow || row.isEditing) {
+        const liveRow = row.isNewRow ? newRows[row.ID] : editDraftRows[row.ID];
+        const rateToUse = usdRupees > 0 ? usdRupees : USD;
+        const inr = Number(liveRow?.MonthlySalaryINR || 0);
+        const usdSalary = rateToUse > 0 ? inr / rateToUse : 0;
+        const allocation =
+          liveRow?.AllocationJson?.reduce(
+            (s: number, m: any) => s + (m.value || 0),
+            0,
+          ) ?? 0;
+        return sum + allocation * usdSalary;
+      }
+      return sum + (Number(row.Cost) || 0);
+    }, 0) / 100;
 
   return (
     <>
@@ -775,44 +693,8 @@ const DealSheet = (props: any) => {
             />
           </div>
           <h2>Deal sheet</h2>
-          <div className={styles.headerAddBtn}>
-            <Button
-              label="Add direct cost"
-              icon="pi pi-plus"
-              className="p-button-sm"
-              onClick={handleAddClick}
-            />
-          </div>
         </div>
       </div>
-      {/* <div className={styles.dealSheetContentWrapper}>
-        <div className={`${projectStyles.allField} dealFormPage`}>
-          <Label>Budget</Label>
-          <InputText value={props?.data?.Budget} disabled />
-        </div>
-        <div className={`${projectStyles.allField} dealFormPage`}>
-          <Label>Project start date</Label>
-          <DatePicker
-            value={
-              props?.data?.StartDate
-                ? new Date(props.data.StartDate)
-                : undefined
-            }
-            disabled
-          />
-        </div>
-        <div className={`${projectStyles.allField} dealFormPage`}>
-          <Label>Project end date</Label>
-          <DatePicker
-            value={
-              props?.data?.PlannedEndDate
-                ? new Date(props.data.PlannedEndDate)
-                : undefined
-            }
-            disabled
-          />
-        </div>
-      </div> */}
       <Configuration
         USDRuppes={USDRuppes}
         goProjectFormPage={props?.goProjectFormPage}
@@ -822,11 +704,24 @@ const DealSheet = (props: any) => {
         spfxContext={props.spfxContext}
         Notify={props.Notify}
       />
+      <div className={styles.DataTableHeaderSection}>
+        <div className={styles.headingName}>Resource allocation</div>
+        <div className={styles.headerAddBtn}>
+          <Button
+            label="Add direct cost"
+            icon="pi pi-plus"
+            className="p-button-sm"
+            onClick={handleAddClick}
+          />
+        </div>
+      </div>
+
       <div className={styles.tableWrapper}>
         <DataTable
+          className="DealSheetDataTable"
           value={dealSheetData}
           paginator={dealSheetData && dealSheetData.length > 8}
-          rows={8}
+          rows={5}
           tableStyle={{ minWidth: "50rem" }}
           emptyMessage={<p className={projectStyles.noData}>No data !!!</p>}
           scrollable
@@ -834,6 +729,11 @@ const DealSheet = (props: any) => {
             isRowEditable(rowData) ? styles.newRow : ""
           }
         >
+          <Column
+            header="Actions"
+            body={actionBody}
+            style={{ minWidth: "90px" }}
+          />
           <Column
             field="Role"
             header="Role"
@@ -857,7 +757,7 @@ const DealSheet = (props: any) => {
               key={month}
               header={month}
               body={monthBody(month)}
-              style={{ minWidth: "110px" }}
+              style={{ minWidth: "50px" }}
             />
           ))}
           <Column
@@ -866,7 +766,10 @@ const DealSheet = (props: any) => {
             body={allocationBody}
             footer={() => (
               <div style={{ fontWeight: 600, fontSize: "14px" }}>
-                {totalAllocation.toFixed(2)}
+                {totalAllocation.toFixed(2)}{" "}
+                <span style={{ fontSize: "10px", color: "#04a499" }}>
+                  Months
+                </span>
               </div>
             )}
             style={{ minWidth: "120px" }}
@@ -881,11 +784,6 @@ const DealSheet = (props: any) => {
               </div>
             )}
             style={{ minWidth: "130px" }}
-          />
-          <Column
-            header="Actions"
-            body={actionBody}
-            style={{ minWidth: "90px" }}
           />
         </DataTable>
       </div>

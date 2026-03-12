@@ -47,9 +47,9 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 
 const ProjectFormPage = (props: any) => {
-  const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
-  // const TARGET_SITE_URL =
-  //   "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
+  // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
+  const TARGET_SITE_URL =
+    "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
 
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
@@ -61,7 +61,6 @@ const ProjectFormPage = (props: any) => {
     ID: null,
     TotalExecutionCost: null,
   });
-  console.log(configurationData, "configurationData in projects form page");
   const [formData, setFormData] = useState<any>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -74,6 +73,7 @@ const ProjectFormPage = (props: any) => {
   const [billingsData, setBillingsData] = useState<any[]>([]);
   const [billingsListData, setBillingsListData] = useState<any[]>([]);
   const [PMOusers, setPMOusers] = useState<IPeoplePickerDetails[]>([]);
+  const [PMusers, setPMusers] = useState<IPeoplePickerDetails[]>([]);
   const [DHusers, setDHusers] = useState<IPeoplePickerDetails[]>([]);
   const [BAusers, setBAusers] = useState<IPeoplePickerDetails[]>([]);
   const [isApproval, setIsApproval] = useState<any>({
@@ -103,6 +103,7 @@ const ProjectFormPage = (props: any) => {
       ProjectName: "",
       StartDate: null,
       PlannedEndDate: null,
+      InternalProject: false,
       ProjectManager: [],
       DeliveryHead: [],
       BA: [],
@@ -281,6 +282,28 @@ const ProjectFormPage = (props: any) => {
           });
         });
         setPMOusers([...tempUsers]);
+        getPMGroupUsers();
+      })
+      .catch((err) => {
+        console.log(err, "Get PMO group users error in projectsFormPage.tsx");
+      });
+  };
+
+  //Get PM Group members:
+  const getPMGroupUsers = () => {
+    SPServices.getSPGroupMember({
+      GroupName: Config.GroupNames.PM,
+    })
+      .then((res: any) => {
+        const tempUsers: IPeoplePickerDetails[] = [];
+        res.forEach((items: any) => {
+          tempUsers.push({
+            id: items?.Id,
+            email: items?.Email,
+            name: items?.Title,
+          });
+        });
+        setPMusers([...tempUsers]);
       })
       .catch((err) => {
         console.log(err, "Get PMO group users error in projectsFormPage.tsx");
@@ -475,7 +498,7 @@ const ProjectFormPage = (props: any) => {
     const budget = Number(formData?.Budget) || 0;
     const totalExecutionCost =
       Number(configurationData?.TotalExecutionCost) || 0;
-    const dealProfit = budget - totalExecutionCost;
+    const dealProfit: any = Number(budget - totalExecutionCost).toFixed(2);
     const dealMargin =
       budget > 0 ? ((dealProfit / budget) * 100).toFixed(2) : "0";
 
@@ -674,6 +697,7 @@ const ProjectFormPage = (props: any) => {
       CustomerDisplayName: formData?.CustomerDisplayName,
       Currency: formData?.Currency,
       UpWork: formData?.UpWork,
+      InternalProject: formData?.InternalProject,
       BillingContactName: formData?.BillingContactName || "",
       BillingContactEmail: formData?.BillingContactEmail || "",
       BillingContactMobile: formData?.BillingContactMobile,
@@ -1161,6 +1185,11 @@ const ProjectFormPage = (props: any) => {
       user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   );
 
+  // const isPMUser = PMusers?.some(
+  //   (user) =>
+  //     user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+  // );
+
   const isProjectManager = formData?.ProjectManager?.some(
     (pm: IPeoplePickerDetails) =>
       pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
@@ -1188,6 +1217,7 @@ const ProjectFormPage = (props: any) => {
         ProjectStatus: "0",
         BillingModel: "",
         UpWork: false,
+        InternalProject: false,
         ProjectType: "",
         Hours: "",
         Budget: "",
@@ -1832,6 +1862,20 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Internal project</Label>
+                <Checkbox
+                  inputId="internalProject"
+                  checked={formData?.InternalProject === true}
+                  onChange={(e) => handleOnChange("InternalProject", e.checked)}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Project Status</Label>
                 <Dropdown
                   options={props?.initialCRMProjectsListDropContainer?.Status}
@@ -1964,6 +2008,8 @@ const ProjectFormPage = (props: any) => {
                   ProjectManager: [],
                   DeliveryHead: [],
                   BA: [],
+                  InternalProject: false,
+                  UpWork: false,
                   ProjectStatus: "0",
                   BillingModel: "",
                   Hours: "",
