@@ -22,9 +22,9 @@ $font: "Segoe UI", "Calibri", sans-serif;
 }
 
 .headerAddBtn {
-  margin-left: auto;
   display: flex;
   align-items: center;
+  padding-right: 16px;
   span {
     color: white !important;
     font-size: 13px !important;
@@ -128,9 +128,11 @@ $font: "Segoe UI", "Calibri", sans-serif;
 .dealSheetContentWrapper {
   display: flex;
   width: 100%;
-  gap: 33px;
+  gap: 12px;
   justify-content: left;
-  padding: 12px 0px 12px 14px;
+  padding: 12px;
+  background: #ffffb3;
+  margin-top: 6px;
   .allField {
     width: 13%;
   }
@@ -147,23 +149,17 @@ $font: "Segoe UI", "Calibri", sans-serif;
 .ConfigBody {
   display: flex;
   width: 100%;
-  gap: 44px;
-  padding: 13px 13px 6px 13px;
-  .DirectCostWrapper {
-    width: 33.3%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    .allField {
-      width: 48%;
-      padding-bottom: 12px;
-      label {
-        font-size: 13px !important;
-      }
-      input {
-        width: 100%;
-        font-size: 13px !important;
-      }
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 14px 14px 26px 14px;
+  .allField {
+    width: 11%;
+    label {
+      font-size: 13px !important;
+    }
+    input {
+      width: 100%;
+      font-size: 13px !important;
     }
   }
 }
@@ -171,8 +167,8 @@ $font: "Segoe UI", "Calibri", sans-serif;
 .buttonWrapper {
   display: flex;
   gap: 12px;
-  justify-content: end;
-  padding-right: 17px;
+  padding-left: 36px;
+  margin-top: 30px;
   .saveBtn {
     background-color: #0d900dc2 !important;
     border: 1px solid #0d900dc2 !important;
@@ -180,7 +176,7 @@ $font: "Segoe UI", "Calibri", sans-serif;
     color: #fff;
     cursor: pointer;
     height: 30px;
-    padding: 4px 30px 4px 30px;
+    padding: 4px 20px 4px 20px;
     font-size: 13px;
   }
   .cancelBtn {
@@ -190,16 +186,15 @@ $font: "Segoe UI", "Calibri", sans-serif;
     color: #fff;
     cursor: pointer;
     height: 30px;
-    padding: 4px 30px 4px 30px;
+    padding: 4px 20px 4px 20px;
     font-size: 13px;
   }
 }
 
 .ConfigurationWrapper {
   background: #f9f9f9;
-  padding: 0px 0px 20px 0px;
   border-radius: 6px;
-  margin: 6px 0px 12px 0px;
+  margin: 20px 0px 12px 0px;
 }
 
 .errorText {
@@ -217,4 +212,23 @@ $font: "Segoe UI", "Calibri", sans-serif;
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 12px;
+}
+.DataTableHeaderSection {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  .headingName {
+    font-size: 16.5px;
+    color: #049389;
+    font-weight: 600;
+    padding-left: 16px;
+  }
+}
+
+.roleText {
+  display: inline-block;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

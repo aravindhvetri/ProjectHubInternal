@@ -36,6 +36,9 @@ import * as FileSaver from "file-saver";
 import * as Excel from "exceljs";
 import MilestonesReports from "./UpComingMilestonesReports/MilestonesReports";
 import PMwiseInvoiceComplianceReport from "./PMwiseInvoiceComplianceReport/PMwiseInvoiceComplianceReport";
+import Utilization from "./Utilization/Utilization";
+import Forecast from "./Forecast/Forecast";
+import BenchReport from "./BenchReport/BenchReport";
 
 const MainComponent = (props: any) => {
   //Local variables:
@@ -614,6 +617,18 @@ const MainComponent = (props: any) => {
               label: "PM-wise Invoice Compliance Report",
               value: "PM-wise Invoice Compliance Report",
             },
+            {
+              label: "Utilization Report",
+              value: "Utilization Report",
+            },
+            {
+              label: "Forecast Report",
+              value: "Forecast Report",
+            },
+            {
+              label: "Bench Report",
+              value: "Bench Report",
+            },
           ]}
           onChange={(e) => setSelectedReport(e.value)}
           placeholder="Select Report"
@@ -938,6 +953,12 @@ const MainComponent = (props: any) => {
       {selectedReport === "PM-wise Invoice Compliance Report" && (
         <PMwiseInvoiceComplianceReport />
       )}
+
+      {selectedReport == "Utilization Report" && <Utilization />}
+
+      {selectedReport == "Forecast Report" && <Forecast />}
+
+      {selectedReport == "Bench Report" && <BenchReport />}
     </>
   );
 };

@@ -1,4 +1,15 @@
-.p-disabled,
+.dealSheetContentWrapper .p-disabled,
 .p-component:disabled {
   background: #f3f2f1 !important;
+}
+.DealSheetDataTable .p-column-title {
+  font-size: 13px;
+}
+
+.cellDropdown .p-dropdown-label {
+  display: inline-block;
+  max-width: 116px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

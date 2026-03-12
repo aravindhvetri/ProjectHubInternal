@@ -17,6 +17,7 @@ interface IList {
   SalaryRangeRoleWise: string;
   DealSheetConfigurationList: string;
   ProjectConfiguration: string;
+  EmployeePartialAllocation: string;
 }
 interface ILibrary {
   ProjectFiles: string;
@@ -28,4 +29,5 @@ interface IGroup {
   Leads: string;
   BA: string;
   Finance: string;
+  PM: string;
 }

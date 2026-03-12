@@ -133,7 +133,7 @@ const Projects = (props: IProps): JSX.Element => {
       Select:
         "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
       Expand: "ProjectManager,DeliveryHead,BA",
-      Orderby: "Modified",
+      Orderby: "ID",
       Orderbydecorasc: true,
       Filter: [
         {
@@ -194,6 +194,7 @@ const Projects = (props: IProps): JSX.Element => {
             Currency: items?.Currency,
             ClientName: items?.ClientName,
             UpWork: items?.UpWork,
+            InternalProject : items?.InternalProject,
             ProjectType: items?.ProjectType,
             CustomerID: items?.CustomerID,
             CustomerDisplayName: items?.CustomerDisplayName,

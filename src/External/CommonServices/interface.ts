@@ -16,6 +16,7 @@ export interface IProjectData {
   PlannedEndDate: string;
   ProjectType: string;
   UpWork: boolean;
+  InternalProject: boolean;
   ProjectManager: IPeoplePickerDetails[];
   DeliveryHead: IPeoplePickerDetails[];
   BA: IPeoplePickerDetails[];

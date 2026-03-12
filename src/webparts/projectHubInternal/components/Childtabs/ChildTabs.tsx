@@ -19,6 +19,7 @@ import QuickLinks from "../QuickLinks/QuickLinks";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import { Config } from "../../../../External/CommonServices/Config";
 import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface";
+import PartialAllocation from "../PartialAllocation/PartialAllocation";
 
 const ChildTabs = (props: any) => {
   const [activeTab, setActiveTab] = React.useState("");
@@ -100,6 +101,19 @@ const ChildTabs = (props: any) => {
             />
           </div>
         );
+      case "Allocation":
+        return (
+          <div className={styles.tabContent}>
+            <PartialAllocation
+              loginUserEmail={props?.loginUserEmail}
+              rowDataID={props?.rowData?.ID}
+              Projectdata={props?.rowData}
+              setActiveTab={setActiveTab}
+              getTabContent={props.getTabContent}
+              spfxContext={props.spfxContext}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -135,6 +149,16 @@ const ChildTabs = (props: any) => {
           }`}
           onClick={() => {
             setActiveTab("QuickLinks");
+            props.getTabContent(true);
+          }}
+        />
+        <Button
+          label="Partial Allocation"
+          className={`${styles.tabButton} ${
+            activeTab === "Allocation" ? styles.active : ""
+          }`}
+          onClick={() => {
+            setActiveTab("Allocation");
             props.getTabContent(true);
           }}
         />
