@@ -390,9 +390,6 @@ const BenchReport = () => {
   }, []);
 
   // ── getEmployeePartialAllocationDatas
-  //    NEW: Step 1 fetches CRMProjects → builds crmMap → Step 2 is the
-  //    original EmployeePartialAllocation query with enrichment attached.
-  //    Every line of the original Step 2 is byte-for-byte identical.
   const getEmployeePartialAllocationDatas = () => {
     // Step 1: fetch CRMProjects with expanded ProjectManager and DeliveryHead
     SPServices.SPReadItems({
@@ -466,7 +463,6 @@ const BenchReport = () => {
           Select: "*",
           Orderby: "Modified",
           Orderbydecorasc: true,
-          Topcount: 5,
           Filter: [
             {
               FilterKey: "ProjectID",

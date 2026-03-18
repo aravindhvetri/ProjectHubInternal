@@ -1259,6 +1259,18 @@ const ProjectFormPage = (props: any) => {
                   ? "Edit project"
                   : "View project"}
             </h2>
+            {(props?.isView || props?.isEdit) && (
+              <span className={selfComponentStyles.projectSize}>
+                (
+                {formData?.Hours >= 0 &&
+                  formData?.Hours <= 100 &&
+                  "Project Size - Small"}
+                {formData?.Hours > 100 &&
+                  formData?.Hours <= 500 &&
+                  "Project Size - Medium"}
+                {formData?.Hours > 500 && "Project Size - High"})
+              </span>
+            )}
           </div>
           <div
             style={{ height: "auto" }}
