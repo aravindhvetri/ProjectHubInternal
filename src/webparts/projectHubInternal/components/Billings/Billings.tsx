@@ -117,7 +117,7 @@ const Billings = (props: any) => {
         BillingDetails.sort((a, b) => {
           const dateA = new Date(a?.DueDate);
           const dateB = new Date(b?.DueDate);
-          return dateA.getTime() - dateB.getTime();
+          return dateB.getTime() - dateA.getTime();
         });
 
         setMasterBillingDetails([...BillingDetails]);

@@ -201,13 +201,13 @@ const BillingsForm = (props: any) => {
     ) {
       const dueDate = new Date(formData?.DueDate);
       const startDate = new Date(props.ProjectsFormData?.StartDate);
-      const endDate = new Date(props.ProjectsFormData?.PlannedEndDate);
+      // const endDate = new Date(props.ProjectsFormData?.PlannedEndDate);
 
-      if (dueDate < startDate || dueDate > endDate) {
+      if (dueDate < startDate) {
         props.Notify(
           "error",
           "Validation Error",
-          "Due Date must be between Project Start Date and Planned End Date!",
+          "Due Date should be after the Project Start Date!",
         );
         errors.DueDate = true;
       }

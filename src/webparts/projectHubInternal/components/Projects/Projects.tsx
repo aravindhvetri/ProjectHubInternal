@@ -72,7 +72,7 @@ const Projects = (props: IProps): JSX.Element => {
     "Chandru@technorucs.com",
     "Chandru@technorucs365.onmicrosoft.com",
     "v.aravinthan@technorucs.com",
-    "Finance@technorucs.com",
+    "finance@technorucs.com",
   ];
   //Local variables:
   const ScreenWidth: number = window.innerWidth;
@@ -194,7 +194,7 @@ const Projects = (props: IProps): JSX.Element => {
             Currency: items?.Currency,
             ClientName: items?.ClientName,
             UpWork: items?.UpWork,
-            InternalProject : items?.InternalProject,
+            InternalProject: items?.InternalProject,
             ProjectType: items?.ProjectType,
             CustomerID: items?.CustomerID,
             CustomerDisplayName: items?.CustomerDisplayName,
