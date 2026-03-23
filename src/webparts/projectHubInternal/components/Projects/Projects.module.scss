@@ -543,7 +543,11 @@ $ThemePrimeryColor: #00a99d;
 }
 
 .projectSize {
-  color: #00a99d !important;
-  font-size: 15px !important;
+  color: black !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
+  background: #0e93e433;
+  border-radius: 30px;
+  padding: 2px 10px 4px 10px;
+  margin-left: 12px;
 }

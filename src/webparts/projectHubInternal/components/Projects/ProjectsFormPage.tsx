@@ -121,7 +121,7 @@ const ProjectFormPage = (props: any) => {
       BillingContactMobile: "",
       BillingAddress: "",
       Remarks: "",
-      Status: "",
+      Status: "New",
       FPMProfit: "",
       FPMMargin: "",
       DealProfit: "",
@@ -1224,7 +1224,7 @@ const ProjectFormPage = (props: any) => {
         ClientName: "",
         Currency: "",
         CustomerID: "",
-        Status: "",
+        Status: "New",
         CustomerDisplayName: "",
         BillingContactName: "",
         BillingContactEmail: "",
@@ -1261,14 +1261,13 @@ const ProjectFormPage = (props: any) => {
             </h2>
             {(props?.isView || props?.isEdit) && (
               <span className={selfComponentStyles.projectSize}>
-                (
                 {formData?.Hours >= 0 &&
                   formData?.Hours <= 100 &&
                   "Project Size - Small"}
                 {formData?.Hours > 100 &&
                   formData?.Hours <= 500 &&
                   "Project Size - Medium"}
-                {formData?.Hours > 500 && "Project Size - High"})
+                {formData?.Hours > 500 && "Project Size - High"}
               </span>
             )}
           </div>
@@ -2037,7 +2036,7 @@ const ProjectFormPage = (props: any) => {
                   BillingAddress: "",
                   Remarks: "",
                   FPMProfit: "",
-                  Status: "",
+                  Status: "New",
                   FPMMargin: "",
                   DealProfit: "",
                   DealMargin: "",
