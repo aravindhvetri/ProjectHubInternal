@@ -79,7 +79,8 @@ const CRForm = (props: any) => {
       ProjectId: "",
       CRTitle: "",
       CRDescription: "",
-      RequestedBy: [],
+      // RequestedBy: [],
+      RequestedBySLT: "",
       RequestDate: null,
       ChangeType: "",
       Severity: "",
@@ -111,8 +112,10 @@ const CRForm = (props: any) => {
   //Validate Func:
   const Validation = () => {
     let errors: { [key: string]: boolean } = {};
-    if (!isValidField("RequestedBy", formData?.RequestedBy))
-      errors.RequestedBy = true;
+    // if (!isValidField("RequestedBy", formData?.RequestedBy))
+    //   errors.RequestedBy = true;
+    if (!isValidField("RequestedBySLT", formData?.RequestedBySLT))
+      errors.RequestedBySLT = true;
     if (!isValidField("AssignedTo", formData?.AssignedTo))
       errors.AssignedTo = true;
     if (!isValidField("CRTitle", formData?.CRTitle)) errors.CRTitle = true;
@@ -136,11 +139,12 @@ const CRForm = (props: any) => {
 
   const isValidField = (field: string, value: any): boolean => {
     switch (field) {
-      case "RequestedBy":
-        return value && value.length > 0;
+      // case "RequestedBy":
+      //   return value && value.length > 0;
       case "AssignedTo":
         return value && value.length > 0;
       case "CRTitle":
+      case "RequestedBySLT":
       case "CRDescription":
       case "Severity":
       case "ChangeType":
@@ -157,11 +161,11 @@ const CRForm = (props: any) => {
   //Json Generations:
   const generateJson = () => {
     setLoader(true);
-    let RequestedByIds: number[] = JSON.parse(
-      JSON.stringify(formData?.RequestedBy),
-    )
-      .map((user: IPeoplePickerDetails) => user.id)
-      .sort((a: any, b: any) => a - b);
+    // let RequestedByIds: number[] = JSON.parse(
+    //   JSON.stringify(formData?.RequestedBy),
+    // )
+    //   .map((user: IPeoplePickerDetails) => user.id)
+    //   .sort((a: any, b: any) => a - b);
 
     let AssignedToIds: number[] = JSON.parse(
       JSON.stringify(formData?.AssignedTo),
@@ -182,7 +186,8 @@ const CRForm = (props: any) => {
       ActualStartDate:
         SPServices.GetDateFormat(formData?.ActualStartDate) || null,
       ActualEndDate: SPServices.GetDateFormat(formData?.ActualEndDate) || null,
-      RequestedById: { results: RequestedByIds },
+      // RequestedById: { results: RequestedByIds },
+      RequestedBySLT: formData?.RequestedBySLT,
       AssignedToId: { results: AssignedToIds },
       Severity: formData?.Severity || "",
       Priority: formData?.Priority || "",
@@ -270,7 +275,8 @@ const CRForm = (props: any) => {
         ProjectId: "",
         CRTitle: "",
         CRDescription: "",
-        RequestedBy: [],
+        // RequestedBy: [],
+        RequestedBySLT: "",
         RequestDate: "",
         ChangeType: "",
         Severity: "",
@@ -366,7 +372,7 @@ const CRForm = (props: any) => {
                 }
               />
             </div>
-            <div className={`${styles.riskFormChilds} dealFormPages`}>
+            {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Requested by</Label>
               <div className={`${styles.textField} ${styles.peoplePicker}`}>
                 <PeoplePicker
@@ -393,6 +399,21 @@ const CRForm = (props: any) => {
                   }
                 />
               </div>
+            </div> */}
+            <div className={`${styles.riskFormChilds} dealFormPages`}>
+              <Label>Requested by</Label>
+              <InputText
+                onChange={(e) =>
+                  handleOnChange("RequestedBySLT", e.target.value)
+                }
+                value={formData?.RequestedBySLT}
+                disabled={props?.isView}
+                style={
+                  errorMessage["RequestedBySLT"]
+                    ? { border: "2px solid #ff0000" }
+                    : undefined
+                }
+              />
             </div>
             <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Request date</Label>

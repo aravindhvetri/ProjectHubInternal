@@ -802,3 +802,7 @@ h4 {
 .reportData .p-datatable > .p-datatable-wrapper {
   height: 398px !important;
 }
+
+.p-dropdown-items-wrapper {
+  max-height: 260px !important;
+}

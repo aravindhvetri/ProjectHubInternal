@@ -406,6 +406,7 @@ const Forecast = () => {
               };
 
               // Original month-key logic — unchanged
+              let hasValue = false;
               Config.monthKeys.forEach((key: any) => {
                 const monthPart = key.slice(0, 3);
                 const yearPart = parseInt(key.slice(3));
@@ -425,12 +426,18 @@ const Forecast = () => {
                   );
                   // Forecast: current month and future months only (unchanged)
                   if (itemDate >= currentMonthStart) {
-                    baseObj[key] = value || 0;
+                    const finalValue = (value || 0) * 100;
+                    baseObj[key] = finalValue;
+                    if (finalValue !== 0) {
+                      hasValue = true;
+                    }
                   }
                 }
               });
 
-              allocationData.push(baseObj);
+              if (hasValue) {
+                allocationData.push(baseObj);
+              }
             });
 
             // Extract month column keys — exclude all non-month fields

@@ -39,6 +39,8 @@ import PMwiseInvoiceComplianceReport from "./PMwiseInvoiceComplianceReport/PMwis
 import Utilization from "./Utilization/Utilization";
 import Forecast from "./Forecast/Forecast";
 import BenchReport from "./BenchReport/BenchReport";
+import RisksReport from "./RisksReport/RisksReport";
+import CRReport from "./CRReport/CRReport";
 
 const MainComponent = (props: any) => {
   //Local variables:
@@ -629,6 +631,14 @@ const MainComponent = (props: any) => {
               label: "Bench Report",
               value: "Bench Report",
             },
+            {
+              label: "Risk Report",
+              value: "Risk Report",
+            },
+            {
+              label: "CR Report",
+              value: "CR Report",
+            },
           ]}
           onChange={(e) => setSelectedReport(e.value)}
           placeholder="Select Report"
@@ -959,6 +969,10 @@ const MainComponent = (props: any) => {
       {selectedReport == "Forecast Report" && <Forecast />}
 
       {selectedReport == "Bench Report" && <BenchReport />}
+
+      {selectedReport == "Risk Report" && <RisksReport />}
+
+      {selectedReport == "CR Report" && <CRReport />}
     </>
   );
 };

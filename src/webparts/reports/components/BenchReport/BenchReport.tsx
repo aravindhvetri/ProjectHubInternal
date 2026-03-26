@@ -27,6 +27,10 @@ import { PrimaryButton } from "@fluentui/react";
 import { Label } from "@fluentui/react";
 import Loading from "../../../../External/Loader/Loading";
 import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface"; // NEW
+import {
+  multiPeoplePickerTemplate,
+  peoplePickerTemplate,
+} from "../../../../External/CommonServices/CommonTemplate";
 
 // ─── MonthPicker (unchanged) ──────────────────────────────────────────────────
 
@@ -512,21 +516,21 @@ const BenchReport = () => {
                 EmployeeID: items?.EmployeeID || "",
                 EmployeeName: items?.EmployeeName || "",
                 ProjectID: items?.ProjectID || "",
-                APR2025: items?.April2025 || 0,
-                MAY2025: items?.Maymonth2025 || 0,
-                JUN2025: items?.June2025 || 0,
-                JUL2025: items?.July2025 || 0,
-                AUG2025: items?.August2025 || 0,
-                SEP2025: items?.September2025 || 0,
-                OCT2025: items?.Octobar2025 || 0,
-                NOV2025: items?.November2025 || 0,
-                DEC2025: items?.December2025 || 0,
-                JAN2026: items?.January2026 || 0,
-                FEB2026: items?.February2026 || 0,
-                MAR2026: items?.March2026 || 0,
-                APR2026: items?.April2026 || 0,
-                MAY2026: items?.Maymonth2026 || 0,
-                JUN2026: items?.June2026 || 0,
+                APR2025: (items?.April2025 || 0) * 100,
+                MAY2025: (items?.Maymonth2025 || 0) * 100,
+                JUN2025: (items?.June2025 || 0) * 100,
+                JUL2025: (items?.July2025 || 0) * 100,
+                AUG2025: (items?.August2025 || 0) * 100,
+                SEP2025: (items?.September2025 || 0) * 100,
+                OCT2025: (items?.Octobar2025 || 0) * 100,
+                NOV2025: (items?.November2025 || 0) * 100,
+                DEC2025: (items?.December2025 || 0) * 100,
+                JAN2026: (items?.January2026 || 0) * 100,
+                FEB2026: (items?.February2026 || 0) * 100,
+                MAR2026: (items?.March2026 || 0) * 100,
+                APR2026: (items?.April2026 || 0) * 100,
+                MAY2026: (items?.Maymonth2026 || 0) * 100,
+                JUN2026: (items?.June2026 || 0) * 100,
                 // NEW — CRMProjects enriched fields
                 ClientName: crmData.ClientName,
                 CustomerDisplayName: crmData.CustomerDisplayName,
@@ -598,13 +602,28 @@ const BenchReport = () => {
     );
   };
 
-  // NEW — People column renderer
-  const renderPeopleNames = (people: IPeoplePickerDetails[]): string => {
-    if (!people?.length) return "-";
-    return people
-      .map((p) => p.name)
-      .filter(Boolean)
-      .join(", ");
+  //Render Manager Column function:
+  const renderManagersColumn = (rowData: any) => {
+    const projectManagers: IPeoplePickerDetails[] = rowData?.ProjectManager;
+    return (
+      <div>
+        {rowData?.ProjectManager?.length > 1
+          ? multiPeoplePickerTemplate(projectManagers)
+          : peoplePickerTemplate(projectManagers[0])}
+      </div>
+    );
+  };
+
+  //Render Delivery Heads Column function:
+  const renderDeliveryHeadsColumn = (rowData: any) => {
+    const deliveryHeads: IPeoplePickerDetails[] = rowData?.DeliveryHead;
+    return (
+      <div>
+        {rowData?.DeliveryHead?.length > 1
+          ? multiPeoplePickerTemplate(deliveryHeads)
+          : peoplePickerTemplate(deliveryHeads[0])}
+      </div>
+    );
   };
 
   // ── Modal footer (unchanged) ───────────────────────────────────────────────
@@ -762,14 +781,14 @@ const BenchReport = () => {
                 field="ProjectManager"
                 header="Project manager"
                 style={{ minWidth: "150px" }}
-                body={(rowData) => renderPeopleNames(rowData.ProjectManager)}
+                body={renderManagersColumn}
               />
               <Column
                 sortable
                 field="DeliveryHead"
                 header="Delivery head"
                 style={{ minWidth: "150px" }}
-                body={(rowData) => renderPeopleNames(rowData.DeliveryHead)}
+                body={renderDeliveryHeadsColumn}
               />
               {/* Existing columns (unchanged) */}
               <Column

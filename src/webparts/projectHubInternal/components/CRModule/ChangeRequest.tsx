@@ -110,16 +110,16 @@ const ChangeRequest = (props: any) => {
       .then((res: any) => {
         let projectChangeRequestDatas: IChangeRequestDetails[] = [];
         res?.forEach((items: any) => {
-          let _RequestedBy: IPeoplePickerDetails[] = [];
-          if (items?.RequestedBy) {
-            items?.RequestedBy.forEach((user: any) => {
-              _RequestedBy.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
+          // let _RequestedBy: IPeoplePickerDetails[] = [];
+          // if (items?.RequestedBy) {
+          //   items?.RequestedBy.forEach((user: any) => {
+          //     _RequestedBy.push({
+          //       id: user?.Id,
+          //       name: user?.Title,
+          //       email: user?.EMail,
+          //     });
+          //   });
+          // }
           let _AssignedTo: IPeoplePickerDetails[] = [];
           if (items?.AssignedTo) {
             items?.AssignedTo.forEach((user: any) => {
@@ -152,7 +152,8 @@ const ChangeRequest = (props: any) => {
             ProjectId: items?.Project?.ProjectID,
             CRTitle: items?.CRTitle,
             CRDescription: items?.CRDescription,
-            RequestedBy: _RequestedBy,
+            // RequestedBy: _RequestedBy,
+            RequestedBySLT: items?.RequestedBySLT || "",
             RequestDate: items?.RequestDate,
             ChangeType: items?.ChangeType,
             Severity: items?.Severity,
@@ -381,16 +382,16 @@ const ChangeRequest = (props: any) => {
   };
 
   //Render Identified By Column:
-  const renderRequestedByColumn = (rowData: IChangeRequestDetails) => {
-    const requestedBy: IPeoplePickerDetails[] = rowData?.RequestedBy || [];
-    return (
-      <div>
-        {rowData?.RequestedBy?.length > 1
-          ? multiPeoplePickerTemplate(requestedBy)
-          : peoplePickerTemplate(requestedBy[0])}
-      </div>
-    );
-  };
+  // const renderRequestedByColumn = (rowData: IChangeRequestDetails) => {
+  //   const requestedBy: IPeoplePickerDetails[] = rowData?.RequestedBy || [];
+  //   return (
+  //     <div>
+  //       {rowData?.RequestedBy?.length > 1
+  //         ? multiPeoplePickerTemplate(requestedBy)
+  //         : peoplePickerTemplate(requestedBy[0])}
+  //     </div>
+  //   );
+  // };
 
   //Render Assigned To Column:
   const renderAssignedToColumn = (rowData: IChangeRequestDetails) => {
@@ -415,17 +416,18 @@ const ChangeRequest = (props: any) => {
     const filtered = masterProjectChangeRequestDetails.filter((item) => {
       const assignedToNames =
         item?.AssignedTo?.map((pm) => pm.name?.toLowerCase()).join(" ") || "";
-      const RequestedByNames =
-        item?.RequestedBy?.map((dh) => dh.name?.toLowerCase()).join(" ") || "";
+      // const RequestedByNames =
+      //   item?.RequestedBy?.map((dh) => dh.name?.toLowerCase()).join(" ") || "";
       return (
         item.CRId?.toLowerCase().includes(val.toLowerCase()) ||
         item.CRTitle?.toLowerCase().includes(val.toLowerCase()) ||
         item.CRDescription?.toLowerCase().includes(val.toLowerCase()) ||
         item.Severity?.toLowerCase().includes(val.toLowerCase()) ||
         item.ApprovalStatus?.toLowerCase().includes(val.toLowerCase()) ||
+        item.RequestedBySLT?.toLowerCase().includes(val.toLowerCase()) ||
         item.ChangeType?.toLowerCase().includes(val.toLowerCase()) ||
-        assignedToNames.includes(val.toLowerCase()) ||
-        RequestedByNames.includes(val.toLowerCase())
+        assignedToNames.includes(val.toLowerCase())
+        // RequestedByNames.includes(val.toLowerCase())
       );
     });
     setProjectChangeRequestDetails(filtered);
@@ -685,11 +687,16 @@ const ChangeRequest = (props: any) => {
                 field="CRDescription"
                 header="CR description"
               ></Column>
-              <Column
+              {/* <Column
                 sortable
                 field="RequestedBy"
                 header="Requested By"
                 body={renderRequestedByColumn}
+              ></Column> */}
+              <Column
+                sortable
+                field="RequestedBySLT"
+                header="Requested By"
               ></Column>
               <Column
                 sortable

@@ -141,7 +141,8 @@ export interface IChangeRequestDetails {
   ProjectId: string;
   CRTitle: string;
   CRDescription: string;
-  RequestedBy: IPeoplePickerDetails[];
+  // RequestedBy: IPeoplePickerDetails[];
+  RequestedBySLT: string;
   RequestDate: string;
   ChangeType: string;
   Severity: string;
