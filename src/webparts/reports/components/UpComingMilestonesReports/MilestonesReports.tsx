@@ -101,7 +101,6 @@ const MilestonesReports = (props: any) => {
           },
         ],
       });
-      console.log("billingRes", billingRes);
 
       // Build combined report data
       let combinedData: any[] = [];

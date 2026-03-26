@@ -1713,7 +1713,15 @@ const ProjectFormPage = (props: any) => {
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact name</Label>
-                <InputText value={formData?.BillingContactName} disabled />
+                <InputText
+                  value={formData?.BillingContactName}
+                  disabled
+                  style={
+                    errorMessage["BillingContactName"]
+                      ? { border: "2px solid #ff0000" }
+                      : undefined
+                  }
+                />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact email</Label>
@@ -1721,6 +1729,11 @@ const ProjectFormPage = (props: any) => {
                   value={formData?.BillingContactEmail}
                   disabled
                   placeholder="e.g., abc@gmail.com"
+                  style={
+                    errorMessage["BillingContactEmail"]
+                      ? { border: "2px solid #ff0000" }
+                      : undefined
+                  }
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
