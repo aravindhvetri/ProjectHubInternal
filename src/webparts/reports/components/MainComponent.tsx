@@ -64,13 +64,14 @@ const MainComponent = (props: any) => {
   const [masterReportData, setMasterReportData] = React.useState<any[]>([]);
   const [filterValues, setFilterValues] = React.useState({
     ProjectID: "",
-    AccountManager: "",
     AccountName: "",
+    BA: "",
     Status: "",
     Currency: "",
     ProjectName: "",
     ProjectManager: "",
     InvoiceTrigger: "",
+    ProjectStatus: "",
   });
   const [selectedReport, setSelectedReport] = React.useState<string>(
     "Project Billing Status Report",
@@ -82,8 +83,8 @@ const MainComponent = (props: any) => {
       const projectRes: any = await SPServices.SPReadItems({
         Listname: Config.ListNames.CRMProjects,
         Select:
-          "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title",
-        Expand: "ProjectManager,DeliveryHead",
+          "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
+        Expand: "ProjectManager,DeliveryHead,BA",
         Orderby: "Modified",
         Orderbydecorasc: true,
         Filter: [
@@ -117,6 +118,17 @@ const MainComponent = (props: any) => {
         if (project?.ProjectManager) {
           project?.ProjectManager.forEach((user: any) => {
             _ProjectManager.push({
+              id: user?.Id,
+              name: user?.Title,
+              email: user?.EMail,
+            });
+          });
+        }
+
+        let _BA: IPeoplePickerDetails[] = [];
+        if (project?.BA) {
+          project?.BA.forEach((user: any) => {
+            _BA.push({
               id: user?.Id,
               name: user?.Title,
               email: user?.EMail,
@@ -159,9 +171,11 @@ const MainComponent = (props: any) => {
               ProjectName: project.ProjectName,
               AccountName: project.AccountName,
               ClientName: project.ClientName,
+              ProjectStatus: project.Status,
               CustomerDisplayName: project.CustomerDisplayName,
               AccountManager: project.AccountManager,
               ProjectManager: _ProjectManager,
+              BA: _BA,
               DeliveryHead: _DeliverHead,
               BillingModel: project.BillingModel,
               StartDate: project.StartDate,
@@ -186,9 +200,11 @@ const MainComponent = (props: any) => {
           combinedData.push({
             ProjectID: project.ProjectID,
             ProjectName: project.ProjectName,
+            ProjectStatus: project.Status,
             AccountName: project.AccountName,
             AccountManager: project.AccountManager,
             ProjectManager: _ProjectManager,
+            BA: _BA,
             DeliveryHead: _DeliverHead,
             ClientName: project.ClientName,
             CustomerDisplayName: project.CustomerDisplayName,
@@ -262,6 +278,29 @@ const MainComponent = (props: any) => {
                 Currency: tempCurrency,
               }),
             );
+            SPServices.SPGetChoices({
+              Listname: Config.ListNames.CRMProjects,
+              FieldName: "Status",
+            })
+              .then((res: any) => {
+                let ProjectStatus: IBasicDropDown[] = [];
+                if (res?.Choices?.length) {
+                  res?.Choices?.forEach((val: any) => {
+                    ProjectStatus.push({
+                      name: val,
+                    });
+                  });
+                }
+                setinitialCRMBillingsListDropContainer(
+                  (prev: ICRMBillingsListDrop) => ({
+                    ...prev,
+                    ProjectStatus: ProjectStatus,
+                  }),
+                );
+              })
+              .catch((err) => {
+                console.log(err, "Get choice error from CRMProjects list");
+              });
           })
           .catch((err) => {
             console.log(err, "Get choice error from CRMProjects list");
@@ -293,6 +332,17 @@ const MainComponent = (props: any) => {
         {rowData?.DeliveryHead?.length > 1
           ? multiPeoplePickerTemplate(DeliveryHead)
           : peoplePickerTemplate(DeliveryHead[0])}
+      </div>
+    );
+  };
+  //Render BA Column function:
+  const renderBAColumn = (rowData: IProjectData) => {
+    const BAs: IPeoplePickerDetails[] = rowData?.BA;
+    return (
+      <div>
+        {rowData?.BA?.length > 1
+          ? multiPeoplePickerTemplate(BAs)
+          : peoplePickerTemplate(BAs[0])}
       </div>
     );
   };
@@ -372,6 +422,10 @@ const MainComponent = (props: any) => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase(),
         ).join(" ") || "";
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
       const deliveryHeadNames =
         item?.DeliveryHead?.map((dh: IPeoplePickerDetails) =>
           dh.name?.toLowerCase(),
@@ -379,7 +433,6 @@ const MainComponent = (props: any) => {
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
         item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
-        item.AccountManager?.toLowerCase().includes(val.toLowerCase()) ||
         item.AccountName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
         item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
@@ -391,8 +444,10 @@ const MainComponent = (props: any) => {
         item?.Remarks?.toLowerCase().includes(val.toLowerCase()) ||
         // item?.Amount?.toString().toLowerCase().includes(val.toLowerCase()) ||
         item.Currency?.toLowerCase().includes(val.toLowerCase()) ||
+        item?.ProjectStatus?.toLowerCase().includes(val.toLowerCase()) ||
         managerNames.includes(val.toLowerCase()) ||
-        deliveryHeadNames.includes(val.toLowerCase())
+        deliveryHeadNames.includes(val.toLowerCase()) ||
+        baNames.includes(val.toLowerCase())
       );
     });
 
@@ -408,8 +463,8 @@ const MainComponent = (props: any) => {
       { header: "Project ID", key: "ProjectID", width: 20 },
       { header: "Project Name", key: "ProjectName", width: 30 },
       { header: "Client Name", key: "ClientName", width: 25 },
-      { header: "AccountManager", key: "AccountManager", width: 20 },
       { header: "Project Manager", key: "ProjectManager", width: 35 },
+      { header: "APM/BA", key: "BA", width: 35 },
       { header: "Start Date", key: "StartDate", width: 20 },
       { header: "Planned End Date", key: "PlannedEndDate", width: 20 },
       { header: "Milestone", key: "BillingMileStone", width: 25 },
@@ -426,6 +481,10 @@ const MainComponent = (props: any) => {
     items.forEach((item: any) => {
       const projectManagers =
         item?.ProjectManager?.map((pm: any) => pm?.name).join(", ") || "-";
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
 
       const invoiceAmount =
         item?.BillingModel == "Milestone"
@@ -438,8 +497,8 @@ const MainComponent = (props: any) => {
         ProjectID: item.ProjectID || "-",
         ProjectName: item.ProjectName || "-",
         ClientName: item.ClientName || "-",
-        AccountManager: item.AccountManager || "-",
         ProjectManager: projectManagers,
+        BA: baNames,
         StartDate: item.StartDate
           ? moment(item.StartDate).format("DD/MM/YYYY")
           : "-",
@@ -509,12 +568,12 @@ const MainComponent = (props: any) => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase(),
         ).join(" ") || "";
-
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
       const matchProjectID = item?.ProjectID?.toLowerCase().includes(
         filterValues.ProjectID.toLowerCase(),
-      );
-      const matchLead = item?.AccountManager?.toLowerCase().includes(
-        filterValues.AccountManager.toLowerCase(),
       );
       const matchAccount = item?.ClientName?.toLowerCase().includes(
         filterValues.AccountName.toLowerCase(),
@@ -526,11 +585,17 @@ const MainComponent = (props: any) => {
         ? (Config.statusLabelMap[item?.Status] || item?.Status) ===
           filterValues.Status
         : true;
+      const matchProjectStatus = filterValues.ProjectStatus
+        ? item?.ProjectStatus === filterValues.ProjectStatus
+        : true;
       const matchCurrency = filterValues.Currency
         ? item?.Currency === filterValues.Currency
         : true;
       const matchProjectManager = filterValues.ProjectManager
         ? managerNames.includes(filterValues.ProjectManager.toLowerCase())
+        : true;
+      const matchBA = filterValues.BA
+        ? baNames.includes(filterValues.BA.toLowerCase())
         : true;
       const matchInvoiceTrigger =
         filterValues.InvoiceTrigger === "" ||
@@ -541,12 +606,13 @@ const MainComponent = (props: any) => {
 
       return (
         matchProjectID &&
-        matchLead &&
+        matchBA &&
         matchAccount &&
         matchProjectName &&
         matchStatus &&
         matchCurrency &&
         matchProjectManager &&
+        matchProjectStatus &&
         matchInvoiceTrigger
       );
     });
@@ -560,11 +626,15 @@ const MainComponent = (props: any) => {
           item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
             pm.name?.toLowerCase(),
           ).join(" ") || "";
+        const baNames =
+          item?.BA?.map((ba: IPeoplePickerDetails) =>
+            ba.name?.toLowerCase(),
+          ).join(" ") || "";
+        const matchProjectStatus = item?.ProjectStatus?.toLowerCase().includes(
+          searchVal.toLowerCase(),
+        );
         return (
           item.ProjectID?.toLowerCase().includes(searchVal.toLowerCase()) ||
-          item.AccountManager?.toLowerCase().includes(
-            searchVal.toLowerCase(),
-          ) ||
           item.AccountName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.ClientName?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.CustomerDisplayName?.toLowerCase().includes(
@@ -581,7 +651,9 @@ const MainComponent = (props: any) => {
             .toLowerCase()
             .includes(searchVal.toLowerCase()) ||
           item.Currency?.toLowerCase().includes(searchVal.toLowerCase()) ||
-          managerNames.includes(searchVal.toLowerCase())
+          managerNames.includes(searchVal.toLowerCase()) ||
+          baNames.includes(searchVal.toLowerCase()) ||
+          matchProjectStatus
         );
       });
       setReportData(filteredSearch);
@@ -735,13 +807,11 @@ const MainComponent = (props: any) => {
                 />
               </div>
               <div className={styles.filterField}>
-                <label>Account manager</label>
+                <label>APM/BA</label>
                 <InputText
-                  value={filterValues?.AccountManager}
-                  onChange={(e) =>
-                    handleFilterChange("AccountManager", e.target.value)
-                  }
-                  placeholder="Enter here"
+                  value={filterValues?.BA}
+                  onChange={(e) => handleFilterChange("BA", e.target.value)}
+                  placeholder="Enter APM/BA name"
                 />
               </div>
               <div className={styles.filterField}>
@@ -755,7 +825,21 @@ const MainComponent = (props: any) => {
                 />
               </div>
               <div className={`${styles.filterField} dropdown`}>
-                <label>Status</label>
+                <label>Project status</label>
+                <Dropdown
+                  options={initialCRMBillingsListDropContainer?.ProjectStatus}
+                  optionLabel="name"
+                  placeholder="Select a project status"
+                  value={initialCRMBillingsListDropContainer?.ProjectStatus.find(
+                    (item) => item.name === filterValues?.ProjectStatus,
+                  )}
+                  onChange={(e) =>
+                    handleFilterChange("ProjectStatus", e.value?.name)
+                  }
+                />
+              </div>
+              <div className={`${styles.filterField} dropdown`}>
+                <label>Invoice status</label>
                 <Dropdown
                   options={initialCRMBillingsListDropContainer?.Status}
                   optionLabel="name"
@@ -808,13 +892,14 @@ const MainComponent = (props: any) => {
                     setSearchVal("");
                     setFilterValues({
                       ProjectID: "",
-                      AccountManager: "",
+                      BA: "",
                       AccountName: "",
                       Status: "",
                       Currency: "",
                       ProjectName: "",
                       ProjectManager: "",
                       InvoiceTrigger: "",
+                      ProjectStatus: "",
                     });
                   }}
                 />
@@ -835,7 +920,7 @@ const MainComponent = (props: any) => {
               value={reportData}
               paginator
               rows={10}
-              tableStyle={{ minWidth: "150rem" }}
+              tableStyle={{ minWidth: "156rem" }}
             >
               <Column sortable field="ProjectID" header="Project Id"></Column>
               <Column
@@ -846,14 +931,15 @@ const MainComponent = (props: any) => {
               <Column sortable field="ClientName" header="Client Name"></Column>
               <Column
                 sortable
-                field="AccountManager"
-                header="Account manager"
-              ></Column>
-              <Column
-                sortable
                 field="ProjectManager"
                 header="Project Manager"
                 body={renderProjectManagersColumn}
+              ></Column>
+              <Column
+                sortable
+                field="BA"
+                header="APM/BA"
+                body={renderBAColumn}
               ></Column>
               <Column
                 sortable
@@ -940,8 +1026,13 @@ const MainComponent = (props: any) => {
               ></Column>
               <Column
                 sortable
+                field="ProjectStatus"
+                header="Project status"
+              ></Column>
+              <Column
+                sortable
                 field="Status"
-                header="Status"
+                header="Invoice status"
                 body={renderStatus}
               ></Column>
               <Column

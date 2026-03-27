@@ -49,6 +49,7 @@ const MilestonesReports = (props: any) => {
   const [filterBar, setFilterBar] = React.useState<boolean>(true);
   const [filterValues, setFilterValues] = React.useState({
     ProjectID: "",
+    BA: "",
     AccountName: "",
     ProjectName: "",
     ProjectManager: "",
@@ -74,8 +75,9 @@ const MilestonesReports = (props: any) => {
     try {
       const projectRes: any = await SPServices.SPReadItems({
         Listname: Config.ListNames.CRMProjects,
-        Select: "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title",
-        Expand: "ProjectManager",
+        Select:
+          "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,BA/Id,BA/EMail,BA/Title",
+        Expand: "ProjectManager,BA",
         Orderby: "Modified",
         Orderbydecorasc: true,
         Filter: [
@@ -115,6 +117,16 @@ const MilestonesReports = (props: any) => {
             });
           });
         }
+        let _BA: IPeoplePickerDetails[] = [];
+        if (project?.BA) {
+          project?.BA.forEach((user: any) => {
+            _BA.push({
+              id: user?.Id,
+              name: user?.Title,
+              email: user?.EMail,
+            });
+          });
+        }
 
         const relatedBillings = billingRes.filter(
           (bill: any) => bill.ProjectId == project.ID,
@@ -131,6 +143,7 @@ const MilestonesReports = (props: any) => {
               CustomerDisplayName: project.CustomerDisplayName,
               ProjectManager: _ProjectManager,
               BillingModel: project.BillingModel,
+              BA: _BA,
               StartDate: project.StartDate,
               PlannedEndDate: project.PlannedEndDate,
               Remarks: project.Remarks || "",
@@ -155,6 +168,7 @@ const MilestonesReports = (props: any) => {
             CustomerDisplayName: project.CustomerDisplayName,
             AccountName: project.AccountName,
             ProjectManager: _ProjectManager,
+            BA: _BA,
             BillingModel: project.BillingModel,
             StartDate: project.StartDate,
             PlannedEndDate: project.PlannedEndDate,
@@ -221,6 +235,17 @@ const MilestonesReports = (props: any) => {
         {rowData?.ProjectManager?.length > 1
           ? multiPeoplePickerTemplate(projectManagers)
           : peoplePickerTemplate(projectManagers[0])}
+      </div>
+    );
+  };
+  //Render BA Column function:
+  const renderBAColumn = (rowData: IProjectData) => {
+    const BAs: IPeoplePickerDetails[] = rowData?.BA;
+    return (
+      <div>
+        {rowData?.BA?.length > 1
+          ? multiPeoplePickerTemplate(BAs)
+          : peoplePickerTemplate(BAs[0])}
       </div>
     );
   };
@@ -415,6 +440,10 @@ const MilestonesReports = (props: any) => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase(),
         ).join(" ") || "";
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
         item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
@@ -423,7 +452,8 @@ const MilestonesReports = (props: any) => {
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
         item?.Remarks?.toLowerCase().includes(val.toLowerCase()) ||
         item?.Amount?.toString().toLowerCase().includes(val.toLowerCase()) ||
-        managerNames.includes(val.toLowerCase())
+        managerNames.includes(val.toLowerCase()) ||
+        baNames.includes(val.toLowerCase())
       );
     });
 
@@ -437,6 +467,10 @@ const MilestonesReports = (props: any) => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase(),
         ).join(" ") || "";
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
 
       const matchProjectID = item?.ProjectID?.toLowerCase().includes(
         filterValues.ProjectID.toLowerCase(),
@@ -449,6 +483,9 @@ const MilestonesReports = (props: any) => {
       );
       const matchProjectManager = filterValues.ProjectManager
         ? managerNames.includes(filterValues.ProjectManager.toLowerCase())
+        : true;
+      const matchBA = filterValues.BA
+        ? baNames.includes(filterValues.BA.toLowerCase())
         : true;
       const matchInvoiceTrigger =
         filterValues.InvoiceTrigger === "" ||
@@ -481,6 +518,7 @@ const MilestonesReports = (props: any) => {
         matchAccount &&
         matchProjectName &&
         matchProjectManager &&
+        matchBA &&
         matchInvoiceTrigger &&
         matchBillingModel &&
         matchDueStatus
@@ -496,6 +534,10 @@ const MilestonesReports = (props: any) => {
           item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
             pm.name?.toLowerCase(),
           ).join(" ") || "";
+        const baNames =
+          item?.BA?.map((ba: IPeoplePickerDetails) =>
+            ba.name?.toLowerCase(),
+          ).join(" ") || "";
         return (
           item.ProjectID?.toLowerCase().includes(searchVal.toLowerCase()) ||
           item.ClientName?.toLowerCase().includes(searchVal.toLowerCase()) ||
@@ -509,7 +551,8 @@ const MilestonesReports = (props: any) => {
           item?.Amount?.toString()
             .toLowerCase()
             .includes(searchVal.toLowerCase()) ||
-          managerNames.includes(searchVal.toLowerCase())
+          managerNames.includes(searchVal.toLowerCase()) ||
+          baNames.includes(searchVal.toLowerCase())
         );
       });
       setFilteredData(filteredSearch);
@@ -601,6 +644,14 @@ const MilestonesReports = (props: any) => {
             />
           </div>
           <div className={styles.filterField}>
+            <label>APM/BA</label>
+            <InputText
+              value={filterValues?.BA}
+              onChange={(e) => handleFilterChange("BA", e.target.value)}
+              placeholder="Enter APM/BA name"
+            />
+          </div>
+          <div className={styles.filterField}>
             <label>Client name</label>
             <InputText
               value={filterValues?.AccountName}
@@ -660,6 +711,7 @@ const MilestonesReports = (props: any) => {
                 setSearchVal("");
                 setFilterValues({
                   ProjectID: "",
+                  BA: "",
                   AccountName: "",
                   ProjectName: "",
                   ProjectManager: "",
@@ -683,7 +735,7 @@ const MilestonesReports = (props: any) => {
                     }`}
       >
         <DataTable
-          tableStyle={{ minWidth: "120rem" }}
+          tableStyle={{ minWidth: "124rem" }}
           value={filteredData}
           paginator
           rows={10}
@@ -696,6 +748,12 @@ const MilestonesReports = (props: any) => {
             field="ProjectManager"
             header="Project Manager"
             body={renderProjectManagersColumn}
+          ></Column>
+          <Column
+            sortable
+            field="BA"
+            header="APM/BA"
+            body={renderBAColumn}
           ></Column>
           <Column sortable field="BillingModel" header="Billing Model" />
           <Column
