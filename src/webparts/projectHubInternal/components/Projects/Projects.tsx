@@ -105,6 +105,7 @@ const Projects = (props: IProps): JSX.Element => {
     CustomerDisplayName: "",
     AccountManager: "",
     AccountName: "",
+    BA: "",
     ProjectStatus: "",
     BillingModel: "",
     Status: "",
@@ -454,6 +455,18 @@ const Projects = (props: IProps): JSX.Element => {
     );
   };
 
+  //Render APM/BA Column function:
+  const renderAPMBAColumn = (rowData: IProjectData) => {
+    const BAs: IPeoplePickerDetails[] = rowData?.BA;
+    return (
+      <div>
+        {rowData?.BA?.length > 1
+          ? multiPeoplePickerTemplate(BAs)
+          : peoplePickerTemplate(BAs[0])}
+      </div>
+    );
+  };
+
   //Render Account Manager Column function:
   // const renderAccountManagerColumn = (rowData: IProjectData) => {
   //   return <div>{rowData?.AccountManager ? rowData?.AccountManager : "-"}</div>;
@@ -520,6 +533,10 @@ const Projects = (props: IProps): JSX.Element => {
         item?.ProjectManager?.map((pm: IPeoplePickerDetails) =>
           pm.name?.toLowerCase(),
         ).join(" ") || "";
+      const baNames =
+        item?.BA?.map((ba: IPeoplePickerDetails) =>
+          ba.name?.toLowerCase(),
+        ).join(" ") || "";
 
       const matchCustomerName =
         item?.CustomerDisplayName?.toLowerCase().includes(
@@ -544,6 +561,9 @@ const Projects = (props: IProps): JSX.Element => {
       const matchProjectManager = filterValues.ProjectManager
         ? managerNames.includes(filterValues.ProjectManager.toLowerCase())
         : true;
+      const matchBA = filterValues.BA
+        ? baNames.includes(filterValues.BA.toLowerCase())
+        : true;
       const matchUpwork =
         filterValues.Upwork === "" || filterValues.Upwork === null
           ? true
@@ -553,6 +573,7 @@ const Projects = (props: IProps): JSX.Element => {
       return (
         matchCustomerName &&
         matchLead &&
+        matchBA &&
         matchAccount &&
         matchStatus &&
         matchBilling &&
@@ -579,6 +600,8 @@ const Projects = (props: IProps): JSX.Element => {
         "";
       const deliveryHeadNames =
         item?.DeliveryHead?.map((dh) => dh.name?.toLowerCase()).join(" ") || "";
+      const baNames =
+        item?.BA?.map((ba) => ba.name?.toLowerCase()).join(" ") || "";
       return (
         item.ProjectID?.toLowerCase().includes(val.toLowerCase()) ||
         item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
@@ -590,7 +613,8 @@ const Projects = (props: IProps): JSX.Element => {
         item?.Status?.toLowerCase().includes(val.toLowerCase()) ||
         item.BillingModel?.toLowerCase().includes(val.toLowerCase()) ||
         managerNames.includes(val.toLowerCase()) ||
-        deliveryHeadNames.includes(val.toLowerCase())
+        deliveryHeadNames.includes(val.toLowerCase()) ||
+        baNames.includes(val.toLowerCase())
       );
     });
     setProjectDetails(filtered);
@@ -833,6 +857,7 @@ const Projects = (props: IProps): JSX.Element => {
                       CustomerDisplayName: "",
                       AccountManager: "",
                       AccountName: "",
+                      BA: "",
                       ProjectStatus: "",
                       Status: "",
                       BillingModel: "",
@@ -935,7 +960,14 @@ const Projects = (props: IProps): JSX.Element => {
                   placeholder="Enter project manager name"
                 />
               </div>
-
+              <div className={styles.filterField}>
+                <label>BA</label>
+                <InputText
+                  value={filterValues?.BA}
+                  onChange={(e) => handleFilterChange("BA", e.target.value)}
+                  placeholder="Enter BA name"
+                />
+              </div>
               <div className={`${styles.filterField} dropdown`}>
                 <label>Approval status</label>
                 <Dropdown
@@ -999,6 +1031,7 @@ const Projects = (props: IProps): JSX.Element => {
                     setFilterValues({
                       CustomerDisplayName: "",
                       AccountManager: "",
+                      BA: "",
                       AccountName: "",
                       ProjectStatus: "",
                       Status: "",
@@ -1018,6 +1051,7 @@ const Projects = (props: IProps): JSX.Element => {
               ${ScreenWidth >= 1536 ? "data_table_1536" : "data_table_1396"}`}
           >
             <DataTable
+              tableStyle={{ minWidth: "104rem" }}
               value={projectDetails}
               paginator={projectDetails && projectDetails?.length > 8}
               rows={8}
@@ -1033,108 +1067,6 @@ const Projects = (props: IProps): JSX.Element => {
               }}
               emptyMessage={<p className={styles.noData}>No data !!!</p>}
             >
-              <Column
-                style={{ width: "8%" }}
-                sortable
-                field="ProjectID"
-                header="Project id"
-              />
-              <Column
-                style={{ width: "14%" }}
-                sortable
-                field="ProjectName"
-                header="Project name"
-              ></Column>
-              <Column
-                style={{ width: "11%" }}
-                sortable
-                field="ClientName"
-                header="Account name"
-              ></Column>
-              {/* <Column
-                style={{ width: "12%" }}
-                sortable
-                field="AccountManager"
-                header="Account manager"
-                body={renderAccountManagerColumn}
-              ></Column> */}
-              <Column
-                style={{ width: "12%" }}
-                sortable
-                field="CustomerDisplayName"
-                header="Client name"
-              ></Column>
-              <Column
-                style={{ width: "12%" }}
-                sortable
-                field="ProjectManager"
-                header="Project manager"
-                body={renderManagersColumn}
-              ></Column>
-              <Column
-                style={{ width: "10%" }}
-                sortable
-                field="DeliveryHead"
-                header="Delivery head"
-                body={renderDeliveryHeadsColumn}
-              ></Column>
-              {/* <Column
-                sortable
-                field="StartDate"
-                header="Start date"
-                body={(rowData) => {
-                  return (
-                    <div>
-                      {rowData?.StartDate
-                        ? moment(rowData?.StartDate).format("DD/MM/YYYY")
-                        : ""}
-                    </div>
-                  );
-                }}
-              ></Column> */}
-              {/* <Column
-                sortable
-                field="PlannedEndDate"
-                header="End date"
-                body={(rowData) => {
-                  return (
-                    <div>
-                      {rowData?.PlannedEndDate
-                        ? moment(rowData?.PlannedEndDate).format("DD/MM/YYYY")
-                        : ""}
-                    </div>
-                  );
-                }}
-              ></Column> */}
-              <Column
-                style={{ width: "11%" }}
-                sortable
-                field="ProjectStatus"
-                header="Approval status"
-                body={(rowData) => renderStatus(rowData)}
-              ></Column>
-              <Column
-                style={{ width: "10%" }}
-                sortable
-                field="Status"
-                header="Project status"
-              ></Column>
-              <Column
-                style={{ width: "10%" }}
-                sortable
-                field="BillingModel"
-                header="Billing model"
-              ></Column>
-              <Column
-                style={{ width: "8%" }}
-                sortable
-                field="UpWork"
-                header="Upwork"
-                body={UpworkTemplate}
-              />
-              {/* <Column sortable field="Budget" header="Budget"></Column>
-              <Column sortable field="Hours" header="Hours"></Column>
-              <Column sortable field="Currency" header="Currency"></Column> */}
               <Column
                 field="Action"
                 header="Actions"
@@ -1224,6 +1156,115 @@ const Projects = (props: IProps): JSX.Element => {
                   );
                 }}
               ></Column>
+              <Column
+                style={{ width: "8rem" }}
+                sortable
+                field="ProjectID"
+                header="Project id"
+              />
+              <Column
+                style={{ width: "14rem" }}
+                sortable
+                field="ProjectName"
+                header="Project name"
+              ></Column>
+              <Column
+                style={{ width: "11rem" }}
+                sortable
+                field="ClientName"
+                header="Account name"
+              ></Column>
+              {/* <Column
+                style={{ width: "12%" }}
+                sortable
+                field="AccountManager"
+                header="Account manager"
+                body={renderAccountManagerColumn}
+              ></Column> */}
+              <Column
+                style={{ width: "12rem" }}
+                sortable
+                field="CustomerDisplayName"
+                header="Client name"
+              ></Column>
+              <Column
+                style={{ width: "12rem" }}
+                sortable
+                field="ProjectManager"
+                header="Project manager"
+                body={renderManagersColumn}
+              ></Column>
+              <Column
+                style={{ width: "12rem" }}
+                sortable
+                field="BA"
+                header="APM/BA"
+                body={renderAPMBAColumn}
+              ></Column>
+              <Column
+                style={{ width: "11rem" }}
+                sortable
+                field="DeliveryHead"
+                header="Delivery head"
+                body={renderDeliveryHeadsColumn}
+              ></Column>
+              {/* <Column
+                sortable
+                field="StartDate"
+                header="Start date"
+                body={(rowData) => {
+                  return (
+                    <div>
+                      {rowData?.StartDate
+                        ? moment(rowData?.StartDate).format("DD/MM/YYYY")
+                        : ""}
+                    </div>
+                  );
+                }}
+              ></Column> */}
+              {/* <Column
+                sortable
+                field="PlannedEndDate"
+                header="End date"
+                body={(rowData) => {
+                  return (
+                    <div>
+                      {rowData?.PlannedEndDate
+                        ? moment(rowData?.PlannedEndDate).format("DD/MM/YYYY")
+                        : ""}
+                    </div>
+                  );
+                }}
+              ></Column> */}
+              <Column
+                style={{ width: "12rem" }}
+                sortable
+                field="ProjectStatus"
+                header="Approval status"
+                body={(rowData) => renderStatus(rowData)}
+              ></Column>
+              <Column
+                style={{ width: "11rem" }}
+                sortable
+                field="Status"
+                header="Project status"
+              ></Column>
+              <Column
+                style={{ width: "11rem" }}
+                sortable
+                field="BillingModel"
+                header="Billing model"
+              ></Column>
+              <Column
+                style={{ width: "8rem" }}
+                sortable
+                field="UpWork"
+                header="Upwork"
+                body={UpworkTemplate}
+              />
+              {/* <Column sortable field="Budget" header="Budget"></Column>
+              <Column sortable field="Hours" header="Hours"></Column>
+              <Column sortable field="Currency" header="Currency"></Column> */}
             </DataTable>
           </div>
         </div>

@@ -72,6 +72,7 @@ export interface ICRMProjectCRsListDrop {
 
 export interface ICRMBillingsListDrop {
   Status: IBasicDropDown[];
+  ProjectStatus: IBasicDropDown[];
   Currency: IBasicDropDown[];
   BillingFrequency: IBasicDropDown[];
 }

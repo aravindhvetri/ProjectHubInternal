@@ -104,6 +104,7 @@ export namespace Config {
   //CRMBillings List DropDown:
   export const CRMBillingsDropDown: ICRMBillingsListDrop = {
     Status: [],
+    ProjectStatus: [],
     Currency: [],
     BillingFrequency: [],
   };
