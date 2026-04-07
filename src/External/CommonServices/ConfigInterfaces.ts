@@ -18,6 +18,7 @@ interface IList {
   DealSheetConfigurationList: string;
   ProjectConfiguration: string;
   EmployeePartialAllocation: string;
+  InternalRegistry: string;
 }
 interface ILibrary {
   ProjectFiles: string;
