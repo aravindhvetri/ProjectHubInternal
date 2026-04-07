@@ -1051,7 +1051,7 @@ const Projects = (props: IProps): JSX.Element => {
               ${ScreenWidth >= 1536 ? "data_table_1536" : "data_table_1396"}`}
           >
             <DataTable
-              tableStyle={{ minWidth: "104rem" }}
+              tableStyle={{ minWidth: "110rem" }}
               value={projectDetails}
               paginator={projectDetails && projectDetails?.length > 8}
               rows={8}
@@ -1156,6 +1156,23 @@ const Projects = (props: IProps): JSX.Element => {
                   );
                 }}
               ></Column>
+              <Column
+                sortable
+                field="ProjectSize"
+                header="Project size"
+                style={{ width: "10rem" }}
+                body={(rowData) => {
+                  return (
+                    <div>
+                      {rowData?.Hours >= 0 && rowData?.Hours <= 100 && "Small"}
+                      {rowData?.Hours > 100 &&
+                        rowData?.Hours <= 500 &&
+                        "Medium"}
+                      {rowData?.Hours > 500 && "High"}
+                    </div>
+                  );
+                }}
+              />
               <Column
                 style={{ width: "8rem" }}
                 sortable

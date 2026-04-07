@@ -49,6 +49,7 @@ export namespace Config {
     DealSheetConfigurationList: "DealSheetConfigurationList",
     ProjectConfiguration: "ProjectConfiguration",
     EmployeePartialAllocation: "EmployeePartialAllocation",
+    InternalRegistry: "InternalRegistry",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -393,6 +394,10 @@ export namespace Config {
       { header: "Project ID", key: "ProjectID", width: 20 },
       { header: "Employee ID", key: "EmployeeID", width: 20 },
       { header: "Employee Name", key: "EmployeeName", width: 25 },
+      { header: "Designation", key: "Designation", width: 20 },
+      { header: "Function", key: "Function", width: 20 },
+      { header: "Reporting Manager", key: "ReportingManager", width: 20 },
+      { header: "Technology", key: "Technology", width: 20 },
     ];
 
     // Dynamic month columns
@@ -415,6 +420,10 @@ export namespace Config {
         ProjectID: item.ProjectID || "-",
         EmployeeID: item.EmployeeID || "-",
         EmployeeName: item.EmployeeName || "-",
+        Designation: item.Designation || "-",
+        Function: item.Function || "-",
+        ReportingManager: item.ReportingManager || "-",
+        Technology: item.Technology || "-",
       };
 
       monthColumns.forEach((month: any) => {

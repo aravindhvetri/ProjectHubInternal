@@ -26,11 +26,6 @@ import { Button } from "primereact/button";
 import { PrimaryButton } from "@fluentui/react";
 import { Label } from "@fluentui/react";
 import Loading from "../../../../External/Loader/Loading";
-import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface"; // NEW
-import {
-  multiPeoplePickerTemplate,
-  peoplePickerTemplate,
-} from "../../../../External/CommonServices/CommonTemplate";
 
 // ─── MonthPicker (unchanged) ──────────────────────────────────────────────────
 
@@ -136,51 +131,45 @@ const BenchReport = () => {
   const [loader, setLoader] = React.useState<boolean>(false);
   const [filterVisible, setFilterVisible] = useState<boolean>(false);
 
-  // ── Existing temp states (unchanged) ──────────────────────────────────────
+  // ── Temp filter states ────────────────────────────────────────────────────
   const [tempEmpFilter, setTempEmpFilter] = useState<string>("");
   const [tempEmpTags, setTempEmpTags] = useState<string[]>([]);
   const [tempFrom, setTempFrom] = useState<string>("");
   const [tempTo, setTempTo] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
-  // NEW — CRM filter temps
-  const [tempClientName, setTempClientName] = useState<string>("");
-  const [tempProjectName, setTempProjectName] = useState<string>("");
-  const [tempCustomerDisplayName, setTempCustomerDisplayName] =
-    useState<string>("");
-  const [tempProjectManager, setTempProjectManager] = useState<string>("");
-  const [tempDeliveryHead, setTempDeliveryHead] = useState<string>("");
+  // InternalRegistry filter temps
+  const [tempDesignation, setTempDesignation] = useState<string>("");
+  const [tempFunction, setTempFunction] = useState<string>("");
+  const [tempReportingManager, setTempReportingManager] = useState<string>("");
+  const [tempTechnology, setTempTechnology] = useState<string>("");
 
-  // ── Existing applied states (unchanged) ───────────────────────────────────
+  // ── Applied filter states ─────────────────────────────────────────────────
   const [appliedEmpTags, setAppliedEmpTags] = useState<string[]>([]);
   const [appliedFrom, setAppliedFrom] = useState<string>("");
   const [appliedTo, setAppliedTo] = useState<string>("");
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
-  // NEW — CRM applied filters
-  const [appliedClientName, setAppliedClientName] = useState<string>("");
-  const [appliedProjectName, setAppliedProjectName] = useState<string>("");
-  const [appliedCustomerDisplayName, setAppliedCustomerDisplayName] =
+  // InternalRegistry applied filters
+  const [appliedDesignation, setAppliedDesignation] = useState<string>("");
+  const [appliedFunction, setAppliedFunction] = useState<string>("");
+  const [appliedReportingManager, setAppliedReportingManager] =
     useState<string>("");
-  const [appliedProjectManager, setAppliedProjectManager] =
-    useState<string>("");
-  const [appliedDeliveryHead, setAppliedDeliveryHead] = useState<string>("");
+  const [appliedTechnology, setAppliedTechnology] = useState<string>("");
 
-  // ── Open modal (NEW CRM temps seeded alongside existing ones) ─────────────
+  // ── Open modal ────────────────────────────────────────────────────────────
   const openFilterModal = () => {
     setTempEmpFilter("");
     setTempEmpTags([...appliedEmpTags]);
     setTempFrom(appliedFrom);
     setTempTo(appliedTo);
     setDateError("");
-    // NEW
-    setTempClientName(appliedClientName);
-    setTempProjectName(appliedProjectName);
-    setTempCustomerDisplayName(appliedCustomerDisplayName);
-    setTempProjectManager(appliedProjectManager);
-    setTempDeliveryHead(appliedDeliveryHead);
+    setTempDesignation(appliedDesignation);
+    setTempFunction(appliedFunction);
+    setTempReportingManager(appliedReportingManager);
+    setTempTechnology(appliedTechnology);
     setFilterVisible(true);
   };
 
-  // ── Date change handlers (unchanged) ──────────────────────────────────────
+  // ── Date change handlers (unchanged) ─────────────────────────────────────
   const handleTempFromChange = (val: string) => {
     setTempFrom(val);
     if (
@@ -223,23 +212,21 @@ const BenchReport = () => {
     setTempEmpTags((prev) => prev.filter((t) => t !== tag));
   };
 
-  // ── Apply filters (NEW CRM params appended; existing logic word-for-word) ──
+  // ── Apply filters ─────────────────────────────────────────────────────────
   const applyFilters = (
     data: any[],
     empTags: string[],
     from: string,
     to: string,
     allCols: string[],
-    // NEW params — all default to "" so existing call-sites stay valid
-    clientName: string = "",
-    projectName: string = "",
-    customerDisplayName: string = "",
-    projectManager: string = "",
-    deliveryHead: string = "",
+    designation: string = "",
+    func: string = "",
+    reportingManager: string = "",
+    technology: string = "",
   ) => {
     let filtered = data;
 
-    // Existing employee tag filter (unchanged)
+    // Employee tag filter (unchanged)
     if (empTags.length > 0) {
       filtered = data.filter((item) =>
         empTags.some(
@@ -250,54 +237,43 @@ const BenchReport = () => {
       );
     }
 
-    // NEW — ClientName (Account name)
-    if (clientName.trim()) {
+    // InternalRegistry — Designation
+    if (designation.trim()) {
       filtered = filtered.filter((item) =>
-        item.ClientName?.toLowerCase().includes(
-          clientName.trim().toLowerCase(),
+        item.Designation?.toLowerCase().includes(
+          designation.trim().toLowerCase(),
         ),
       );
     }
 
-    // NEW — ProjectName
-    if (projectName.trim()) {
+    // InternalRegistry — Function
+    if (func.trim()) {
       filtered = filtered.filter((item) =>
-        item.ProjectName?.toLowerCase().includes(
-          projectName.trim().toLowerCase(),
+        item.Function?.toLowerCase().includes(func.trim().toLowerCase()),
+      );
+    }
+
+    // InternalRegistry — ReportingManager
+    if (reportingManager.trim()) {
+      filtered = filtered.filter((item) =>
+        item.ReportingManager?.toLowerCase().includes(
+          reportingManager.trim().toLowerCase(),
         ),
       );
     }
 
-    // NEW — CustomerDisplayName (Client name)
-    if (customerDisplayName.trim()) {
+    // InternalRegistry — Technology
+    if (technology.trim()) {
       filtered = filtered.filter((item) =>
-        item.CustomerDisplayName?.toLowerCase().includes(
-          customerDisplayName.trim().toLowerCase(),
-        ),
-      );
-    }
-
-    // NEW — ProjectManager (match by Title of any PM in the people array)
-    if (projectManager.trim()) {
-      filtered = filtered.filter((item) =>
-        item.ProjectManager?.some((pm: IPeoplePickerDetails) =>
-          pm.name?.toLowerCase().includes(projectManager.trim().toLowerCase()),
-        ),
-      );
-    }
-
-    // NEW — DeliveryHead (match by Title of any DH in the people array)
-    if (deliveryHead.trim()) {
-      filtered = filtered.filter((item) =>
-        item.DeliveryHead?.some((dh: IPeoplePickerDetails) =>
-          dh.name?.toLowerCase().includes(deliveryHead.trim().toLowerCase()),
+        item.Technology?.toLowerCase().includes(
+          technology.trim().toLowerCase(),
         ),
       );
     }
 
     setEmployeePartialAllocationData([...filtered]);
 
-    // Existing column-slicing logic (unchanged)
+    // Column-slicing logic (unchanged)
     if (from && to) {
       const fromD = Config.colKeyToDate(from).getTime();
       const toD = Config.colKeyToDate(to).getTime();
@@ -312,7 +288,7 @@ const BenchReport = () => {
     }
   };
 
-  // ── Save (NEW CRM fields committed alongside existing ones) ───────────────
+  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = () => {
     if (dateError) return;
     const finalTags =
@@ -322,39 +298,34 @@ const BenchReport = () => {
     setAppliedEmpTags(finalTags);
     setAppliedFrom(tempFrom);
     setAppliedTo(tempTo);
-    // NEW
-    setAppliedClientName(tempClientName);
-    setAppliedProjectName(tempProjectName);
-    setAppliedCustomerDisplayName(tempCustomerDisplayName);
-    setAppliedProjectManager(tempProjectManager);
-    setAppliedDeliveryHead(tempDeliveryHead);
+    setAppliedDesignation(tempDesignation);
+    setAppliedFunction(tempFunction);
+    setAppliedReportingManager(tempReportingManager);
+    setAppliedTechnology(tempTechnology);
     applyFilters(
       masterEmployeePartialAllocationData,
       finalTags,
       tempFrom,
       tempTo,
       monthColumns,
-      tempClientName,
-      tempProjectName,
-      tempCustomerDisplayName,
-      tempProjectManager,
-      tempDeliveryHead,
+      tempDesignation,
+      tempFunction,
+      tempReportingManager,
+      tempTechnology,
     );
     setFilterVisible(false);
   };
 
-  // ── Cancel (NEW CRM fields reset to "" alongside existing reset) ──────────
+  // ── Cancel ────────────────────────────────────────────────────────────────
   const handleCancel = () => {
     const { from, to } = Config.getDefaultFromTo(monthColumns);
     setAppliedEmpTags([]);
     setAppliedFrom(from);
     setAppliedTo(to);
-    // NEW
-    setAppliedClientName("");
-    setAppliedProjectName("");
-    setAppliedCustomerDisplayName("");
-    setAppliedProjectManager("");
-    setAppliedDeliveryHead("");
+    setAppliedDesignation("");
+    setAppliedFunction("");
+    setAppliedReportingManager("");
+    setAppliedTechnology("");
     applyFilters(
       masterEmployeePartialAllocationData,
       [],
@@ -365,7 +336,7 @@ const BenchReport = () => {
     setFilterVisible(false);
   };
 
-  // ── Global search (NEW fields included) ───────────────────────────────────
+  // ── Global search ─────────────────────────────────────────────────────────
   const searchPartialAllocationDetails = (val: string) => {
     setSearchVal(val);
     setEmployeePartialAllocationData(
@@ -373,16 +344,10 @@ const BenchReport = () => {
         (item) =>
           item.EmployeeID?.toLowerCase().includes(val.toLowerCase()) ||
           item.EmployeeName?.toLowerCase().includes(val.toLowerCase()) ||
-          // NEW
-          item.ProjectName?.toLowerCase().includes(val.toLowerCase()) ||
-          item.ClientName?.toLowerCase().includes(val.toLowerCase()) ||
-          item.CustomerDisplayName?.toLowerCase().includes(val.toLowerCase()) ||
-          item.ProjectManager?.some((pm: IPeoplePickerDetails) =>
-            pm.name?.toLowerCase().includes(val.toLowerCase()),
-          ) ||
-          item.DeliveryHead?.some((dh: IPeoplePickerDetails) =>
-            dh.name?.toLowerCase().includes(val.toLowerCase()),
-          ),
+          item.Designation?.toLowerCase().includes(val.toLowerCase()) ||
+          item.Function?.toLowerCase().includes(val.toLowerCase()) ||
+          item.ReportingManager?.toLowerCase().includes(val.toLowerCase()) ||
+          item.Technology?.toLowerCase().includes(val.toLowerCase()),
       ),
     );
   };
@@ -393,9 +358,9 @@ const BenchReport = () => {
     getEmployeePartialAllocationDatas();
   }, []);
 
-  // ── getEmployeePartialAllocationDatas
+  // ── getEmployeePartialAllocationDatas ─────────────────────────────────────
   const getEmployeePartialAllocationDatas = () => {
-    // Step 1: fetch CRMProjects with expanded ProjectManager and DeliveryHead
+    // Step 1: fetch CRMProjects (data-fetching logic unchanged as requested)
     SPServices.SPReadItems({
       Listname: Config.ListNames.CRMProjects,
       Select:
@@ -412,169 +377,163 @@ const BenchReport = () => {
       ],
     })
       .then((crmRes: any) => {
-        // Build a lookup map keyed by ProjectID string
-        const crmMap: Record<
-          string,
-          {
-            ClientName: string;
-            CustomerDisplayName: string;
-            ProjectName: string;
-            ProjectManager: IPeoplePickerDetails[];
-            DeliveryHead: IPeoplePickerDetails[];
-          }
-        > = {};
-
+        // Build CRM lookup map (unchanged — kept for existing data-fetching logic)
+        const crmMap: Record<string, any> = {};
         crmRes?.forEach((crmItem: any) => {
           const pid: string = crmItem?.ProjectID || "";
           if (!pid) return;
-
-          // Build ProjectManager array — same pattern as Projects.tsx
-          const _ProjectManager: IPeoplePickerDetails[] = [];
-          if (crmItem?.ProjectManager) {
-            crmItem.ProjectManager.forEach((user: any) => {
-              _ProjectManager.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-
-          // Build DeliveryHead array — same pattern as Projects.tsx
-          const _DeliveryHead: IPeoplePickerDetails[] = [];
-          if (crmItem?.DeliveryHead) {
-            crmItem.DeliveryHead.forEach((user: any) => {
-              _DeliveryHead.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-
-          crmMap[pid] = {
-            ClientName: crmItem?.ClientName || "",
-            CustomerDisplayName: crmItem?.CustomerDisplayName || "",
-            ProjectName: crmItem?.ProjectName || "",
-            ProjectManager: _ProjectManager,
-            DeliveryHead: _DeliveryHead,
-          };
+          crmMap[pid] = crmItem;
         });
 
-        // Step 2: original EmployeePartialAllocation query (unchanged)
+        // Step 2: fetch InternalRegistry
         SPServices.SPReadItems({
-          Listname: Config.ListNames.EmployeePartialAllocation,
+          Listname: Config.ListNames.InternalRegistry,
           Select: "*",
           Orderby: "Modified",
           Orderbydecorasc: true,
-          Filter: [
-            {
-              FilterKey: "ProjectID",
-              Operator: "eq",
-              FilterValue: Config.benchProject,
-            },
-          ],
+          Filter: [],
         })
-          .then((res: any) => {
-            let allocationData: any[] = [];
-            res.forEach((items: any) => {
-              const monthValues = [
-                items?.April2025,
-                items?.Maymonth2025,
-                items?.June2025,
-                items?.July2025,
-                items?.August2025,
-                items?.September2025,
-                items?.Octobar2025,
-                items?.November2025,
-                items?.December2025,
-                items?.January2026,
-                items?.February2026,
-                items?.March2026,
-                items?.April2026,
-                items?.Maymonth2026,
-                items?.June2026,
-              ];
-              // check if any value is non-zero
-              const hasAllocation = monthValues.some(
-                (val) => Number(val) !== 0,
-              );
-              if (!hasAllocation) return; // skip record
+          .then((registryRes: any) => {
+            // Build InternalRegistry lookup map keyed by EmpID
+            const registryMap: Record<
+              string,
+              {
+                Designation: string;
+                Function: string;
+                ReportingManager: string;
+                Technology: string;
+              }
+            > = {};
 
-              // Look up CRM data for this record's ProjectID
-              const crmData = crmMap[items?.ProjectID] || {
-                ClientName: "",
-                CustomerDisplayName: "",
-                ProjectName: "",
-                ProjectManager: [],
-                DeliveryHead: [],
+            registryRes?.forEach((regItem: any) => {
+              const empId: string = regItem?.EmpID || "";
+              if (!empId) return;
+              registryMap[empId] = {
+                Designation: regItem?.Designation || "",
+                Function: regItem?.Function || "",
+                ReportingManager: regItem?.ReportingManager || "",
+                Technology: regItem?.Technology || "",
               };
-
-              allocationData.push({
-                // Existing fields (unchanged — exact same property names & values)
-                ID: items?.ID,
-                EmployeeID: items?.EmployeeID || "",
-                EmployeeName: items?.EmployeeName || "",
-                ProjectID: items?.ProjectID || "",
-                APR2025: (items?.April2025 || 0) * 100,
-                MAY2025: (items?.Maymonth2025 || 0) * 100,
-                JUN2025: (items?.June2025 || 0) * 100,
-                JUL2025: (items?.July2025 || 0) * 100,
-                AUG2025: (items?.August2025 || 0) * 100,
-                SEP2025: (items?.September2025 || 0) * 100,
-                OCT2025: (items?.Octobar2025 || 0) * 100,
-                NOV2025: (items?.November2025 || 0) * 100,
-                DEC2025: (items?.December2025 || 0) * 100,
-                JAN2026: (items?.January2026 || 0) * 100,
-                FEB2026: (items?.February2026 || 0) * 100,
-                MAR2026: (items?.March2026 || 0) * 100,
-                APR2026: (items?.April2026 || 0) * 100,
-                MAY2026: (items?.Maymonth2026 || 0) * 100,
-                JUN2026: (items?.June2026 || 0) * 100,
-                // NEW — CRMProjects enriched fields
-                ClientName: crmData.ClientName,
-                CustomerDisplayName: crmData.CustomerDisplayName,
-                ProjectName: crmData.ProjectName,
-                ProjectManager: crmData.ProjectManager,
-                DeliveryHead: crmData.DeliveryHead,
-              });
             });
 
-            // Existing column-key extraction — NEW fields added to exclusion list
-            let cols: string[] = [];
-            if (allocationData.length > 0) {
-              cols = Object.keys(allocationData[0]).filter(
-                (key) =>
-                  ![
-                    "ID",
-                    "EmployeeID",
-                    "EmployeeName",
-                    "ProjectID",
-                    // NEW exclusions so these don't become month columns
-                    "ClientName",
-                    "CustomerDisplayName",
-                    "ProjectName",
-                    "ProjectManager",
-                    "DeliveryHead",
-                  ].includes(key),
-              );
-              setMonthColumns(cols);
-            }
+            // Step 3: original EmployeePartialAllocation query (unchanged)
+            SPServices.SPReadItems({
+              Listname: Config.ListNames.EmployeePartialAllocation,
+              Select: "*",
+              Orderby: "Modified",
+              Orderbydecorasc: true,
+              Filter: [
+                {
+                  FilterKey: "ProjectID",
+                  Operator: "eq",
+                  FilterValue: Config.benchProject,
+                },
+              ],
+            })
+              .then((res: any) => {
+                let allocationData: any[] = [];
+                res.forEach((items: any) => {
+                  const monthValues = [
+                    items?.April2025,
+                    items?.Maymonth2025,
+                    items?.June2025,
+                    items?.July2025,
+                    items?.August2025,
+                    items?.September2025,
+                    items?.Octobar2025,
+                    items?.November2025,
+                    items?.December2025,
+                    items?.January2026,
+                    items?.February2026,
+                    items?.March2026,
+                    items?.April2026,
+                    items?.Maymonth2026,
+                    items?.June2026,
+                  ];
+                  // check if any value is non-zero (unchanged)
+                  const hasAllocation = monthValues.some(
+                    (val) => Number(val) !== 0,
+                  );
+                  if (!hasAllocation) return;
 
-            setMasterEmployeePartialAllocationData([...allocationData]);
+                  // Look up InternalRegistry data by EmployeeID === EmpID
+                  const regData = registryMap[items?.EmployeeID] || {
+                    Designation: "",
+                    Function: "",
+                    ReportingManager: "",
+                    Technology: "",
+                  };
 
-            // Existing default From/To logic (unchanged)
-            const { from, to } = Config.getDefaultFromTo(cols);
-            setAppliedFrom(from);
-            setAppliedTo(to);
-            setTempFrom(from);
-            setTempTo(to);
-            applyFilters(allocationData, [], from, to, cols);
-            setLoader(false);
+                  allocationData.push({
+                    // Existing fields (unchanged)
+                    ID: items?.ID,
+                    EmployeeID: items?.EmployeeID || "",
+                    EmployeeName: items?.EmployeeName || "",
+                    ProjectID: items?.ProjectID || "",
+                    APR2025: (items?.April2025 || 0) * 100,
+                    MAY2025: (items?.Maymonth2025 || 0) * 100,
+                    JUN2025: (items?.June2025 || 0) * 100,
+                    JUL2025: (items?.July2025 || 0) * 100,
+                    AUG2025: (items?.August2025 || 0) * 100,
+                    SEP2025: (items?.September2025 || 0) * 100,
+                    OCT2025: (items?.Octobar2025 || 0) * 100,
+                    NOV2025: (items?.November2025 || 0) * 100,
+                    DEC2025: (items?.December2025 || 0) * 100,
+                    JAN2026: (items?.January2026 || 0) * 100,
+                    FEB2026: (items?.February2026 || 0) * 100,
+                    MAR2026: (items?.March2026 || 0) * 100,
+                    APR2026: (items?.April2026 || 0) * 100,
+                    MAY2026: (items?.Maymonth2026 || 0) * 100,
+                    JUN2026: (items?.June2026 || 0) * 100,
+                    // InternalRegistry enriched fields
+                    Designation: regData.Designation,
+                    Function: regData.Function,
+                    ReportingManager: regData.ReportingManager,
+                    Technology: regData.Technology,
+                  });
+                });
+
+                // Column-key extraction — InternalRegistry fields added to exclusion list
+                let cols: string[] = [];
+                if (allocationData.length > 0) {
+                  cols = Object.keys(allocationData[0]).filter(
+                    (key) =>
+                      ![
+                        "ID",
+                        "EmployeeID",
+                        "EmployeeName",
+                        "ProjectID",
+                        "Designation",
+                        "Function",
+                        "ReportingManager",
+                        "Technology",
+                      ].includes(key),
+                  );
+                  setMonthColumns(cols);
+                }
+
+                setMasterEmployeePartialAllocationData([...allocationData]);
+
+                // Default From/To logic (unchanged)
+                const { from, to } = Config.getDefaultFromTo(cols);
+                setAppliedFrom(from);
+                setAppliedTo(to);
+                setTempFrom(from);
+                setTempTo(to);
+                applyFilters(allocationData, [], from, to, cols);
+                setLoader(false);
+              })
+              .catch((err) => {
+                console.log(
+                  "Get Employee partial allocation datas err in BenchReport.tsx",
+                  err,
+                );
+                setLoader(false);
+              });
           })
           .catch((err) => {
             console.log(
-              "Get Employee partial allocation datas err in BenchReport.tsx",
+              "Get InternalRegistry data err in BenchReport.tsx",
               err,
             );
             setLoader(false);
@@ -586,43 +545,17 @@ const BenchReport = () => {
       });
   };
 
-  // ── isFilterActive (NEW CRM fields included in check) ────────────────────
+  // ── isFilterActive ────────────────────────────────────────────────────────
   const isFilterActive = (): boolean => {
     const { from, to } = Config.getDefaultFromTo(monthColumns);
     return (
       appliedEmpTags.length > 0 ||
       appliedFrom !== from ||
       appliedTo !== to ||
-      // NEW
-      !!appliedClientName ||
-      !!appliedProjectName ||
-      !!appliedCustomerDisplayName ||
-      !!appliedProjectManager ||
-      !!appliedDeliveryHead
-    );
-  };
-
-  //Render Manager Column function:
-  const renderManagersColumn = (rowData: any) => {
-    const projectManagers: IPeoplePickerDetails[] = rowData?.ProjectManager;
-    return (
-      <div>
-        {rowData?.ProjectManager?.length > 1
-          ? multiPeoplePickerTemplate(projectManagers)
-          : peoplePickerTemplate(projectManagers[0])}
-      </div>
-    );
-  };
-
-  //Render Delivery Heads Column function:
-  const renderDeliveryHeadsColumn = (rowData: any) => {
-    const deliveryHeads: IPeoplePickerDetails[] = rowData?.DeliveryHead;
-    return (
-      <div>
-        {rowData?.DeliveryHead?.length > 1
-          ? multiPeoplePickerTemplate(deliveryHeads)
-          : peoplePickerTemplate(deliveryHeads[0])}
-      </div>
+      !!appliedDesignation ||
+      !!appliedFunction ||
+      !!appliedReportingManager ||
+      !!appliedTechnology
     );
   };
 
@@ -660,7 +593,7 @@ const BenchReport = () => {
             }`}
           >
             <div className={styles.filterBar}>
-              <h2>Bench Report</h2>
+              <h2>Bench Report ({Config.benchProject})</h2>
             </div>
             <div className={styles.filterBtns}>
               <div className="all_search">
@@ -736,7 +669,7 @@ const BenchReport = () => {
             </div>
           </div>
 
-          {/* ── Table — NEW CRM columns inserted after Project id ── */}
+          {/* ── Data Table ── */}
           <div
             className={`${styles.tableData} ${
               ScreenWidth >= 1536 ? "data_table_1536" : "data_table_1396"
@@ -750,47 +683,7 @@ const BenchReport = () => {
               rows={8}
               emptyMessage={<p className={styles.noData}>No data !!!</p>}
             >
-              {/* Existing column (unchanged) */}
-              <Column
-                sortable
-                field="ProjectID"
-                header="Project id"
-                style={{ minWidth: "120px" }}
-              />
-              {/* NEW CRM columns */}
-              <Column
-                sortable
-                field="ProjectName"
-                header="Project name"
-                style={{ minWidth: "150px" }}
-              />
-              <Column
-                sortable
-                field="ClientName"
-                header="Account name"
-                style={{ minWidth: "140px" }}
-              />
-              <Column
-                sortable
-                field="CustomerDisplayName"
-                header="Client name"
-                style={{ minWidth: "140px" }}
-              />
-              <Column
-                sortable
-                field="ProjectManager"
-                header="Project manager"
-                style={{ minWidth: "150px" }}
-                body={renderManagersColumn}
-              />
-              <Column
-                sortable
-                field="DeliveryHead"
-                header="Delivery head"
-                style={{ minWidth: "150px" }}
-                body={renderDeliveryHeadsColumn}
-              />
-              {/* Existing columns (unchanged) */}
+              {/* Employee columns */}
               <Column
                 sortable
                 field="EmployeeID"
@@ -803,6 +696,32 @@ const BenchReport = () => {
                 header="Employee name"
                 style={{ minWidth: "146px" }}
               />
+              {/* InternalRegistry columns */}
+              <Column
+                sortable
+                field="Designation"
+                header="Designation"
+                style={{ minWidth: "150px" }}
+              />
+              <Column
+                sortable
+                field="Function"
+                header="Function"
+                style={{ minWidth: "140px" }}
+              />
+              <Column
+                sortable
+                field="ReportingManager"
+                header="Reporting manager"
+                style={{ minWidth: "170px" }}
+              />
+              <Column
+                sortable
+                field="Technology"
+                header="Technology"
+                style={{ minWidth: "140px" }}
+              />
+              {/* Month columns */}
               {(visibleColumns.length ? visibleColumns : monthColumns).map(
                 (month: string) => (
                   <Column
@@ -868,36 +787,23 @@ const BenchReport = () => {
 
               <div className={styles.modalDivider} />
 
-              {/* NEW — CRMProjects filters, two per row */}
+              {/* InternalRegistry filters */}
               <div className={styles.filterFieldRow}>
                 <div className={styles.filterFieldHalf}>
-                  <Label className={styles.filterFieldLabel}>
-                    Project name
-                  </Label>
+                  <Label className={styles.filterFieldLabel}>Designation</Label>
                   <InputText
-                    value={tempProjectName}
-                    onChange={(e) => setTempProjectName(e.target.value)}
-                    placeholder="Enter project name"
+                    value={tempDesignation}
+                    onChange={(e) => setTempDesignation(e.target.value)}
+                    placeholder="Enter designation"
                     className={styles.filterFieldInput}
                   />
                 </div>
                 <div className={styles.filterFieldHalf}>
-                  <Label className={styles.filterFieldLabel}>
-                    Account name
-                  </Label>
+                  <Label className={styles.filterFieldLabel}>Function</Label>
                   <InputText
-                    value={tempClientName}
-                    onChange={(e) => setTempClientName(e.target.value)}
-                    placeholder="Enter account name"
-                    className={styles.filterFieldInput}
-                  />
-                </div>
-                <div className={styles.filterFieldHalf}>
-                  <Label className={styles.filterFieldLabel}>Client name</Label>
-                  <InputText
-                    value={tempCustomerDisplayName}
-                    onChange={(e) => setTempCustomerDisplayName(e.target.value)}
-                    placeholder="Enter client name"
+                    value={tempFunction}
+                    onChange={(e) => setTempFunction(e.target.value)}
+                    placeholder="Enter function"
                     className={styles.filterFieldInput}
                   />
                 </div>
@@ -906,27 +812,26 @@ const BenchReport = () => {
               <div className={styles.filterFieldRow}>
                 <div className={styles.filterFieldHalf}>
                   <Label className={styles.filterFieldLabel}>
-                    Project manager
+                    Reporting manager
                   </Label>
                   <InputText
-                    value={tempProjectManager}
-                    onChange={(e) => setTempProjectManager(e.target.value)}
-                    placeholder="Enter manager name"
+                    value={tempReportingManager}
+                    onChange={(e) => setTempReportingManager(e.target.value)}
+                    placeholder="Enter reporting manager"
                     className={styles.filterFieldInput}
                   />
                 </div>
                 <div className={styles.filterFieldHalf}>
-                  <Label className={styles.filterFieldLabel}>
-                    Delivery head
-                  </Label>
+                  <Label className={styles.filterFieldLabel}>Technology</Label>
                   <InputText
-                    value={tempDeliveryHead}
-                    onChange={(e) => setTempDeliveryHead(e.target.value)}
-                    placeholder="Enter delivery head name"
+                    value={tempTechnology}
+                    onChange={(e) => setTempTechnology(e.target.value)}
+                    placeholder="Enter technology"
                     className={styles.filterFieldInput}
                   />
                 </div>
               </div>
+
               <div className={styles.modalDivider} />
 
               {/* Month pickers (unchanged) */}
