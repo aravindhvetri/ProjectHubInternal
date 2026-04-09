@@ -90,8 +90,8 @@ const Risk = (props: any) => {
     SPServices.SPReadItems({
       Listname: Config.ListNames.CRMProjectRisks,
       Select:
-        "*,IdentifiedBy/Title,IdentifiedBy/ID,IdentifiedBy/EMail,AssignedTo/Title,AssignedTo/ID,AssignedTo/EMail,Project/Id,Project/ProjectName,Project/ProjectID",
-      Expand: "IdentifiedBy,AssignedTo,Project",
+        "*,IdentifiedBy/Title,IdentifiedBy/ID,IdentifiedBy/EMail,AssignedTo/Title,AssignedTo/ID,AssignedTo/EMail,Project/Id,Project/ProjectName,Project/ProjectID,Author/Id,Author/Title,Author/EMail,Editor/Id,Editor/EMail,Editor/Title",
+      Expand: "IdentifiedBy,AssignedTo,Project,Author,Editor",
       Orderby: "Modified",
       Orderbydecorasc: true,
       Filter: [
@@ -130,6 +130,22 @@ const Risk = (props: any) => {
               });
             });
           }
+          let _CreatedBy: IPeoplePickerDetails[] = [];
+          if (items?.Author) {
+            _CreatedBy.push({
+              id: items?.Author?.Id,
+              name: items?.Author?.Title,
+              email: items?.Author?.EMail,
+            });
+          }
+          let _LastUpdatedBy: IPeoplePickerDetails[] = [];
+          if (items?.Editor) {
+            _LastUpdatedBy.push({
+              id: items?.Editor?.Id,
+              name: items?.Editor?.Title,
+              email: items?.Editor?.EMail,
+            });
+          }
           projectRisksData.push({
             ID: items?.ID,
             ProjectID: items?.Project?.ProjectID,
@@ -148,6 +164,8 @@ const Risk = (props: any) => {
             ResidualRisk: items?.ResidualRisk,
             Remarks: items?.Remarks,
             DateClosed: items?.DateClosed,
+            CreatedBy: _CreatedBy,
+            LastUpdatedBy: _LastUpdatedBy,
             RiskOccurred: items?.RiskOccurred,
             IdentifiedBy: _IdentifiedBy,
             AssignedTo: _AssignedTo,

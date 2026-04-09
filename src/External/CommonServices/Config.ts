@@ -50,6 +50,8 @@ export namespace Config {
     ProjectConfiguration: "ProjectConfiguration",
     EmployeePartialAllocation: "EmployeePartialAllocation",
     InternalRegistry: "InternalRegistry",
+    FPMMaster: "FPMMaster",
+    ProjectChecklist: "CRMProjectChecklist",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -163,6 +165,8 @@ export namespace Config {
     Remarks: "",
     DateClosed: "",
     RiskOccurred: "",
+    CreatedBy: [],
+    LastUpdatedBy: [],
     IdentifiedBy: [],
     AssignedTo: [],
   };

@@ -45,6 +45,7 @@ import { FileUpload } from "primereact/fileupload";
 import Loading from "../../../../External/Loader/Loading";
 import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
+import FPM from "../FPM/FPM";
 
 const ProjectFormPage = (props: any) => {
   // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
@@ -60,6 +61,11 @@ const ProjectFormPage = (props: any) => {
   const [configurationData, setConfigurationData] = useState<any>({
     ID: null,
     TotalExecutionCost: null,
+  });
+  const [fpmData, setFPMData] = useState<any>({
+    ID: null,
+    FPMProfit: "",
+    FPMMargin: "",
   });
   const [formData, setFormData] = useState<any>({});
   const [customers, setCustomers] = useState<any[]>([]);
@@ -80,6 +86,7 @@ const ProjectFormPage = (props: any) => {
     boolean: false,
     id: null,
   });
+  const [showFPM, setShowFPM] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isDelModal, setIsDelModal] = React.useState<IApproveModal>({
@@ -154,6 +161,7 @@ const ProjectFormPage = (props: any) => {
         getCustomerDisplayName();
         getChangeRequestDetails();
         getConfigurationData();
+        getFPMData();
         props?.setLoader(false);
       })
       .catch((err) => {
@@ -190,6 +198,35 @@ const ProjectFormPage = (props: any) => {
       });
   };
 
+  //Get FPM Data:
+  const getFPMData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.FPMMaster,
+      Select: "*",
+      Filter: [
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.data?.ID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        if (res && res.length > 0) {
+          const item = res[0];
+          setFPMData({
+            ID: item.ID,
+            FPMProfit: item.FPMProfit,
+            FPMMargin: item.FPMMargin,
+          });
+        }
+      })
+      .catch((err) => {
+        console.log("Error fetching FPM data", err);
+      });
+  };
+
+  //Get Customer Display Name:
   const getCustomerDisplayName = async () => {
     try {
       const web = Web(TARGET_SITE_URL);
@@ -508,10 +545,21 @@ const ProjectFormPage = (props: any) => {
       DealMargin: dealMargin,
     }));
   }, [
-    formData?.Budget,
+    // formData?.Budget,
     configurationData?.TotalExecutionCost,
     configurationData?.USDRupees,
   ]);
+
+  //Set FPM Data to formData:
+  React.useEffect(() => {
+    if (fpmData?.ID) {
+      setFormData((prev: any) => ({
+        ...prev,
+        FPMProfit: fpmData.FPMProfit,
+        FPMMargin: fpmData.FPMMargin,
+      }));
+    }
+  }, [fpmData, formData?.Budget]);
 
   //LoadExistingFiles in Library:
   const LoadExistingFiles = async (id: number) => {
@@ -560,7 +608,6 @@ const ProjectFormPage = (props: any) => {
       case "Currency":
       case "Budget":
       case "ProjectName":
-      case "BillingContactName":
         return value && typeof value === "string" && value.trim() !== "";
 
       case "Hours":
@@ -577,13 +624,6 @@ const ProjectFormPage = (props: any) => {
           }
         }
         return false;
-
-      case "BillingContactEmail": {
-        // Email regex
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return value && typeof value === "string" && emailRegex.test(value);
-      }
-
       case "StartDate":
       case "PlannedEndDate":
         return value !== null && value !== undefined;
@@ -612,10 +652,6 @@ const ProjectFormPage = (props: any) => {
     if (!isValidField("BillingModel", formData?.BillingModel))
       errors.BillingModel = true;
     if (!isValidField("Currency", formData?.Currency)) errors.Currency = true;
-    if (!isValidField("BillingContactName", formData?.BillingContactName))
-      errors.BillingContactName = true;
-    if (!isValidField("BillingContactEmail", formData?.BillingContactEmail))
-      errors.BillingContactEmail = true;
     if (!isValidField("Hours", formData?.Hours)) errors.Hours = true;
 
     //Start/End Date validation
@@ -1231,10 +1267,10 @@ const ProjectFormPage = (props: any) => {
         BillingContactMobile: "",
         BillingAddress: "",
         Remarks: "",
-        FPMProfit: "",
-        FPMMargin: "",
-        DealProfit: "",
-        DealMargin: "",
+        FPMProfit: "0",
+        FPMMargin: "0",
+        DealProfit: "0",
+        DealMargin: "0",
       });
     }
   }, []);
@@ -1713,15 +1749,7 @@ const ProjectFormPage = (props: any) => {
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact name</Label>
-                <InputText
-                  value={formData?.BillingContactName}
-                  disabled
-                  style={
-                    errorMessage["BillingContactName"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
-                  }
-                />
+                <InputText value={formData?.BillingContactName} disabled />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>Billing contact email</Label>
@@ -1729,11 +1757,6 @@ const ProjectFormPage = (props: any) => {
                   value={formData?.BillingContactEmail}
                   disabled
                   placeholder="e.g., abc@gmail.com"
-                  style={
-                    errorMessage["BillingContactEmail"]
-                      ? { border: "2px solid #ff0000" }
-                      : undefined
-                  }
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
@@ -1815,42 +1838,29 @@ const ProjectFormPage = (props: any) => {
                   <div
                     className={`${selfComponentStyles.allField} dealFormPage`}
                   >
-                    <Label>FPM profit</Label>
-                    <InputText
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow digits
-                        if (/^\d*$/.test(value)) {
-                          handleOnChange("FPMProfit", value);
-                        }
-                      }}
-                      value={formData?.FPMProfit}
-                      disabled={
-                        props?.isView ||
-                        (isProjectManager && !isPMOUser) ||
-                        (isDeliveryHead && !isPMOUser)
-                      }
-                    />
+                    <div className={selfComponentStyles.fpmProfitWrapper}>
+                      <Label>FPM profit</Label>
+                      {props?.data?.Budget > 0 &&
+                        (props?.isView || props?.isEdit) && (
+                          <>
+                            <img
+                              src={require("../../../../External/Images/file.png")}
+                              onClick={() => setShowFPM(true)}
+                            ></img>
+
+                            {/* <img
+                              src={require("../../../../External/Images/recycling.png")}
+                            ></img> */}
+                          </>
+                        )}
+                    </div>
+                    <InputText value={formData?.FPMProfit} disabled />
                   </div>
                   <div
                     className={`${selfComponentStyles.allField} dealFormPage`}
                   >
                     <Label>FPM margin(%)</Label>
-                    <InputText
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow digits
-                        if (/^\d*$/.test(value)) {
-                          handleOnChange("FPMMargin", value);
-                        }
-                      }}
-                      value={formData?.FPMMargin}
-                      disabled={
-                        props?.isView ||
-                        (isProjectManager && !isPMOUser) ||
-                        (isDeliveryHead && !isPMOUser)
-                      }
-                    />
+                    <InputText value={formData?.FPMMargin} disabled />
                   </div>
                 </>
               )}
@@ -2171,6 +2181,24 @@ const ProjectFormPage = (props: any) => {
           </PrimaryButton>
         </div>
       </Dialog>
+
+      {/* FPM Dialog */}
+      <Dialog
+        visible={showFPM}
+        style={{ width: "64vw" }}
+        onHide={() => setShowFPM(false)}
+        modal
+        showHeader={false}
+      >
+        {/* FPM Component */}
+        <FPM
+          getFPMDataCallback={getFPMData}
+          projectDatas={props?.data}
+          setShowFPM={setShowFPM}
+          Notify={props.Notify}
+        />
+      </Dialog>
+
       {/*Approve button modal popup........................................................*/}
       <Modal isOpen={isDelModal.isOpen} styles={Config.delModalStyle}>
         <p className={styles.delmsg}>
