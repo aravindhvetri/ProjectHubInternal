@@ -19,6 +19,8 @@ interface IList {
   ProjectConfiguration: string;
   EmployeePartialAllocation: string;
   InternalRegistry: string;
+  FPMMaster: string;
+  ProjectChecklist: string;
 }
 interface ILibrary {
   ProjectFiles: string;

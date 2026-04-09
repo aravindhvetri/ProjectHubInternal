@@ -133,6 +133,8 @@ export interface IProjectRisksDetails {
   DateClosed: string;
   RiskOccurred: string;
   IdentifiedBy: IPeoplePickerDetails[];
+  CreatedBy: IPeoplePickerDetails[];
+  LastUpdatedBy: IPeoplePickerDetails[];
   AssignedTo: IPeoplePickerDetails[];
 }
 

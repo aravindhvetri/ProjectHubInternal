@@ -34,7 +34,7 @@ const RiskForm = (props: any) => {
   const [loader, setLoader] = useState<boolean>(false);
   const [formData, setFormData] = useState<any>({});
   const [errorMessage, setErrorMessage] = useState<{ [key: string]: boolean }>(
-    {}
+    {},
   );
 
   //handleOnChange function:
@@ -67,7 +67,7 @@ const RiskForm = (props: any) => {
   //Get selected emails from people picker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
-    fallbackUsers: any[]
+    fallbackUsers: any[],
   ) => {
     let selectedEmails: string[] = [];
     if (selectedUsers?.length) {
@@ -106,6 +106,8 @@ const RiskForm = (props: any) => {
       DateClosed: null,
       RiskOccurred: "",
       IdentifiedBy: [],
+      CreatedBy: [],
+      LastUpdatedBy: [],
       AssignedTo: [],
     });
     props?.refresh();
@@ -163,13 +165,13 @@ const RiskForm = (props: any) => {
   const generateJson = () => {
     setLoader(true);
     let IdentifiedByIds: number[] = JSON.parse(
-      JSON.stringify(formData?.IdentifiedBy)
+      JSON.stringify(formData?.IdentifiedBy),
     )
       .map((user: IPeoplePickerDetails) => user.id)
       .sort((a: any, b: any) => a - b);
 
     let AssignedToIds: number[] = JSON.parse(
-      JSON.stringify(formData?.AssignedTo)
+      JSON.stringify(formData?.AssignedTo),
     )
       .map((user: any) => (user.id ? user?.id : user?.key))
       .sort((a: any, b: any) => a - b);
@@ -182,7 +184,7 @@ const RiskForm = (props: any) => {
       RiskDescription: formData?.RiskDescription,
       DateIdentified: SPServices.GetDateFormat(formData?.DateIdentified),
       TargetResolutionDate: SPServices.GetDateFormat(
-        formData?.TargetResolutionDate
+        formData?.TargetResolutionDate,
       ),
       IdentifiedById: { results: IdentifiedByIds },
       AssignedToId: { results: AssignedToIds },
@@ -213,7 +215,7 @@ const RiskForm = (props: any) => {
       .get()
       .then((res: any) => {
         const projectShortId = extractProjectShortId(
-          props?.projectData?.ProjectID
+          props?.projectData?.ProjectID,
         );
         const format = `RISK-${projectShortId}-`;
 
@@ -223,7 +225,7 @@ const RiskForm = (props: any) => {
         handleAdd({ ...json, RiskID: newId });
       })
       .catch((err) =>
-        console.log(err, "generate Risk Id Error in RiskForm.tsx")
+        console.log(err, "generate Risk Id Error in RiskForm.tsx"),
       );
   };
 
@@ -242,7 +244,7 @@ const RiskForm = (props: any) => {
   const GenerateFormatId = (
     prefix: string,
     lastId: string,
-    padLength: number
+    padLength: number,
   ): string => {
     let lastNumber = 0;
     if (lastId) {
@@ -271,7 +273,7 @@ const RiskForm = (props: any) => {
       .catch((err) => {
         console.log(
           err,
-          "data update error to CRMProjectRisks List in RiskForm.tsx"
+          "data update error to CRMProjectRisks List in RiskForm.tsx",
         );
       });
   };
@@ -290,7 +292,7 @@ const RiskForm = (props: any) => {
       .catch((err) => {
         console.log(
           "Add datas to CRMProjectRisks list err in RiskForm.tsx",
-          err
+          err,
         );
       });
   };
@@ -316,6 +318,8 @@ const RiskForm = (props: any) => {
         DateClosed: null,
         RiskOccurred: "",
         IdentifiedBy: [],
+        CreatedBy: [],
+        LastUpdatedBy: [],
         AssignedTo: [],
       });
     }
@@ -340,8 +344,8 @@ const RiskForm = (props: any) => {
               {props?.isAdd
                 ? "Add Risk"
                 : props?.isEdit
-                ? "Edit Risk"
-                : "View Risk"}
+                  ? "Edit Risk"
+                  : "View Risk"}
             </h2>
           </div>
           <div className={styles.riskFormContainer}>
@@ -399,7 +403,7 @@ const RiskForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectsRisksListDropContainer?.RiskCategory.find(
-                  (item: any) => item.name === formData?.RiskCategory
+                  (item: any) => item.name === formData?.RiskCategory,
                 )}
                 onChange={(e) => handleOnChange("RiskCategory", e?.value?.name)}
                 disabled={props?.isView}
@@ -418,7 +422,7 @@ const RiskForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectsRisksListDropContainer?.Impact.find(
-                  (item: any) => item.name === formData?.Impact
+                  (item: any) => item.name === formData?.Impact,
                 )}
                 onChange={(e) => handleOnChange("Impact", e?.value?.name)}
                 disabled={props?.isView}
@@ -456,7 +460,7 @@ const RiskForm = (props: any) => {
                   context={props.spfxContext}
                   defaultSelectedUsers={getSelectedEmails(
                     props?.data?.AssignedTo,
-                    formData?.AssignedTo
+                    formData?.AssignedTo,
                   )}
                   webAbsoluteUrl={
                     props?.spfxContext._pageContext._web.absoluteUrl
@@ -482,7 +486,7 @@ const RiskForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectsRisksListDropContainer?.CurrentStatus.find(
-                  (item: any) => item.name === formData?.CurrentStatus
+                  (item: any) => item.name === formData?.CurrentStatus,
                 )}
                 onChange={(e) => {
                   const newStatus = e?.value?.name;
@@ -559,12 +563,62 @@ const RiskForm = (props: any) => {
                 }
                 optionLabel="name"
                 value={props?.initialCRMProjectsRisksListDropContainer?.RiskOccurred.find(
-                  (item: any) => item.name === formData?.RiskOccurred
+                  (item: any) => item.name === formData?.RiskOccurred,
                 )}
                 onChange={(e) => handleOnChange("RiskOccurred", e?.value?.name)}
                 disabled={props?.isView}
               />
             </div>
+            {!props?.isAdd && (
+              <>
+                <div className={`${styles.riskFormChilds} dealFormPages`}>
+                  <Label>Created by</Label>
+                  <div className={`${styles.textField} ${styles.peoplePicker}`}>
+                    <PeoplePicker
+                      ensureUser
+                      placeholder="Select the Person"
+                      personSelectionLimit={1}
+                      context={props.spfxContext}
+                      defaultSelectedUsers={getSelectedEmails(
+                        props?.data?.CreatedBy,
+                        formData?.CreatedBy,
+                      )}
+                      webAbsoluteUrl={
+                        props?.spfxContext._pageContext._web.absoluteUrl
+                      }
+                      resolveDelay={100}
+                      onChange={(items: any[]) =>
+                        handleOnChange("CreatedBy", items)
+                      }
+                      disabled
+                    />
+                  </div>
+                </div>
+                <div className={`${styles.riskFormChilds} dealFormPages`}>
+                  <Label>Last updated by</Label>
+                  <div className={`${styles.textField} ${styles.peoplePicker}`}>
+                    <PeoplePicker
+                      ensureUser
+                      placeholder="Select the Person"
+                      personSelectionLimit={1}
+                      context={props.spfxContext}
+                      defaultSelectedUsers={getSelectedEmails(
+                        props?.data?.LastUpdatedBy,
+                        formData?.LastUpdatedBy,
+                      )}
+                      webAbsoluteUrl={
+                        props?.spfxContext._pageContext._web.absoluteUrl
+                      }
+                      resolveDelay={100}
+                      onChange={(items: any[]) =>
+                        handleOnChange("LastUpdatedBy", items)
+                      }
+                      disabled
+                    />
+                  </div>
+                </div>
+              </>
+            )}
             {/* <div className={`${styles.riskFormChilds} dealFormPages`}>
               <Label>Identified by</Label>
               <div className={`${styles.textField} ${styles.peoplePicker}`}>
