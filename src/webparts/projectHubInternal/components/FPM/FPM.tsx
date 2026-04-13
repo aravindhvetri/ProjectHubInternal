@@ -349,12 +349,12 @@ const FPM = (props: any) => {
             {[
               { label: "USD Rate", value: projectConfig.usdRate || 0 },
               {
-                label: "Project Budget",
-                value: props?.projectDatas?.Budget || 0,
-              },
-              {
                 label: "Cost Per Person",
                 value: projectConfig.costPerPerson || 0,
+              },
+              {
+                label: "Project Budget",
+                value: props?.projectDatas?.Budget || 0,
               },
               {
                 label: "Indirect Cost",

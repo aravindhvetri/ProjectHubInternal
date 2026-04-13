@@ -1840,21 +1840,25 @@ const ProjectFormPage = (props: any) => {
                   >
                     <div className={selfComponentStyles.fpmProfitWrapper}>
                       <Label>FPM profit</Label>
+                    </div>
+                    <div className={selfComponentStyles.dealProfitWrapper}>
+                      <div className={selfComponentStyles.dealProfitInput}>
+                        <InputText value={formData?.FPMProfit} disabled />
+                      </div>
                       {props?.data?.Budget > 0 &&
                         (props?.isView || props?.isEdit) && (
-                          <>
+                          <div>
                             <img
-                              src={require("../../../../External/Images/file.png")}
+                              src={require("../../../../External/Images/fileView.png")}
                               onClick={() => setShowFPM(true)}
                             ></img>
 
                             {/* <img
                               src={require("../../../../External/Images/recycling.png")}
                             ></img> */}
-                          </>
+                          </div>
                         )}
                     </div>
-                    <InputText value={formData?.FPMProfit} disabled />
                   </div>
                   <div
                     className={`${selfComponentStyles.allField} dealFormPage`}
