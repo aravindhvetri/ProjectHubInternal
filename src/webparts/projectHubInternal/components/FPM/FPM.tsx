@@ -20,6 +20,7 @@ import commonStyles from "../CommonStyles/CommonStyle.module.scss";
 import Loading from "../../../../External/Loader/Loading";
 import { PrimaryButton } from "@fluentui/react";
 import projectComponentStyles from "../Projects/Projects.module.scss";
+import { InputText } from "primereact/inputtext";
 
 const FPM = (props: any) => {
   //State:
@@ -37,6 +38,8 @@ const FPM = (props: any) => {
   const [loader, setLoader] = useState<boolean>(false);
   const [monthColumns, setMonthColumns] = React.useState<any[]>([]);
   const [dealConfigData, setDealConfigData] = useState<any>({});
+  const [usdValue, setUsdValue] = useState<number>(0);
+  const [usdError, setUsdError] = useState<boolean>(false);
 
   //Get internal registry full datas:
   const getInternalRegistryDatas = () => {
@@ -71,6 +74,7 @@ const FPM = (props: any) => {
           costPerPerson: Number(costObj?.Value) || 0,
         });
         getDealSheetConfiguration();
+        getFPMMasterData();
       })
       .catch((err) => {
         console.log("ProjectConfiguration error", err);
@@ -100,12 +104,34 @@ const FPM = (props: any) => {
           HSLCosts: data?.HSLCosts || 0,
           MiscContigencyCosts: data?.MiscContigencyCosts || 0,
           IndirectMisCost: data?.IndirectMisCost || 0,
+          USDRupees: data?.USDRupees || 0,
         });
         setLoader(false);
       })
       .catch((err) => {
         console.log("DealSheet config error", err);
       });
+  };
+
+  //Get FPM master data:
+  const getFPMMasterData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.FPMMaster,
+      Select: "*",
+      Filter: [
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.projectDatas?.ID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        if (res.length > 0 && res[0]?.USDRupee) {
+          setUsdValue(Number(res[0].USDRupee));
+        }
+      })
+      .catch((err) => console.log("FPMMaster fetch error", err));
   };
 
   //Get employee partial allocation full datas:
@@ -163,6 +189,20 @@ const FPM = (props: any) => {
           }
         });
 
+        // if (allocationData.length > 0) {
+        //   const keys = Object.keys(allocationData[0]);
+
+        //   const months = keys.filter(
+        //     (key) =>
+        //       key !== "ID" &&
+        //       key !== "EmployeeID" &&
+        //       key !== "EmployeeName" &&
+        //       key !== "ProjectID" &&
+        //       key !== "EmpMonthlyCTCINR",
+        //   );
+
+        //   setMonthColumns(months);
+        // }
         if (allocationData.length > 0) {
           const keys = Object.keys(allocationData[0]);
 
@@ -175,7 +215,12 @@ const FPM = (props: any) => {
               key !== "EmpMonthlyCTCINR",
           );
 
-          setMonthColumns(months);
+          // 🔥 only keep months where at least one row has value > 0
+          const filteredMonths = months.filter((month) =>
+            allocationData.some((row) => (row[month] || 0) !== 0),
+          );
+
+          setMonthColumns(filteredMonths);
         }
 
         setEmployeePartialAllocationData([...allocationData]);
@@ -213,7 +258,7 @@ const FPM = (props: any) => {
       );
 
       const inr = row?.EmpMonthlyCTCINR || 0;
-      const usd = projectConfig.usdRate ? inr / projectConfig.usdRate : 0;
+      const usd = usdValue ? inr / usdValue : 0;
 
       const cost = (allocation / 100) * usd;
 
@@ -233,7 +278,7 @@ const FPM = (props: any) => {
   //Grand TotalCost:
   const grandTotal = React.useMemo(() => {
     return getTotalCost() + (totalExecutionCost || 0);
-  }, [employeePartialAllocationData, projectConfig, dealConfigData]);
+  }, [employeePartialAllocationData, projectConfig, dealConfigData, usdValue]);
 
   //Get Execution Cost:
   const getExecutionCost = () => {
@@ -260,11 +305,23 @@ const FPM = (props: any) => {
 
   //Save FPM Data:
   const saveFPMData = () => {
+    // if (!dealConfigData?.USDRupees) {
+    //   setUsdError(true);
+    //   return;
+    // }
+    // setUsdError(false);
+    if (!usdValue || usdValue === 0) {
+      setUsdError(true);
+      return;
+    }
+    setUsdError(false);
+
     const payload = {
       FPMMargin: grossMargin.toString(),
       FPMProfit: netProfit.toString(),
       AsOnDate: new Date().toISOString(),
       ProjectId: props?.projectDatas?.ID,
+      USDRupee: usdValue,
       Status: "Success",
       Message: "Data added successfully",
     };
@@ -322,6 +379,12 @@ const FPM = (props: any) => {
     }
   }, [internalRegistryData]);
 
+  useEffect(() => {
+    if (!usdValue && dealConfigData?.USDRupees) {
+      setUsdValue(dealConfigData.USDRupees);
+    }
+  }, [dealConfigData]);
+
   return (
     <>
       {loader ? (
@@ -343,11 +406,26 @@ const FPM = (props: any) => {
                 />
               </div>
               <h2>FPM</h2>
+              {usdError && (
+                <span
+                  style={{ color: "red", fontSize: "12px", fontWeight: "500" }}
+                >
+                  Please enter USD value or complete the Deal Sheet
+                </span>
+              )}
             </div>
           </div>
           <div className={styles.summaryContainer}>
+            <div className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>USD Rate</div>
+              <InputText
+                value={usdValue?.toString()}
+                onChange={(e) => setUsdValue(Number(e.target.value))}
+                className={styles.summaryInput}
+              />
+            </div>
+
             {[
-              { label: "USD Rate", value: projectConfig.usdRate || 0 },
               {
                 label: "Cost Per Person",
                 value: projectConfig.costPerPerson || 0,
@@ -389,7 +467,11 @@ const FPM = (props: any) => {
             ))}
           </div>
           <div style={{ marginBottom: "20px" }}>
-            <DataTable value={[dealConfigData]} tableStyle={{ width: "100%" }}>
+            <DataTable
+              key={usdValue}
+              value={[dealConfigData]}
+              tableStyle={{ width: "100%" }}
+            >
               <Column
                 header="Direct Cost (USD $)"
                 body={() => grandTotal.toFixed(2)}
@@ -419,7 +501,11 @@ const FPM = (props: any) => {
               justifyContent: "center",
             }}
           >
-            <DataTable value={[dealConfigData]} tableStyle={{ width: "100%" }}>
+            <DataTable
+              key={usdValue}
+              value={[dealConfigData]}
+              tableStyle={{ width: "100%" }}
+            >
               <Column field="TrainingCost" header="Training Cost" />
               <Column field="HSLCosts" header="HSL Cost" />
               <Column field="MiscContigencyCosts" header="Misc Cost" />
@@ -431,6 +517,7 @@ const FPM = (props: any) => {
           </div>
           <div style={{ padding: "0px" }} className={styles.tableWrapper}>
             <DataTable
+              key={usdValue}
               className="EmployeePartialAllocationDataTable"
               value={employeePartialAllocationData}
               paginator={
@@ -457,9 +544,7 @@ const FPM = (props: any) => {
                 header="Monthly Salary (USD $)"
                 body={(rowData: any) => {
                   const inr = rowData?.EmpMonthlyCTCINR || 0;
-                  const usd = projectConfig.usdRate
-                    ? inr / projectConfig.usdRate
-                    : 0;
+                  const usd = usdValue ? inr / usdValue : 0;
                   return usd.toFixed(2);
                 }}
                 style={{ minWidth: "180px" }}
@@ -507,9 +592,7 @@ const FPM = (props: any) => {
                   );
 
                   const inr = rowData?.EmpMonthlyCTCINR || 0;
-                  const usd = projectConfig.usdRate
-                    ? inr / projectConfig.usdRate
-                    : 0;
+                  const usd = usdValue ? inr / usdValue : 0;
 
                   const cost = (allocation / 100) * usd;
 
