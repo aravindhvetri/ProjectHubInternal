@@ -1410,8 +1410,7 @@ const ProjectFormPage = (props: any) => {
                   disabled={
                     props?.isView ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
                   }
                 />
               </div>
