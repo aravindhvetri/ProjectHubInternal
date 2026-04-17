@@ -67,6 +67,7 @@ const ProjectFormPage = (props: any) => {
     FPMProfit: "",
     FPMMargin: "",
   });
+  const [partialAllocationData, setPartialAllocationData] = useState<any[]>([]);
   const [formData, setFormData] = useState<any>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -162,6 +163,7 @@ const ProjectFormPage = (props: any) => {
         getChangeRequestDetails();
         getConfigurationData();
         getFPMData();
+        getPartialAllocationData();
         props?.setLoader(false);
       })
       .catch((err) => {
@@ -223,6 +225,27 @@ const ProjectFormPage = (props: any) => {
       })
       .catch((err) => {
         console.log("Error fetching FPM data", err);
+      });
+  };
+
+  //Get partial allocation data:
+  const getPartialAllocationData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.EmployeePartialAllocation,
+      Select: "*",
+      Filter: [
+        {
+          FilterKey: "ProjectID",
+          Operator: "eq",
+          FilterValue: `${props?.data?.ProjectID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        setPartialAllocationData(res);
+      })
+      .catch((err) => {
+        console.log("Error fetching partial allocation data", err);
       });
   };
 
