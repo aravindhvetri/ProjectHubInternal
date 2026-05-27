@@ -75,19 +75,6 @@ const PartialAllocation = (props: any) => {
             JUN2026: (items?.June2026 || 0) * 100,
           });
         });
-        // if (allocationData.length > 0) {
-        //   const keys = Object.keys(allocationData[0]);
-
-        //   const months = keys.filter(
-        //     (key) =>
-        //       key !== "ID" &&
-        //       key !== "EmployeeID" &&
-        //       key !== "EmployeeName" &&
-        //       key !== "ProjectID",
-        //   );
-
-        //   setMonthColumns(months);
-        // }
         if (allocationData.length > 0) {
           const keys = Object.keys(allocationData[0]);
 

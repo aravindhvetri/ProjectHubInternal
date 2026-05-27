@@ -52,6 +52,7 @@ export namespace Config {
     InternalRegistry: "InternalRegistry",
     FPMMaster: "FPMMaster",
     ProjectChecklist: "CRMProjectChecklist",
+    EmployeeAllocations: "EmployeeAllocations",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",

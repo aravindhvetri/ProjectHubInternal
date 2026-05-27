@@ -21,6 +21,7 @@ interface IList {
   InternalRegistry: string;
   FPMMaster: string;
   ProjectChecklist: string;
+  EmployeeAllocations: string;
 }
 interface ILibrary {
   ProjectFiles: string;

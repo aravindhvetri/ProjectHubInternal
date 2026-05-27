@@ -21,6 +21,7 @@ import { Config } from "../../../../External/CommonServices/Config";
 import { IPeoplePickerDetails } from "../../../../External/CommonServices/interface";
 import PartialAllocation from "../PartialAllocation/PartialAllocation";
 import Checklist from "../Checklist/Checklist";
+import EmployeeAllocations from "../EmployeeAllocations/EmployeeAllocations";
 
 const ChildTabs = (props: any) => {
   const [activeTab, setActiveTab] = React.useState("");
@@ -128,6 +129,20 @@ const ChildTabs = (props: any) => {
             />
           </div>
         );
+      case "EmployeeAllocations":
+        return (
+          <div className={styles.tabContent}>
+            <EmployeeAllocations
+              Notify={props.Notify}
+              loginUserEmail={props?.loginUserEmail}
+              rowDataID={props?.rowData?.ID}
+              selectedData={props?.rowData}
+              getTabContent={props.getTabContent}
+              setActiveTab={setActiveTab}
+              spfxContext={props.spfxContext}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -183,6 +198,16 @@ const ChildTabs = (props: any) => {
           }`}
           onClick={() => {
             setActiveTab("Checklist");
+            props.getTabContent(true);
+          }}
+        />
+        <Button
+          label="Employee Allocations"
+          className={`${styles.tabButton} ${
+            activeTab === "EmployeeAllocations" ? styles.active : ""
+          }`}
+          onClick={() => {
+            setActiveTab("EmployeeAllocations");
             props.getTabContent(true);
           }}
         />

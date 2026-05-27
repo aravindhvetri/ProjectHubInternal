@@ -806,3 +806,7 @@ h4 {
 .p-dropdown-items-wrapper {
   max-height: 260px !important;
 }
+
+.EmployeeAllocationsDataTable .p-column-header-content {
+  font-size: 12px !important;
+}
