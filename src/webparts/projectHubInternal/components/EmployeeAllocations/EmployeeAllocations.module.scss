@@ -1,120 +1,199 @@
+// ── Theme tokens ──────────────────────────────────────────────
 $ThemePrimeryColor: #00a99d;
+$ThemePrimeryHover: #009a8f;
 $ThemeDarkTeal: #056861;
-$borderColor: #e0e0e0;
+$ThemeDarkTealDeep: #045a54;
+$ThemePrimerySoft: rgba(0, 169, 157, 0.1);
+$ThemePrimeryBorder: rgba(0, 169, 157, 0.22);
+$borderColor: #e8e8e8;
 $textMuted: #686766;
 $textDark: #333;
 $danger: #aa1f1f;
 $success: #0d900d;
-$radius: 6px;
+$radius: 8px;
+$radiusSm: 6px;
+$sidebarWidth: 280px;
+$sidebarHeaderMin: 168px;
+$sidebarBg: #e8f2f1;
+$shadowSm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadowMd: 0 4px 16px rgba(0, 0, 0, 0.08);
+$mainPaddingX: 32px;
+$mainPaddingY: 24px;
 
+// ── Page shell: absolute sidebar + main content flow ──────────
 .pageWrapper {
+  position: relative;
   min-height: 100vh;
-  background-color: #f9f9f9;
+  padding-left: $sidebarWidth;
+  background-color: #f4f6f6;
   color: $textDark;
-  font-family: "Segoe UI", sans-serif;
+  font-family:
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  // Full-height sidebar backdrop
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: $sidebarWidth;
+    min-height: 100%;
+    z-index: 0;
+    background: linear-gradient(
+      180deg,
+      $ThemeDarkTeal 0,
+      $ThemeDarkTealDeep $sidebarHeaderMin,
+      $sidebarBg $sidebarHeaderMin,
+      $sidebarBg 100%
+    );
+    border-right: 1px solid rgba(5, 104, 97, 0.12);
+    box-shadow: 4px 0 20px rgba(5, 104, 97, 0.07);
+    pointer-events: none;
+  }
 }
 
+.container {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: $mainPaddingY $mainPaddingX 40px;
+}
+
+// ── Left sidebar: navigation + search / actions ───────────────
 .navBar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  position: sticky;
+  position: absolute;
   top: 0;
-  z-index: 100;
-  background-color: #fff;
+  left: 0;
+  z-index: 3;
+  width: $sidebarWidth;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 20px 18px;
 
   .backBtn {
-    width: 38px;
-    height: 26px;
-    border-radius: 3px;
-    background-color: $ThemePrimeryColor;
-    border: none;
+    width: 40px;
+    height: 36px;
+    border-radius: $radiusSm;
+    background-color: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: #fff;
     padding: 0;
-    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+    transition:
+      background 0.15s ease,
+      transform 0.12s ease;
 
     &:hover {
-      opacity: 0.9;
+      background-color: rgba(255, 255, 255, 0.28);
+      transform: translateX(-2px);
+    }
+
+    &:active {
+      transform: translateX(0);
     }
   }
 
   h2 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 500;
-    color: $ThemePrimeryColor;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #fff;
+    letter-spacing: -0.02em;
 
     span {
-      color: $ThemeDarkTeal;
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 500;
     }
-  }
-}
 
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-
-  .sectionTitle {
-    font-size: 13px;
-    font-weight: 500;
-    color: $ThemePrimeryColor;
-    display: flex;
-    text-transform: uppercase;
-    align-items: center;
-    gap: 8px;
-
-    &::before {
-      content: "";
-      width: 16px;
-      height: 2px;
-      background: $ThemePrimeryColor;
+    // Project subtitle (inline style in TSX)
+    span[style] {
       display: block;
+      margin: 8px 0 0 !important;
+      font-size: 0.8rem !important;
+      font-weight: 400 !important;
+      color: rgba(255, 255, 255, 0.78) !important;
+      line-height: 1.45;
+      letter-spacing: 0;
     }
   }
 }
 
+// Anchored to pageWrapper (not .container) so controls stay in the sidebar
 .pickerCard {
-  border: 1px solid $borderColor;
-  border-radius: $radius;
-  padding: 20px 24px;
-  margin-bottom: 20px;
+  position: absolute;
+  top: $sidebarHeaderMin;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  width: $sidebarWidth;
+  padding: 20px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .pickerLabel {
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
-  font-weight: 500;
-  color: $textMuted;
-  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: $ThemeDarkTeal;
+  margin-bottom: 10px;
 }
 
 .peoplePicker {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  min-height: 36px;
 
   button {
     background: none;
     border: none;
+  }
+
+  // Neutralize global picker accent border inside sidebar
+  :global(.ms-BasePicker) {
+    border-left-color: $ThemePrimeryColor !important;
+    border-left-width: 3px !important;
+    border-radius: $radiusSm !important;
+    background: #fff !important;
+    min-height: 36px;
+  }
+
+  :global(.ms-BasePicker-text) {
+    min-height: 34px;
   }
 }
 
 .pickerInputWrapper {
   position: relative;
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: flex-start;
+  align-items: stretch;
   width: 100%;
 
   .pickerIcon {
@@ -130,21 +209,26 @@ $radius: 6px;
 
 .pickerInput {
   flex: 1;
-  height: 32px;
-  border: 1px solid #00a99d38;
-  border-radius: $radius;
+  width: 100%;
+  height: 36px;
+  border: 1px solid $ThemePrimeryBorder;
+  border-radius: $radiusSm;
+  background: #fff;
   color: #000;
-  font-size: 12px;
+  font-size: 13px;
   padding: 0 12px 0 36px;
   outline: none;
-  transition: box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &::placeholder {
     color: #afafaf;
   }
 
   &:focus {
-    box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+    border-color: $ThemePrimeryColor;
+    box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.15);
   }
 }
 
@@ -152,11 +236,11 @@ $radius: 6px;
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 60px;
+  right: 0;
   background: #fff;
   border: 1px solid $borderColor;
-  border-radius: $radius;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: $radiusSm;
+  box-shadow: $shadowMd;
   z-index: 200;
   overflow: hidden;
   animation: slideDown 0.15s ease;
@@ -189,7 +273,7 @@ $radius: 6px;
   }
 
   &:hover {
-    background: rgba(0, 169, 157, 0.08);
+    background: $ThemePrimerySoft;
     color: $ThemeDarkTeal;
   }
 
@@ -209,22 +293,27 @@ $radius: 6px;
 }
 
 .benchBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   border: 1px solid rgba(13, 144, 13, 0.35);
-  border-radius: $radius;
-  padding: 8px 14px;
-  margin-top: 12px;
+  border-radius: $radiusSm;
+  padding: 10px 12px;
+  margin-top: 14px;
   font-size: 12px;
+  line-height: 1.5;
   color: $success;
+  background: rgba(13, 144, 13, 0.06);
   animation: fadeIn 0.3s ease;
+  width: 100%;
 
   .dot {
     width: 8px;
     height: 8px;
+    margin-top: 4px;
     border-radius: 50%;
     background: $success;
+    flex-shrink: 0;
     animation: pulse 1.8s infinite;
   }
 }
@@ -252,32 +341,109 @@ $radius: 6px;
   }
 }
 
+.btnAdd {
+  width: 100%;
+  height: 38px;
+  padding: 0 16px;
+  justify-content: center;
+  background: $ThemePrimeryColor;
+  border: 1px solid $ThemePrimeryColor;
+  border-radius: $radiusSm;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 169, 157, 0.28);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $ThemePrimeryHover;
+    box-shadow: 0 4px 12px rgba(0, 169, 157, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid $borderColor;
+
+  .sectionTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ThemeDarkTeal;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    &::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, $ThemePrimeryColor, $ThemeDarkTeal);
+      display: block;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// ── Dashboard stat cards ──────────────────────────────────────
 .dashboard {
   display: grid;
-  grid-template-columns: repeat(4, 1.6fr) 1.6fr;
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(200px, 1.4fr);
+  gap: 14px;
+  margin: 0 0 24px;
+  padding: 0;
   animation: fadeIn 0.4s ease;
 
-  @media (max-width: 1100px) {
-    grid-template-columns: repeat(2, 1fr);
+  @media (max-width: 1280px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 }
 
 .statCard {
   border: 1px solid $borderColor;
   border-radius: $radius;
-  background: linear-gradient(339deg, #00a99d, transparent);
-  padding: 16px 18px;
-  transition: box-shadow 0.15s ease;
+  background: #fff;
+  padding: 18px 20px;
+  box-shadow: $shadowSm;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: $shadowMd;
+    transform: translateY(-1px);
   }
 
   .statIcon {
-    font-size: 16px;
-    margin-bottom: 8px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.9;
   }
 
   .statLabel {
@@ -286,58 +452,77 @@ $radius: 6px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: $textMuted;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .statValue {
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
     color: $ThemePrimeryColor;
-    margin-bottom: 4px;
-    color: $ThemePrimeryColor;
+    margin-bottom: 6px;
   }
 
   .statSub {
     font-size: 11px;
     color: $textMuted;
+    line-height: 1.4;
   }
 
-  &.tealCard .statValue {
-    color: #5d478b;
+  &.tealCard {
+    border-top: 3px solid $ThemePrimeryColor;
+
+    .statValue {
+      color: #5d478b;
+    }
   }
 
-  &.goldCard .statValue {
-    color: $ThemeDarkTeal;
+  &.goldCard {
+    border-top: 3px solid $ThemeDarkTeal;
+
+    .statValue {
+      color: $ThemeDarkTeal;
+    }
   }
 
-  &.sageCard .statValue {
-    color: $success;
+  &.sageCard {
+    border-top: 3px solid $success;
+
+    .statValue {
+      color: $success;
+    }
   }
 
-  &.crimsonCard .statValue {
-    color: $textMuted;
+  &.crimsonCard {
+    border-top: 3px solid $textMuted;
   }
 
   &.projectsCard {
     grid-column: 5;
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1280px) {
       grid-column: span 2;
+    }
+
+    @media (max-width: 900px) {
+      grid-column: span 1;
     }
 
     .projectList {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 120px;
+      overflow-y: auto;
 
       .projectTag {
-        border: 1px solid $borderColor;
-        border-radius: 4px;
-        padding: 4px 8px;
+        border: 1px solid $ThemePrimeryBorder;
+        border-radius: $radiusSm;
+        padding: 6px 10px;
         font-size: 12px;
         color: $textDark;
+        background: $ThemePrimerySoft;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -346,8 +531,12 @@ $radius: 6px;
   }
 }
 
+// ── Availability summary ──────────────────────────────────────
 .availabilitySummary {
-  padding: 16px 20px;
+  padding: 20px 24px;
+  margin-top: 0;
+  border-top: 1px solid $borderColor;
+  background: linear-gradient(180deg, #fafbfb 0%, #fff 100%);
   animation: fadeIn 0.35s ease;
 }
 
@@ -357,13 +546,13 @@ $radius: 6px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: $ThemeDarkTeal;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .availabilitySummaryGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 28px 40px;
+  gap: 24px 36px;
 }
 
 .availabilityStat {
@@ -380,8 +569,8 @@ $radius: 6px;
 }
 
 .availabilityStatValue {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   line-height: 1.2;
   color: $ThemePrimeryColor;
   margin-bottom: 4px;
@@ -390,8 +579,8 @@ $radius: 6px;
 .availabilityStatSub {
   font-size: 11px;
   color: $textMuted;
-  max-width: 220px;
-  line-height: 1.4;
+  max-width: 240px;
+  line-height: 1.45;
 }
 
 .availabilityAvailableNow {
@@ -399,12 +588,12 @@ $radius: 6px;
 }
 
 .availabilityFullyBooked {
-  color: #aa1f1f !important;
+  color: $danger !important;
 }
 
 .availabilityWindowsSection {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
   border-top: 1px solid $borderColor;
 }
 
@@ -414,15 +603,16 @@ $radius: 6px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: $ThemeDarkTeal;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .availabilityWindowRow {
   border: 1px solid $borderColor;
-  border-radius: $radius;
-  padding: 10px 14px;
+  border-radius: $radiusSm;
+  padding: 12px 16px;
   margin-bottom: 8px;
   background: #fff;
+  box-shadow: $shadowSm;
 
   &:last-child {
     margin-bottom: 0;
@@ -448,17 +638,16 @@ $radius: 6px;
 .miniChart {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 40px;
-  margin-top: 8px;
+  gap: 4px;
+  height: 44px;
+  margin-top: 10px;
 
   .bar {
     flex: 1;
-    border-radius: 2px 2px 0 0;
+    border-radius: 3px 3px 0 0;
     min-height: 2px;
     transition: height 0.4s ease;
-    // background: rgba(0, 169, 157, 0.45);
-    background: #3a395573;
+    background: rgba(58, 57, 85, 0.45);
 
     &.overAllocated {
       background: rgba(170, 31, 31, 0.55);
@@ -466,37 +655,45 @@ $radius: 6px;
   }
 }
 
+// ── New allocation form ───────────────────────────────────────
 .formPanel {
-  border: 1px solid $borderColor;
+  border: 1px solid $ThemePrimeryBorder;
   border-radius: $radius;
-  padding: 24px;
-  margin: 20px 0 20px 0;
+  padding: 28px 24px 24px;
+  margin: 0 0 24px;
+  background: #fff;
+  box-shadow: $shadowSm;
   animation: fadeIn 0.35s ease;
   position: relative;
 
   &::before {
     content: "NEW ALLOCATION";
     position: absolute;
-    top: -10px;
-    left: 20px;
-    background: $ThemePrimeryColor;
+    top: -11px;
+    left: 24px;
+    background: linear-gradient(135deg, $ThemePrimeryColor, $ThemeDarkTeal);
     color: #fff;
     font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    padding: 2px 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 4px 12px;
     border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 169, 157, 0.3);
   }
 }
 
 .formGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 16px;
+  margin-bottom: 20px;
 
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr 1fr;
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -506,30 +703,37 @@ $radius: 6px;
   gap: 6px;
 
   label {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     color: $textMuted;
   }
 
   .peoplePicker {
-    min-height: 32px;
+    min-height: 36px;
   }
 
   input,
   select {
-    height: 32px;
-    border-radius: $radius;
+    height: 36px;
+    // border: 1px solid $borderColor;
+    border-radius: $radiusSm;
     color: #000;
-    font-size: 12px;
-    padding: 0 10px;
+    font-size: 13px;
+    padding: 0 12px;
     outline: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
 
     &::placeholder {
       color: #afafaf;
     }
 
     &:focus {
-      box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+      border-color: $ThemePrimeryColor;
+      box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
     }
 
     option {
@@ -538,12 +742,13 @@ $radius: 6px;
   }
 
   .readonlyField {
-    height: 32px;
-    border: 1px solid $borderColor;
-    border-radius: $radius;
+    height: 36px;
+    border: 1px dashed $borderColor;
+    border-radius: $radiusSm;
+    background: #f9fafb;
     color: $textMuted;
-    font-size: 12px;
-    padding: 0 10px;
+    font-size: 13px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
   }
@@ -554,72 +759,63 @@ $radius: 6px;
   align-items: center;
   gap: 10px;
   justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid $borderColor;
+  margin-top: 4px;
+  padding-top: 16px;
 }
 
 .btnPrimary {
-  height: 32px;
-  padding: 0 20px;
+  height: 36px;
+  padding: 0 22px;
   background: $ThemePrimeryColor;
   border: 1px solid $ThemePrimeryColor;
-  border-radius: 5px;
+  border-radius: $radiusSm;
   color: #fff;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
-    opacity: 0.9;
+    background: $ThemePrimeryHover;
+    box-shadow: 0 2px 8px rgba(0, 169, 157, 0.3);
   }
 }
 
 .btnSecondary {
-  height: 32px;
-  padding: 0 16px;
-  background: transparent;
-  border: 1px solid #808080;
-  border-radius: 5px;
-  color: #808080;
+  height: 36px;
+  padding: 0 18px;
+  background: #fff;
+  border: 1px solid #c4c4c4;
+  border-radius: $radiusSm;
+  color: $textMuted;
   font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: opacity 0.15s ease;
-
-  &:hover {
-    opacity: 0.85;
-  }
-}
-
-.btnAdd {
-  height: 32px;
-  padding: 0 16px;
-  background: $ThemePrimeryColor;
-  border: 1px solid $ThemePrimeryColor;
-  border-radius: 5px;
-  color: #fff;
-  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
-  transition: opacity 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
-    opacity: 0.9;
+    border-color: $ThemePrimeryColor;
+    color: $ThemeDarkTeal;
   }
 }
 
+// ── Data table ────────────────────────────────────────────────
 .btnIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  border-radius: $radiusSm;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -633,7 +829,7 @@ $radius: 6px;
     color: $ThemePrimeryColor;
 
     &:hover {
-      background: rgba(0, 169, 157, 0.1);
+      background: $ThemePrimerySoft;
     }
   }
 
@@ -649,7 +845,7 @@ $radius: 6px;
     color: $danger;
 
     &:hover {
-      background: rgba(170, 31, 31, 0.1);
+      background: rgba(170, 31, 31, 0.08);
     }
   }
 }
@@ -658,12 +854,15 @@ $radius: 6px;
   border: 1px solid $borderColor;
   border-radius: $radius;
   overflow: hidden;
+  margin: 0;
+  background: #fff;
+  box-shadow: $shadowSm;
 
   :global {
     .p-datatable {
       background: transparent;
       color: $textDark;
-      font-family: "Segoe UI", sans-serif;
+      font-family: inherit;
     }
 
     .p-datatable .p-datatable-header {
@@ -673,31 +872,35 @@ $radius: 6px;
     }
 
     .p-datatable .p-datatable-thead > tr > th {
-      background: #fff;
-      color: $textMuted;
+      background: #f7fafa;
+      color: $ThemeDarkTeal;
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       border: none;
-      border-bottom: 1px solid $borderColor;
-      padding: 12px 14px;
+      border-bottom: 2px solid $ThemePrimeryBorder;
+      padding: 14px 16px;
       white-space: nowrap;
     }
 
     .p-datatable .p-datatable-tbody > tr {
-      background: transparent;
+      background: #fff;
       transition: background 0.12s ease;
       border-bottom: 1px solid $borderColor;
 
+      &:nth-child(even) {
+        background: #fcfdfd;
+      }
+
       &:hover {
-        background: rgba(0, 169, 157, 0.04);
+        background: rgba(0, 169, 157, 0.05) !important;
       }
     }
 
     .p-datatable .p-datatable-tbody > tr > td {
       border: none;
-      padding: 10px 14px;
+      padding: 12px 16px;
       color: $textDark;
       font-size: 13px;
       vertical-align: middle;
@@ -705,21 +908,27 @@ $radius: 6px;
 
     .p-datatable .p-datatable-tfoot > tr > td {
       border: none;
-      padding: 8px;
+      padding: 10px;
+      background: #f7fafa;
+      font-weight: 600;
+      font-size: 12px;
+      color: $ThemeDarkTeal;
     }
 
     .p-paginator {
-      background: #fff;
+      background: #fafbfb;
       border: none;
       border-top: 1px solid $borderColor;
-      padding: 8px 14px;
+      padding: 10px 16px;
 
       .p-paginator-element {
         color: $textMuted;
-        border-radius: 4px;
+        border-radius: $radiusSm;
+        min-width: 2rem;
+        height: 2rem;
 
         &:hover {
-          background: rgba(0, 169, 157, 0.08);
+          background: $ThemePrimerySoft;
           color: $ThemePrimeryColor;
         }
 
@@ -731,29 +940,29 @@ $radius: 6px;
     }
 
     .p-inputnumber-input {
-      width: 60px;
-      height: 32px;
+      width: 64px;
+      height: 34px;
       border: 1px solid $ThemePrimeryColor;
-      border-radius: $radius;
+      border-radius: $radiusSm;
       color: #000;
-      font-size: 12px;
+      font-size: 13px;
       text-align: center;
       outline: none;
 
       &:focus {
-        box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+        box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.15);
       }
     }
 
     .p-dropdown {
       border: 1px solid $ThemePrimeryColor;
-      border-radius: $radius;
+      border-radius: $radiusSm;
       min-width: 160px;
 
       .p-dropdown-label {
         color: #000;
-        font-size: 12px;
-        padding: 6px 10px;
+        font-size: 13px;
+        padding: 8px 12px;
       }
 
       .p-dropdown-trigger {
@@ -765,24 +974,24 @@ $radius: 6px;
       }
 
       &:not(.p-disabled).p-focus {
-        box-shadow: 0 0 0 2px rgba(0, 169, 157, 0.2);
+        box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
       }
     }
 
     .p-dropdown-panel {
       background: #fff;
       border: 1px solid $borderColor;
-      border-radius: $radius;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-radius: $radiusSm;
+      box-shadow: $shadowMd;
 
       .p-dropdown-items .p-dropdown-item {
         color: $textDark;
-        font-size: 12px;
-        padding: 8px 12px;
+        font-size: 13px;
+        padding: 10px 14px;
 
         &:hover,
         &.p-highlight {
-          background: rgba(0, 169, 157, 0.1);
+          background: $ThemePrimerySoft;
           color: $ThemeDarkTeal;
         }
       }
@@ -791,65 +1000,77 @@ $radius: 6px;
 }
 
 .editingRow {
-  border-left: 3px solid $ThemePrimeryColor !important;
+  background: rgba(0, 169, 157, 0.06) !important;
+  box-shadow: inset 3px 0 0 $ThemePrimeryColor;
 }
 
 .monthChip {
   font-size: 12px;
+  font-weight: 500;
   color: $textMuted;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   border: 1px solid $borderColor;
+  background: #fff;
 
   &.high {
     color: $ThemePrimeryColor;
-    border-color: rgba(0, 169, 157, 0.4);
+    border-color: rgba(0, 169, 157, 0.45);
+    background: rgba(0, 169, 157, 0.06);
   }
 
   &.medium {
     color: $ThemeDarkTeal;
     border-color: rgba(5, 104, 97, 0.35);
+    background: rgba(5, 104, 97, 0.06);
   }
 
   &.over {
     color: $danger;
     border-color: rgba(170, 31, 31, 0.4);
+    background: rgba(170, 31, 31, 0.06);
   }
 }
 
 .totalChip {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: $ThemePrimeryColor;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: $ThemePrimerySoft;
 }
 
 .emptyState {
   text-align: center;
-  padding: 48px 20px;
+  padding: 56px 24px;
   color: $textMuted;
 
   .emptyIcon {
-    font-size: 36px;
-    margin-bottom: 10px;
-    opacity: 0.5;
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.45;
   }
 
   p {
     font-size: 14px;
+    line-height: 1.5;
+    max-width: 360px;
+    margin: 0 auto;
   }
 }
 
 .timelineBar {
   height: 6px;
   border-radius: 3px;
-  border: 1px solid $borderColor;
+  background: $borderColor;
   overflow: hidden;
-  margin-top: 6px;
+  margin-top: 8px;
 
   .fill {
     height: 100%;
-    border-radius: 2px;
-    background: $ThemePrimeryColor;
+    border-radius: 3px;
+    background: linear-gradient(90deg, $ThemePrimeryColor, $ThemeDarkTeal);
     transition: width 0.4s ease;
   }
 }
@@ -858,14 +1079,15 @@ $radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
-  gap: 10px;
+  padding: 48px 32px;
+  gap: 12px;
   color: $textMuted;
-  font-size: 13px;
+  font-size: 14px;
+  background: #fff;
 
   .spinner {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border: 2px solid $borderColor;
     border-top-color: $ThemePrimeryColor;
     border-radius: 50%;
@@ -882,35 +1104,39 @@ $radius: 6px;
 .employeeBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 
   .avatar {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: $ThemePrimeryColor;
+    background: linear-gradient(135deg, $ThemePrimeryColor, $ThemeDarkTeal);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     color: #fff;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 169, 157, 0.25);
   }
 
   .name {
     font-size: 13px;
+    font-weight: 500;
     color: $textDark;
   }
 }
 
 .projectTagSmall {
   display: inline-block;
-  border: 1px solid rgba(0, 169, 157, 0.35);
+  border: 1px solid $ThemePrimeryBorder;
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   font-size: 11px;
+  font-weight: 500;
   color: $ThemeDarkTeal;
+  background: $ThemePrimerySoft;
 }
 
 .inlineEditorCell {
@@ -922,13 +1148,13 @@ $radius: 6px;
   }
 }
 
-// Inline table editors
 .inlineEditInput {
   width: 100%;
   max-width: 110px;
   font-size: 12px !important;
-  padding: 4px 8px !important;
+  padding: 5px 8px !important;
   border-color: $ThemePrimeryColor !important;
+  border-radius: $radiusSm !important;
   color: #000 !important;
 }
 
@@ -938,8 +1164,9 @@ $radius: 6px;
 
   :global(.p-inputtext) {
     font-size: 12px !important;
-    padding: 4px 8px !important;
+    padding: 5px 8px !important;
     border-color: $ThemePrimeryColor !important;
+    border-radius: $radiusSm !important;
     color: #000 !important;
   }
 
@@ -953,8 +1180,59 @@ $radius: 6px;
 
   :global(.p-inputtext) {
     width: 100%;
-    font-size: 12px;
+    font-size: 13px;
     border-color: $ThemePrimeryColor;
+    border-radius: $radiusSm;
     color: #000;
+  }
+}
+
+// ── Responsive: stack sidebar on narrow viewports ─────────────
+@media (max-width: 1024px) {
+  .pageWrapper {
+    padding-left: 0;
+    min-height: 0;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .navBar {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(135deg, $ThemeDarkTeal, $ThemePrimeryColor);
+    box-shadow: $shadowMd;
+  }
+
+  .pickerCard {
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    padding: 20px;
+    background: $sidebarBg;
+    border-bottom: 1px solid $borderColor;
+    overflow: visible;
+  }
+
+  .container {
+    padding: 20px 16px 32px;
+  }
+
+  .sectionHeader {
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 16px 12px 28px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
