@@ -53,6 +53,8 @@ export namespace Config {
     FPMMaster: "FPMMaster",
     ProjectChecklist: "CRMProjectChecklist",
     EmployeeAllocations: "EmployeeAllocations",
+    AllocationsApproval: "AllocationsApproval",
+    AllocationsApprovalRejectComments: "AllocationsApprovalRejectComments",
   };
   export const LibraryNames: ILibrary = {
     ProjectFiles: "ProjectFiles",
@@ -386,6 +388,20 @@ export namespace Config {
     return `${monthName.charAt(0) + monthName.slice(1).toLowerCase()}-${year}`;
   };
 
+  /** Converts a raw allocation fraction (0–1) to a rounded whole-number percentage. */
+  export const toMonthPercentage = (rawValue: unknown): number =>
+    Math.round((Number(rawValue) || 0) * 100);
+
+  /** Rounds a month percentage for display (handles float noise from backend/calculation). */
+  export const formatMonthDisplayValue = (value: unknown): number =>
+    Math.round(Number(value) || 0);
+
+  /** PrimeReact Column body template for dynamic month columns in Reports. */
+  export const monthColumnBodyTemplate =
+    (field: string) =>
+    (rowData: any): number =>
+      formatMonthDisplayValue(rowData?.[field]);
+
   export const generateExcel = async (
     items: any[],
     monthColumns: any,
@@ -432,7 +448,7 @@ export namespace Config {
       };
 
       monthColumns.forEach((month: any) => {
-        rowObj[month] = item[month] ?? 0;
+        rowObj[month] = formatMonthDisplayValue(item[month] ?? 0);
       });
 
       const row = worksheet.addRow(rowObj);

@@ -33,18 +33,19 @@ import {
   computeDashboardStats,
   computeEmployeeAvailabilitySummary,
   computeEndDate,
+  buildInternalRegistryEmailToEmpIdMap,
   DateInlineEditor,
   EmployeeAllocationDashboard,
   EmployeeAllocationNewFormPanel,
   EmployeeAvailabilitySummaryPanel,
-  EmpIdInlineEditor,
   findCrossProjectDateConflicts,
   formatDate,
   formatDateForSp,
   getPersonDisplayName,
+  getPersonEmail,
   getPickerDefaultEmails,
+  lookupEmpIdByEmail,
   inlineDatePickerStyles,
-  inlineTextFieldStyles,
   localDateToIso,
   mapSpItemToRow,
   namesMatch,
@@ -54,12 +55,27 @@ import {
   stopTableCellEvent,
 } from "../../../../External/CommonServices/CommonTemplate";
 
+const PENDING_APPROVAL_MESSAGE =
+  "This employee is currently locked because an allocation request is already under the approval process. A new allocation can only be added after the current request has been approved.";
+
+const getRequestedByFromProjectManagers = (projectManagers: any[]): string => {
+  if (!Array.isArray(projectManagers) || projectManagers.length === 0) {
+    return "";
+  }
+  return projectManagers
+    .map((pm) => String(pm?.name || pm?.text || "").trim())
+    .filter(Boolean)
+    .join(", ");
+};
+
 //  COMPONENT
 const EmployeeAllocations = (props: any) => {
+  console.log("EmployeeAllocations props", props);
   // ── State ────────────────────────────────────────────────────
   const [allRows, setAllRows] = useState<AllocationRow[]>([]);
   const [globalRows, setGlobalRows] = useState<AllocationRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [globalLoading, setGlobalLoading] = useState(true);
 
   // People Picker (search + form)
   const [searchPickerPeople, setSearchPickerPeople] = useState<any[]>([]);
@@ -68,6 +84,10 @@ const EmployeeAllocations = (props: any) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [isNewEmployee, setIsNewEmployee] = useState(false);
   const [isAlreadyOnProject, setIsAlreadyOnProject] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [approvalStatusByEmployeeProject, setApprovalStatusByEmployeeProject] =
+    useState<Record<string, string>>({});
 
   // Dashboard
   const [dashboard, setDashboard] = useState<DashboardStats | null>(null);
@@ -83,6 +103,11 @@ const EmployeeAllocations = (props: any) => {
 
   // Dynamic month columns for the DataTable
   const [monthColumns, setMonthColumns] = useState<string[]>([]);
+
+  // InternalRegistry EmpEmail → EmpID lookup for People Picker selections
+  const [registryByEmail, setRegistryByEmail] = useState<
+    Record<string, string>
+  >({});
 
   // ── Derived project identifiers ───────────────────────────────
   const projectFullId: string = (props?.selectedData?.ProjectID ?? "").trim();
@@ -101,6 +126,7 @@ const EmployeeAllocations = (props: any) => {
 
   //  DATA FETCHING
   const fetchGlobalAllocations = useCallback(() => {
+    setGlobalLoading(true);
     SPServices.SPReadItems({
       Listname: Config.ListNames.EmployeeAllocations,
       Select:
@@ -114,9 +140,11 @@ const EmployeeAllocations = (props: any) => {
           mapSpItemToRow(item, projectFullId, projectTitle),
         );
         setGlobalRows(rows);
+        setGlobalLoading(false);
       })
       .catch((err: any) => {
         console.error("Global fetch error:", err);
+        setGlobalLoading(false);
       });
   }, [projectFullId, projectTitle]);
 
@@ -159,20 +187,104 @@ const EmployeeAllocations = (props: any) => {
       });
   }, [projectFullId, projectTitle]);
 
+  const fetchPendingApprovals = useCallback(() => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.AllocationsApproval,
+      Select: "ID,EmployeeID,EmployeeName,ProjectID,Status",
+      Orderby: "ID",
+      Orderbydecorasc: false,
+    })
+      .then((res: any[]) => {
+        const approvals = res || [];
+        const openApprovals = approvals.filter(
+          (item: any) =>
+            String(item?.Status ?? "")
+              .trim()
+              .toLowerCase() === "open",
+        );
+        setPendingApprovals(openApprovals);
+
+        const latestStatusByKey: Record<
+          string,
+          { id: number; status: string }
+        > = {};
+        approvals.forEach((item: any) => {
+          const employeeId = String(item?.EmployeeID ?? "").trim();
+          const employeeName = String(item?.EmployeeName ?? "").trim();
+          const projectId = String(item?.ProjectID ?? "").trim();
+          const status = String(item?.Status ?? "").trim();
+          const id = Number(item?.ID ?? 0);
+          const employeeRef = employeeId || employeeName.toLowerCase();
+          if (!employeeRef || !projectId || !status) return;
+          const key = `${employeeRef}::${projectId}`;
+          const existing = latestStatusByKey[key];
+          if (!existing || id > existing.id) {
+            latestStatusByKey[key] = { id, status };
+          }
+        });
+
+        const statusMap: Record<string, string> = {};
+        Object.keys(latestStatusByKey).forEach((key) => {
+          statusMap[key] = latestStatusByKey[key].status;
+        });
+        setApprovalStatusByEmployeeProject(statusMap);
+      })
+      .catch((err: any) => {
+        console.error("AllocationsApproval fetch error:", err);
+      });
+  }, []);
+
   const refreshData = useCallback(() => {
+    setGlobalLoading(true);
     fetchAllocations();
     fetchGlobalAllocations();
-  }, [fetchAllocations, fetchGlobalAllocations]);
+    fetchPendingApprovals();
+  }, [fetchAllocations, fetchGlobalAllocations, fetchPendingApprovals]);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  useEffect(() => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.InternalRegistry,
+      Select: "EmpID,EmpEmail",
+    })
+      .then((res: any[]) => {
+        setRegistryByEmail(buildInternalRegistryEmailToEmpIdMap(res || []));
+      })
+      .catch((err: any) => {
+        console.error("InternalRegistry fetch error:", err);
+      });
+  }, []);
+
+  const resolveEmpIdFromPerson = useCallback(
+    (person: any): string => {
+      const email = getPersonEmail(person);
+      if (!email) return "";
+      return lookupEmpIdByEmail(registryByEmail, email);
+    },
+    [registryByEmail],
+  );
+
+  const employeeHasOpenApprovalRequest = useCallback(
+    (employeeName: string, employeeId?: string | null): boolean => {
+      const normalizedId = (employeeId ?? "").trim();
+      return pendingApprovals.some((item) => {
+        const itemId = String(item?.EmployeeID ?? "").trim();
+        if (normalizedId && itemId && normalizedId === itemId) return true;
+        return namesMatch(item?.EmployeeName, employeeName);
+      });
+    },
+    [pendingApprovals],
+  );
 
   const clearEmployeeSearch = () => {
     setSearchPickerPeople([]);
     setSelectedEmployee(null);
     setIsNewEmployee(false);
     setIsAlreadyOnProject(false);
+    setIsPendingApproval(false);
     setDashboard(null);
   };
 
@@ -183,10 +295,108 @@ const EmployeeAllocations = (props: any) => {
     setEditDraft(null);
   }, [projectFullId]);
 
-  const isEmployeeOnProject = useCallback(
-    (employeeName: string) =>
-      allRows.some((r) => namesMatch(r.EmployeeName, employeeName)),
-    [allRows],
+  const hasReleasedOnBeforeAllocatedOn = (
+    allocatedOn: string | null | undefined,
+    releasedOn: string | null | undefined,
+  ): boolean => {
+    if (!allocatedOn || !releasedOn) return false;
+    return new Date(releasedOn).getTime() <= new Date(allocatedOn).getTime();
+  };
+
+  const rangesOverlapInclusive = (
+    startA: Date,
+    endA: Date,
+    startB: Date,
+    endB: Date,
+  ): boolean =>
+    startA.getTime() <= endB.getTime() && startB.getTime() <= endA.getTime();
+
+  const hasSameProjectDateOverlap = (
+    employeeName: string,
+    allocatedOn: string | null | undefined,
+    releasedOn: string | null | undefined,
+    excludeRowId?: number,
+  ): boolean => {
+    const proposedStart = computeBeginDate(allocatedOn ?? null);
+    const proposedEnd = computeEndDate(allocatedOn ?? null, releasedOn ?? null);
+    if (!proposedStart || !proposedEnd) return false;
+
+    return allRows.some((row) => {
+      if (!namesMatch(row.EmployeeName, employeeName)) return false;
+      if (excludeRowId != null && row.ID === excludeRowId) return false;
+      if (!isCurrentProjectRow(row)) return false;
+
+      const rowStart = computeBeginDate(row.AllocatedOn ?? null);
+      const rowEnd = computeEndDate(
+        row.AllocatedOn ?? null,
+        row.ReleasedOn ?? null,
+      );
+      if (!rowStart || !rowEnd) return false;
+
+      return rangesOverlapInclusive(
+        proposedStart,
+        proposedEnd,
+        rowStart,
+        rowEnd,
+      );
+    });
+  };
+
+  const buildEmployeeMonthlyTotals = (
+    employeeName: string,
+    excludeRowId?: number,
+  ): Map<string, number> => {
+    const totals = new Map<string, number>();
+    globalRows.forEach((row) => {
+      if (!namesMatch(row.EmployeeName, employeeName)) return;
+      if (excludeRowId != null && row.ID === excludeRowId) return;
+      row.AllocationJson.forEach((month) => {
+        totals.set(
+          month.month,
+          (totals.get(month.month) ?? 0) + (month.value ?? 0),
+        );
+      });
+    });
+    return totals;
+  };
+
+  const getEmployeeOverAllocatedMonths = (
+    employeeName: string,
+    candidateMonths: { month: string; value: number }[],
+    excludeRowId?: number,
+  ): string[] => {
+    const totals = buildEmployeeMonthlyTotals(employeeName, excludeRowId);
+    candidateMonths.forEach((month) => {
+      totals.set(
+        month.month,
+        (totals.get(month.month) ?? 0) + (month.value ?? 0),
+      );
+    });
+    return Array.from(totals.entries())
+      .filter(([, value]) => value > 1 + 0.00001)
+      .map(([month]) => month)
+      .sort(
+        (a, b) => parseMonthLabel(a).getTime() - parseMonthLabel(b).getTime(),
+      );
+  };
+
+  const isLatestAllocationRowForEmployee = useCallback(
+    (row: AllocationRow): boolean => {
+      const employeeRows = globalRows.filter((r) =>
+        namesMatch(r.EmployeeName, row.EmployeeName),
+      );
+      if (employeeRows.length === 0) return false;
+
+      const sorted = [...employeeRows].sort((a, b) => {
+        const aTime = a.AllocatedOn ? new Date(a.AllocatedOn).getTime() : 0;
+        const bTime = b.AllocatedOn ? new Date(b.AllocatedOn).getTime() : 0;
+        if (bTime !== aTime) return bTime - aTime;
+        return (b.ID ?? 0) - (a.ID ?? 0);
+      });
+
+      return sorted[0]?.ID === row.ID;
+    },
+    [globalRows],
   );
 
   // Recompute dashboard when data or selection changes (cross-project stats)
@@ -206,6 +416,25 @@ const EmployeeAllocations = (props: any) => {
       employeeRows.length > 0 ? computeDashboardStats(employeeRows) : null,
     );
   }, [globalRows, allRows, selectedEmployee]);
+
+  useEffect(() => {
+    if (!selectedEmployee) {
+      setIsPendingApproval(false);
+      return;
+    }
+
+    const empId = searchPickerPeople.length
+      ? resolveEmpIdFromPerson(searchPickerPeople[0])
+      : "";
+    setIsPendingApproval(
+      employeeHasOpenApprovalRequest(selectedEmployee, empId),
+    );
+  }, [
+    selectedEmployee,
+    searchPickerPeople,
+    employeeHasOpenApprovalRequest,
+    resolveEmpIdFromPerson,
+  ]);
 
   // Month columns follow whichever rows are shown in the table
   useEffect(() => {
@@ -253,7 +482,8 @@ const EmployeeAllocations = (props: any) => {
   const handleFormPickerChange = (items: any[]) => {
     setFormPickerPeople(items);
     const name = items?.length ? getPersonDisplayName(items[0]) : "";
-    setFormData((prev) => ({ ...prev, EmployeeName: name }));
+    const empId = items?.length ? resolveEmpIdFromPerson(items[0]) : "";
+    setFormData((prev) => ({ ...prev, EmployeeName: name, EmployeeID: empId }));
   };
 
   //  ADD NEW ROW (form-based)
@@ -268,18 +498,20 @@ const EmployeeAllocations = (props: any) => {
     }
 
     const prefillName = selectedEmployee || "";
-    if (prefillName && isEmployeeOnProject(prefillName)) {
-      props.Notify?.(
-        "warn",
-        "Warning",
-        "This employee is already assigned to this project. Each person can only be added once per project.",
-      );
+    const prefillEmpId = searchPickerPeople.length
+      ? resolveEmpIdFromPerson(searchPickerPeople[0])
+      : "";
+    if (
+      prefillName &&
+      employeeHasOpenApprovalRequest(prefillName, prefillEmpId)
+    ) {
+      props.Notify?.("warn", "Validation", PENDING_APPROVAL_MESSAGE);
       return;
     }
 
     const initialForm: Partial<AllocationRow> = {
       EmployeeName: prefillName,
-      EmployeeID: "",
+      EmployeeID: prefillEmpId,
       ProjectID: projectFullId,
       ProjectFullID: projectFullId,
       Loading: 1,
@@ -318,16 +550,57 @@ const EmployeeAllocations = (props: any) => {
       props.Notify?.("warn", "Validation", "Employee Name is required.");
       return;
     }
-    if (isEmployeeOnProject(employeeName)) {
-      props.Notify?.(
-        "warn",
-        "Validation",
-        "This employee is already assigned to this project. Each person can only be added once per project.",
-      );
+    if (employeeHasOpenApprovalRequest(employeeName, formData.EmployeeID)) {
+      props.Notify?.("warn", "Validation", PENDING_APPROVAL_MESSAGE);
       return;
     }
     if (!formData.AllocatedOn) {
       props.Notify?.("warn", "Validation", "Allocated On date is required.");
+      return;
+    }
+    if (
+      hasReleasedOnBeforeAllocatedOn(formData.AllocatedOn, formData.ReleasedOn)
+    ) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "Released On date must be greater than Allocated On date.",
+      );
+      return;
+    }
+    if ((formData.Loading ?? 0) > 1) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "Loading cannot be greater than 100%.",
+      );
+      return;
+    }
+    if (
+      hasSameProjectDateOverlap(
+        employeeName,
+        formData.AllocatedOn,
+        formData.ReleasedOn,
+      )
+    ) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "This employee already has an overlapping allocation on this project. Add a new allocation only after the previous one ends.",
+      );
+      return;
+    }
+
+    const overAllocatedMonths = getEmployeeOverAllocatedMonths(
+      employeeName,
+      formData.AllocationJson ?? [],
+    );
+    if (overAllocatedMonths.length > 0) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        `Total allocation across projects cannot exceed 100% for ${employeeName}. Over-allocated month(s): ${overAllocatedMonths.slice(0, 3).join(", ")}${overAllocatedMonths.length > 3 ? "..." : ""}.`,
+      );
       return;
     }
 
@@ -351,6 +624,12 @@ const EmployeeAllocations = (props: any) => {
       return;
     }
 
+    let DeliveryHeadIds: number[] = JSON.parse(
+      JSON.stringify(props?.selectedData?.DeliveryHead),
+    )
+      .map((user: any) => (user.id ? user?.id : user?.key))
+      .sort((a: any, b: any) => a - b);
+
     const payload = {
       EmployeeName: employeeName,
       EmployeeID: formData.EmployeeID || "",
@@ -364,10 +643,32 @@ const EmployeeAllocations = (props: any) => {
       AllocationJson: JSON.stringify(formData.AllocationJson || []),
     };
 
-    SPServices.SPAddItem({
-      Listname: Config.ListNames.EmployeeAllocations,
-      RequestJSON: payload,
-    })
+    const approvalPayload = {
+      RequestedBy: getRequestedByFromProjectManagers(
+        props?.selectedData?.ProjectManager,
+      ),
+      EmployeeID: formData.EmployeeID || "",
+      EmployeeName: employeeName,
+      Loading: formData.Loading?.toString() ?? "1",
+      FromDate: formatDateForSp(formData.AllocatedOn),
+      ToDate: formatDateForSp(formData.ReleasedOn),
+      ProjectName: projectTitle,
+      ProjectID: projectFullId,
+      DeliveryHeadId: { results: DeliveryHeadIds },
+      Status: "Open",
+      ProjectId: projectLookupId,
+    };
+
+    Promise.all([
+      SPServices.SPAddItem({
+        Listname: Config.ListNames.EmployeeAllocations,
+        RequestJSON: payload,
+      }),
+      SPServices.SPAddItem({
+        Listname: Config.ListNames.AllocationsApproval,
+        RequestJSON: approvalPayload,
+      }),
+    ])
       .then(() => {
         setShowForm(false);
         setFormData({});
@@ -377,6 +678,11 @@ const EmployeeAllocations = (props: any) => {
       })
       .catch((err: any) => {
         console.error(err);
+        props.Notify?.(
+          "error",
+          "Error",
+          "Failed to save allocation. Please try again.",
+        );
       });
   };
 
@@ -422,6 +728,14 @@ const EmployeeAllocations = (props: any) => {
       );
       return;
     }
+    if (!isLatestAllocationRowForEmployee(rowData)) {
+      props.Notify?.(
+        "info",
+        "Read only",
+        "Only the employee's current allocation can be edited. Earlier allocations are view only.",
+      );
+      return;
+    }
     const draftCopy = { ...rowData };
     editDraftRef.current = draftCopy;
     setEditingRowId(rowData.ID);
@@ -447,6 +761,51 @@ const EmployeeAllocations = (props: any) => {
 
     if (!draft.AllocatedOn) {
       props.Notify?.("warn", "Validation", "Allocated On date is required.");
+      return;
+    }
+    if (hasReleasedOnBeforeAllocatedOn(draft.AllocatedOn, draft.ReleasedOn)) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "Released On date must be greater than Allocated On date.",
+      );
+      return;
+    }
+    if ((draft.Loading ?? 0) > 1) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "Loading cannot be greater than 100%.",
+      );
+      return;
+    }
+    if (
+      hasSameProjectDateOverlap(
+        draft.EmployeeName,
+        draft.AllocatedOn,
+        draft.ReleasedOn,
+        rowData.ID,
+      )
+    ) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        "This employee already has an overlapping allocation on this project. Keep allocations in the same project non-overlapping.",
+      );
+      return;
+    }
+
+    const overAllocatedMonths = getEmployeeOverAllocatedMonths(
+      draft.EmployeeName,
+      draft.AllocationJson ?? [],
+      rowData.ID,
+    );
+    if (overAllocatedMonths.length > 0) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        `Total allocation across projects cannot exceed 100% for ${draft.EmployeeName}. Over-allocated month(s): ${overAllocatedMonths.slice(0, 3).join(", ")}${overAllocatedMonths.length > 3 ? "..." : ""}.`,
+      );
       return;
     }
 
@@ -545,10 +904,6 @@ const EmployeeAllocations = (props: any) => {
     });
   };
 
-  const handleEditEmployeeIdChange = (value: string) => {
-    updateEditDraft((prev) => ({ ...prev, EmployeeID: value }));
-  };
-
   const handleEditAllocatedOnChange = (date: Date | null | undefined) => {
     updateEditDraft((prev) =>
       recalcDraftFromDates({
@@ -620,22 +975,8 @@ const EmployeeAllocations = (props: any) => {
 
   const employeeIdBody = (row: AllocationRow) => {
     const draft = getRowDraft(row);
-    if (draft && editingRowId === row.ID) {
-      return (
-        <div
-          className={styles.inlineEditorCell}
-          onMouseDown={stopTableCellEvent}
-          onClick={stopTableCellEvent}
-        >
-          <EmpIdInlineEditor
-            rowId={row.ID}
-            initialValue={draft.EmployeeID || ""}
-            onValueChange={handleEditEmployeeIdChange}
-            fieldStyles={inlineTextFieldStyles}
-          />
-        </div>
-      );
-    }
+    const employeeId =
+      draft && editingRowId === row.ID ? draft.EmployeeID : row.EmployeeID;
     return (
       <span
         style={{
@@ -643,7 +984,7 @@ const EmployeeAllocations = (props: any) => {
           color: "#686766",
         }}
       >
-        {row.EmployeeID || "-"}
+        {employeeId || "-"}
       </span>
     );
   };
@@ -766,11 +1107,59 @@ const EmployeeAllocations = (props: any) => {
     );
   };
 
+  const getStatusDisplayValue = (row: AllocationRow): string => {
+    const employeeId = String(row.EmployeeID ?? "").trim();
+    const employeeName = String(row.EmployeeName ?? "")
+      .trim()
+      .toLowerCase();
+    const projectId = String(row.ProjectFullID ?? row.ProjectID ?? "").trim();
+
+    const keyById = `${employeeId}::${projectId}`;
+    const keyByName = `${employeeName}::${projectId}`;
+    const approvalStatus =
+      approvalStatusByEmployeeProject[keyById] ??
+      approvalStatusByEmployeeProject[keyByName] ??
+      "";
+    const normalized = approvalStatus.trim().toLowerCase();
+
+    if (normalized === "open") return "Locked";
+    if (normalized === "approved") return "Approved";
+    if (normalized === "reject") return "Reject";
+    return "-";
+  };
+
+  const getStatusTagClass = (displayValue: string): string => {
+    switch (displayValue) {
+      case "Locked":
+        return styles.statusLocked;
+      case "Approved":
+        return styles.statusApproved;
+      case "Reject":
+        return styles.statusRejected;
+      default:
+        return "";
+    }
+  };
+
+  const statusBody = (row: AllocationRow) => {
+    const displayValue = getStatusDisplayValue(row);
+    if (displayValue === "-") {
+      return <span className={styles.statusEmpty}>-</span>;
+    }
+    return (
+      <span
+        className={`${styles.statusTag} ${getStatusTagClass(displayValue)}`}
+      >
+        {displayValue}
+      </span>
+    );
+  };
+
   const actionBody = (row: AllocationRow) => {
     if (selectedEmployee) {
       return (
         <span style={{ fontSize: "11px", color: "#afafaf" }} title="View only">
-          —
+          -
         </span>
       );
     }
@@ -792,6 +1181,23 @@ const EmployeeAllocations = (props: any) => {
             ✕
           </button>
         </div>
+      );
+    }
+    if (!isCurrentProjectRow(row)) {
+      return (
+        <span style={{ fontSize: "11px", color: "#afafaf" }} title="View only">
+          -
+        </span>
+      );
+    }
+    if (!isLatestAllocationRowForEmployee(row)) {
+      return (
+        <span
+          style={{ fontSize: "11px", color: "#afafaf" }}
+          title="Only the employee's current allocation is editable"
+        >
+          view only
+        </span>
       );
     }
     return (
@@ -850,16 +1256,10 @@ const EmployeeAllocations = (props: any) => {
         <h2>
           Employee <span>Allocation</span>
           {projectTitle && (
-            <span
-              style={{
-                fontSize: "14px",
-                color: "#686766",
-                fontWeight: 400,
-                marginLeft: "12px",
-              }}
-            >
-              - {projectTitle}
-            </span>
+            <div className={styles.projectMeta}>
+              <span className={styles.projectLabel}>Project Name</span>
+              <span className={styles.projectTitleChip}>{projectTitle}</span>
+            </div>
           )}
         </h2>
       </div>
@@ -885,37 +1285,38 @@ const EmployeeAllocations = (props: any) => {
                 />
               </div>
             )}
-            <button
-              className={styles.btnAdd}
-              onClick={handleAddClick}
-              disabled={!!(selectedEmployee && isAlreadyOnProject)}
-              title={
-                selectedEmployee && isAlreadyOnProject
-                  ? "Employee is already assigned to this project"
-                  : undefined
-              }
-            >
+            <button className={styles.btnAdd} onClick={handleAddClick}>
               <i className="pi pi-plus" style={{ fontSize: "13px" }}></i> Add
               Resource
             </button>
           </div>
 
-          {isAlreadyOnProject && selectedEmployee && (
+          {isPendingApproval && selectedEmployee && (
             <div className={styles.benchBadge} style={{ marginTop: 12 }}>
               <div className={styles.dot} style={{ background: "#aa1f1f" }} />
-              <strong>{selectedEmployee}</strong> is already assigned to this
-              project. Edit the existing allocation or set a release date
-              instead of adding again.
+              <strong>{selectedEmployee}</strong> {PENDING_APPROVAL_MESSAGE}
             </div>
           )}
 
-          {isNewEmployee && selectedEmployee && !isAlreadyOnProject && (
-            <div className={styles.benchBadge}>
-              <div className={styles.dot} />
-              This is a new employee and currently{" "}
-              <strong>100% available on bench</strong>.
+          {isAlreadyOnProject && selectedEmployee && !isPendingApproval && (
+            <div className={styles.benchBadge} style={{ marginTop: 12 }}>
+              <div className={styles.dot} style={{ background: "#aa1f1f" }} />
+              <strong>{selectedEmployee}</strong> already has allocation
+              record(s) on this project. You can add another allocation only for
+              a non-overlapping period.
             </div>
           )}
+
+          {isNewEmployee &&
+            selectedEmployee &&
+            !isAlreadyOnProject &&
+            !isPendingApproval && (
+              <div className={styles.benchBadge}>
+                <div className={styles.dot} />
+                This is a new employee and currently{" "}
+                <strong>100% available on bench</strong>.
+              </div>
+            )}
         </div>
 
         {dashboard && selectedEmployee && (
@@ -948,9 +1349,6 @@ const EmployeeAllocations = (props: any) => {
               context={props?.spfxContext}
               defaultSelectedEmails={getPickerDefaultEmails(formPickerPeople)}
               onPeopleChange={handleFormPickerChange}
-              onEmployeeIdChange={(value) =>
-                handleFormChange("EmployeeID", value)
-              }
               onLoadingPctChange={(fraction) =>
                 handleFormChange("Loading", fraction)
               }
@@ -979,7 +1377,7 @@ const EmployeeAllocations = (props: any) => {
         </div>
 
         <div className={styles.tableWrapper}>
-          {loading ? (
+          {loading || globalLoading ? (
             <div className={styles.loadingOverlay}>
               <div className={styles.spinner} />
               Loading allocations…
@@ -1031,6 +1429,11 @@ const EmployeeAllocations = (props: any) => {
                 header="Emp ID"
                 body={employeeIdBody}
                 style={{ minWidth: "90px" }}
+              />
+              <Column
+                header="Status"
+                body={statusBody}
+                style={{ minWidth: "95px" }}
               />
               <Column
                 field="Loading"

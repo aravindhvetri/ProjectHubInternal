@@ -303,7 +303,6 @@ export interface IEmployeeAllocationNewFormPanelProps {
   context: any;
   defaultSelectedEmails: string[];
   onPeopleChange: (items: any[]) => void;
-  onEmployeeIdChange: (value: string) => void;
   onLoadingPctChange: (fraction: number) => void;
   onAllocatedOnIsoChange: (iso: string | null) => void;
   onReleasedOnIsoChange: (iso: string | null) => void;

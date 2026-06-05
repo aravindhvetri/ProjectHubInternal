@@ -672,8 +672,7 @@ h4 {
 .pi-times {
   font-size: 8px;
   cursor: pointer;
-  color: white;
-  background: #00a99d;
+  color: rgb(248, 50, 50);
   width: 18px;
   height: 18px;
   display: flex !important;
@@ -808,5 +807,8 @@ h4 {
 }
 
 .EmployeeAllocationsDataTable .p-column-header-content {
+  font-size: 12px !important;
+}
+.p-inputtextarea {
   font-size: 12px !important;
 }

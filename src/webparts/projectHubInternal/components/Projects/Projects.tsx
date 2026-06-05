@@ -44,6 +44,7 @@ import { Dialog } from "primereact/dialog";
 import { sp } from "@pnp/sp";
 import ProjectFormAndTabs from "../ProjectFormAndTabsModule/ProjectFormAndTabs";
 import DealSheet from "../DealSheet/DealSheet";
+import ApproveRejectScreen from "../EmployeeAllocationsApproveReject/ApproveRejectScreen";
 interface IProps {
   Notify: (
     type: "info" | "success" | "warn" | "error" | "secondary" | "contrast",
@@ -81,6 +82,7 @@ const Projects = (props: IProps): JSX.Element => {
   const [projectDetails, setProjectDetails] = React.useState<IProjectData[]>(
     [],
   );
+  const [DHusers, setDHusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [PMOusers, setPMOusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [masterProjectDetails, setMasterProjectDetails] = React.useState<
     IProjectData[]
@@ -126,6 +128,9 @@ const Projects = (props: IProps): JSX.Element => {
     ...Config.initialModal,
   });
   const [isCmtsLoader, setIsCmtsLoader] = React.useState(false);
+  const [isApprovalPopupOpen, setIsApprovalPopupOpen] =
+    React.useState<boolean>(false);
+  const [openApprovalCount, setOpenApprovalCount] = React.useState<number>(0);
 
   //Get Project Details:
   const getProjectDetails = () => {
@@ -801,9 +806,53 @@ const Projects = (props: IProps): JSX.Element => {
   };
 
   //Initial Render:
+  const getOpenAllocationsApprovalCount = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.AllocationsApproval,
+      Select: "ID,Status",
+      Filter: [
+        {
+          FilterKey: "Status",
+          Operator: "eq",
+          FilterValue: "Open",
+        },
+      ],
+    })
+      .then((res: any[]) => {
+        setOpenApprovalCount(res?.length || 0);
+        getDHGroupMembers();
+      })
+      .catch((err: any) => {
+        console.log("Error while fetching open approvals count", err);
+      });
+  };
+
+  //Get DH Group members:
+  const getDHGroupMembers = () => {
+    SPServices.getSPGroupMember({
+      GroupName: Config.GroupNames.DH,
+    })
+      .then((res) => {
+        const tempDHusers: IPeoplePickerDetails[] = [];
+        res.forEach((items: any) => {
+          tempDHusers.push({
+            id: items?.Id,
+            email: items?.Email,
+            name: items?.Title,
+          });
+        });
+        setDHusers([...tempDHusers]);
+      })
+      .catch((err) => {
+        console.log(err, "Get DH group users errro in projectsFormPage.tsx");
+      });
+  };
+
+  //Initial Render:
   React.useEffect(() => {
     setLoader(true);
     getProjectDetails();
+    getOpenAllocationsApprovalCount();
   }, []);
 
   //Filter changes render:
@@ -824,6 +873,27 @@ const Projects = (props: IProps): JSX.Element => {
           >
             <div className={styles.filterBar}>
               <h2>Projects</h2>
+              {DHusers?.some(
+                (user) =>
+                  user?.email?.toLowerCase() ===
+                  props?.loginUserEmail?.toLowerCase(),
+              ) && (
+                <div
+                  className={styles.bellIconWrap}
+                  title="Allocation Approvals"
+                  onClick={() => setIsApprovalPopupOpen(true)}
+                >
+                  <img
+                    src={require("../../../../External/Images/bell.png")}
+                    alt="notification bell"
+                  />
+                  {openApprovalCount > 0 && (
+                    <span className={styles.notificationBadge}>
+                      {openApprovalCount > 99 ? "99+" : openApprovalCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className={styles.filterBtns}>
               <div className={styles.btnAndText}>
@@ -1425,6 +1495,30 @@ const Projects = (props: IProps): JSX.Element => {
             </div>
           </div>
         )}
+      </Dialog>
+
+      <Dialog
+        className="modal-template"
+        header={
+          <div className={styles.approvalDialogHeader}>
+            <h3>Employee Allocation Approvals</h3>
+            <span>Review and action pending allocation requests</span>
+          </div>
+        }
+        draggable={false}
+        blockScroll={false}
+        resizable={false}
+        visible={isApprovalPopupOpen}
+        style={{ width: "70vw" }}
+        onHide={() => {
+          setIsApprovalPopupOpen(false);
+          getOpenAllocationsApprovalCount();
+        }}
+      >
+        <ApproveRejectScreen
+          Notify={props.Notify}
+          refreshCount={getOpenAllocationsApprovalCount}
+        />
       </Dialog>
     </>
   );

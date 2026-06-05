@@ -43,11 +43,26 @@ $ThemePrimeryColor: #00a99d;
     padding: 15px 8px;
 
     .filterBar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
       h2 {
         color: $ThemePrimeryColor;
         margin: 0;
         font-size: 20px;
         font-weight: 500;
+      }
+      .bellIconWrap {
+        position: relative;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        margin-top: 4px;
+
+        img {
+          width: 100%;
+          height: 100%;
+        }
       }
     }
 
@@ -106,6 +121,41 @@ $ThemePrimeryColor: #00a99d;
         height: 100%;
       }
     }
+  }
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
+  border: 1px solid #fff;
+}
+
+.approvalDialogHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 12px;
+    color: #64748b;
   }
 }
 

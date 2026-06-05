@@ -426,7 +426,7 @@ const Forecast = () => {
                   );
                   // Forecast: current month and future months only (unchanged)
                   if (itemDate >= currentMonthStart) {
-                    const finalValue = (value || 0) * 100;
+                    const finalValue = Config.toMonthPercentage(value);
                     baseObj[key] = finalValue;
                     if (finalValue !== 0) {
                       hasValue = true;
@@ -723,6 +723,7 @@ const Forecast = () => {
                     sortable
                     field={month}
                     header={Config.formatColLabel(month)}
+                    body={Config.monthColumnBodyTemplate(month)}
                     style={{ minWidth: "120px" }}
                   />
                 ),

@@ -22,6 +22,8 @@ interface IList {
   FPMMaster: string;
   ProjectChecklist: string;
   EmployeeAllocations: string;
+  AllocationsApproval: string;
+  AllocationsApprovalRejectComments: string;
 }
 interface ILibrary {
   ProjectFiles: string;

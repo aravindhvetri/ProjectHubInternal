@@ -995,6 +995,32 @@ export const getPersonEmail = (person: any): string => {
   ).trim();
 };
 
+export const normalizeEmail = (email: string): string =>
+  email.trim().toLowerCase();
+
+/** Map InternalRegistry EmpEmail → EmpID (case-insensitive email keys). */
+export const buildInternalRegistryEmailToEmpIdMap = (
+  items: any[],
+): Record<string, string> => {
+  const map: Record<string, string> = {};
+  (items || []).forEach((item) => {
+    const email = String(item?.EmpEmail || "").trim();
+    const empId = String(item?.EmpID || "").trim();
+    if (!email || !empId) return;
+    map[normalizeEmail(email)] = empId;
+  });
+  return map;
+};
+
+export const lookupEmpIdByEmail = (
+  registryByEmail: Record<string, string>,
+  email: string,
+): string => {
+  const key = normalizeEmail(email);
+  if (!key) return "";
+  return registryByEmail[key] || "";
+};
+
 export const getPickerDefaultEmails = (people: any[]): string[] => {
   if (!people?.length) return [];
   return people.map((p) => getPersonEmail(p)).filter((e) => e.length > 0);
@@ -1490,7 +1516,6 @@ export const EmployeeAllocationNewFormPanel: React.FC<
   context,
   defaultSelectedEmails,
   onPeopleChange,
-  onEmployeeIdChange,
   onLoadingPctChange,
   onAllocatedOnIsoChange,
   onReleasedOnIsoChange,
@@ -1522,9 +1547,9 @@ export const EmployeeAllocationNewFormPanel: React.FC<
       <div className={css.formField}>
         <label>Employee ID</label>
         <InputText
-          placeholder="e.g. E0042"
+          placeholder="Auto-generated"
           value={formData.EmployeeID || ""}
-          onChange={(e) => onEmployeeIdChange(e.target.value)}
+          readOnly
         />
       </div>
 
