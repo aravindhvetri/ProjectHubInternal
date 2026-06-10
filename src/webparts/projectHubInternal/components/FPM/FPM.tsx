@@ -22,6 +22,63 @@ import { PrimaryButton } from "@fluentui/react";
 import projectComponentStyles from "../Projects/Projects.module.scss";
 import { InputText } from "primereact/inputtext";
 
+// Fixed conversion rates: 1 unit of currency = X USD
+const CURRENCY_TO_USD_RATES: Record<string, number> = {
+  USD: 1,
+  INR: 0.01047,
+  EURO: 1.08,
+  EUR: 1.08,
+  BHD: 2.65119,
+  CAD: 0.72,
+  AED: 0.2723,
+  AUD: 0.65,
+};
+
+const normalizeCurrency = (currency: string): string => {
+  const trimmed = (currency || "").trim();
+  if (!trimmed) {
+    return "USD";
+  }
+
+  const upper = trimmed.toUpperCase();
+  const aliases: Record<string, string> = {
+    USD: "USD",
+    INR: "INR",
+    EURO: "EURO",
+    EUR: "EURO",
+    BHD: "BHD",
+    CAD: "CAD",
+    AED: "AED",
+    AUD: "AUD",
+  };
+
+  return aliases[upper] || upper;
+};
+
+const parseBudgetAmount = (value: any): number => {
+  if (value == null || value === "") {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleaned = String(value).replace(/,/g, "").trim();
+  const parsed = Number(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const convertBudgetToUSD = (amount: number, currency: string): number => {
+  const parsedAmount = parseBudgetAmount(amount);
+  if (!parsedAmount) {
+    return 0;
+  }
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const rate = CURRENCY_TO_USD_RATES[normalizedCurrency] ?? 1;
+  return Number((parsedAmount * rate).toFixed(2));
+};
+
 const FPM = (props: any) => {
   //State:
   const [employeePartialAllocationData, setEmployeePartialAllocationData] =
@@ -294,14 +351,16 @@ const FPM = (props: any) => {
     return directCost + indirectCost + travel + badge + misc;
   };
 
+  const rawBudget = parseBudgetAmount(props?.projectDatas?.Budget);
+  const budget = convertBudgetToUSD(rawBudget, props?.projectDatas?.Currency);
+  const executionCost = getExecutionCost();
+
   //Get Net Profit:
-  const netProfit =
-    (props?.projectDatas?.Budget || 0) - getExecutionCost().toFixed(2);
+  const netProfit = budget - executionCost;
 
   //Get Gross Margin:
-  const grossMargin = props?.projectDatas?.Budget
-    ? ((netProfit / props?.projectDatas?.Budget) * 100).toFixed(2)
-    : "0";
+  const grossMargin =
+    budget > 0 ? ((netProfit / budget) * 100).toFixed(2) : "0.00";
 
   //Save FPM Data:
   const saveFPMData = () => {
@@ -431,8 +490,8 @@ const FPM = (props: any) => {
                 value: projectConfig.costPerPerson || 0,
               },
               {
-                label: "Project Budget",
-                value: props?.projectDatas?.Budget || 0,
+                label: "$Budget",
+                value: rawBudget ? budget.toFixed(2) : "0.00",
               },
               {
                 label: "Indirect Cost",
@@ -447,17 +506,11 @@ const FPM = (props: any) => {
               },
               {
                 label: "Net Profit (USD $)",
-                value: (
-                  props?.projectDatas?.Budget - getExecutionCost()
-                ).toFixed(2),
+                value: netProfit.toFixed(2),
               },
               {
                 label: "Gross Margin %",
-                value: (
-                  ((props?.projectDatas?.Budget - getExecutionCost()) /
-                    props?.projectDatas?.Budget) *
-                  100
-                ).toFixed(2),
+                value: grossMargin,
               },
             ].map((item, index) => (
               <div key={index} className={styles.summaryCard}>

@@ -9,7 +9,65 @@ import { Config } from "../../../../../External/CommonServices/Config";
 import { Button } from "primereact/button";
 import "../DealSheet.css";
 
+// Fixed conversion rates: 1 unit of currency = X USD
+const CURRENCY_TO_USD_RATES: Record<string, number> = {
+  USD: 1,
+  INR: 0.01047,
+  EURO: 1.08,
+  EUR: 1.08,
+  BHD: 2.65119,
+  CAD: 0.72,
+  AED: 0.2723,
+  AUD: 0.65,
+};
+
+const normalizeCurrency = (currency: string): string => {
+  const trimmed = (currency || "").trim();
+  if (!trimmed) {
+    return "USD";
+  }
+
+  const upper = trimmed.toUpperCase();
+  const aliases: Record<string, string> = {
+    USD: "USD",
+    INR: "INR",
+    EURO: "EURO",
+    EUR: "EURO",
+    BHD: "BHD",
+    CAD: "CAD",
+    AED: "AED",
+    AUD: "AUD",
+  };
+
+  return aliases[upper] || upper;
+};
+
+const parseBudgetAmount = (value: any): number => {
+  if (value == null || value === "") {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleaned = String(value).replace(/,/g, "").trim();
+  const parsed = Number(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const convertBudgetToUSD = (amount: number, currency: string): number => {
+  const parsedAmount = parseBudgetAmount(amount);
+  if (!parsedAmount) {
+    return 0;
+  }
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const rate = CURRENCY_TO_USD_RATES[normalizedCurrency] ?? 1;
+  return Number((parsedAmount * rate).toFixed(2));
+};
+
 const Configuration = (props: any) => {
+  console.log(props, "props");
   const [projectConfigurationData, setProjectConfigurationData] = useState<
     any[]
   >([]);
@@ -60,7 +118,8 @@ const Configuration = (props: any) => {
   );
 
   //net profit and gross margin % calculation:
-  const budget = Number(props?.data?.Budget) || 0;
+  const rawBudget = parseBudgetAmount(props?.data?.Budget);
+  const budget = convertBudgetToUSD(rawBudget, props?.data?.Currency);
   const netProfit = budget - totalExecutionCost;
   const grossMargin =
     budget > 0 ? ((netProfit / budget) * 100).toFixed(2) : "0.00";
@@ -281,8 +340,8 @@ const Configuration = (props: any) => {
           />
         </div>
         <div className={`${projectStyles.allField}`}>
-          <Label>Budget</Label>
-          <InputText value={props?.data?.Budget} disabled />
+          <Label>$Budget</Label>
+          <InputText value={rawBudget ? budget.toFixed(2) : ""} disabled />
         </div>
         <div className={`${styles.allField}`}>
           <Label>Direct cost</Label>

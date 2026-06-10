@@ -139,6 +139,7 @@ export namespace Config {
     Notes: "",
     Currency: "",
     MonthlyAmount: 0,
+    DummyInvoice: false,
     StartMonth: "",
     EndMonth: "",
     BillingFrequency: "",

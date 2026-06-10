@@ -103,6 +103,7 @@ export interface IBillingsDetails {
   Notes: string;
   Currency: string;
   MonthlyAmount: number;
+  DummyInvoice: boolean;
   StartMonth: string;
   EndMonth: string;
   BillingFrequency: string;

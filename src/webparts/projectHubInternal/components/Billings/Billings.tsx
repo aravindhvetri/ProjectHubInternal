@@ -102,6 +102,7 @@ const Billings = (props: any) => {
               ? items?.ReminderDaysBeforeDue
               : 7,
             Notes: items?.Notes,
+            DummyInvoice: items?.DummyInvoice,
             Currency: items?.Currency,
             MonthlyAmount: items?.MonthlyAmount,
             StartMonth: items?.StartMonth,
@@ -532,7 +533,8 @@ const Billings = (props: any) => {
                           ) : (
                             ""
                           )}
-                          {(props?.ProjectsFormData?.UpWork === false ||
+                          {!rowData?.DummyInvoice &&
+                          (props?.ProjectsFormData?.UpWork === false ||
                             props?.ProjectsFormData?.UpWork === null) &&
                           ((props?.data?.ProjectStatus == "6" &&
                             (props?.data?.ProjectManager?.some(

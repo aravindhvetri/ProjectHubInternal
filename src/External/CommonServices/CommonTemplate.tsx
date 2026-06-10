@@ -983,6 +983,16 @@ export const namesMatch = (
   b: string | null | undefined,
 ): boolean => normalizeName(a) === normalizeName(b);
 
+export const employeeIdsMatch = (
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean => {
+  const idA = String(a ?? "").trim();
+  const idB = String(b ?? "").trim();
+  if (!idA || !idB) return false;
+  return idA === idB;
+};
+
 export const getPersonDisplayName = (person: any): string => {
   if (!person) return "";
   return String(person.text || person.name || person.displayName || "").trim();
@@ -1204,7 +1214,7 @@ export const recalcDraftFromDates = (draft: AllocationRow): AllocationRow => {
 
 export const findCrossProjectDateConflicts = (
   records: AllocationRow[],
-  employeeName: string,
+  employeeId: string,
   allocatedOn: string | null,
   releasedOn: string | null,
   currentProjectFullId: string,
@@ -1217,7 +1227,7 @@ export const findCrossProjectDateConflicts = (
   const conflicts: DateRangeConflict[] = [];
 
   records.forEach((row) => {
-    if (!namesMatch(row.EmployeeName, employeeName)) return;
+    if (!employeeIdsMatch(row.EmployeeID, employeeId)) return;
     if (excludeRowId != null && row.ID === excludeRowId) return;
     if (isSameProjectRow(row, currentProjectFullId)) return;
 

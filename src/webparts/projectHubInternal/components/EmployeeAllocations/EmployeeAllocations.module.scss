@@ -67,6 +67,8 @@ $mainPaddingY: 24px;
 .container {
   display: block;
   width: 100%;
+  height: 638px;
+  overflow: auto;
   min-width: 0;
   padding: $mainPaddingY $mainPaddingX 40px;
 }
