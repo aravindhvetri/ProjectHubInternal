@@ -47,6 +47,62 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 import FPM from "../FPM/FPM";
 
+const CURRENCY_TO_USD_RATES: Record<string, number> = {
+  USD: 1,
+  INR: 0.01047,
+  EURO: 1.08,
+  EUR: 1.08,
+  BHD: 2.65119,
+  CAD: 0.72,
+  AED: 0.2723,
+  AUD: 0.65,
+};
+
+const normalizeCurrency = (currency: string): string => {
+  const trimmed = (currency || "").trim();
+  if (!trimmed) {
+    return "USD";
+  }
+
+  const upper = trimmed.toUpperCase();
+  const aliases: Record<string, string> = {
+    USD: "USD",
+    INR: "INR",
+    EURO: "EURO",
+    EUR: "EURO",
+    BHD: "BHD",
+    CAD: "CAD",
+    AED: "AED",
+    AUD: "AUD",
+  };
+
+  return aliases[upper] || upper;
+};
+
+const parseBudgetAmount = (value: any): number => {
+  if (value == null || value === "") {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleaned = String(value).replace(/,/g, "").trim();
+  const parsed = Number(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const convertBudgetToUSD = (amount: number, currency: string): number => {
+  const parsedAmount = parseBudgetAmount(amount);
+  if (!parsedAmount) {
+    return 0;
+  }
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const rate = CURRENCY_TO_USD_RATES[normalizedCurrency] ?? 1;
+  return Number((parsedAmount * rate).toFixed(2));
+};
+
 const ProjectFormPage = (props: any) => {
   // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
   const TARGET_SITE_URL =
@@ -216,11 +272,17 @@ const ProjectFormPage = (props: any) => {
       .then((res: any) => {
         if (res && res.length > 0) {
           const item = res[0];
-          setFPMData({
+          const nextFpmData = {
             ID: item.ID,
-            FPMProfit: item.FPMProfit,
-            FPMMargin: item.FPMMargin,
-          });
+            FPMProfit: item.FPMProfit ?? "",
+            FPMMargin: item.FPMMargin ?? "",
+          };
+          setFPMData(nextFpmData);
+          setFormData((prev: any) => ({
+            ...prev,
+            FPMProfit: nextFpmData.FPMProfit,
+            FPMMargin: nextFpmData.FPMMargin,
+          }));
         }
       })
       .catch((err) => {
@@ -522,7 +584,14 @@ const ProjectFormPage = (props: any) => {
   React.useEffect(() => {
     if (props?.data && leadOptions.length > 0) {
       setFormData((prev: any) => {
-        const newForm = { ...props.data };
+        const {
+          DealProfit: _dealProfit,
+          DealMargin: _dealMargin,
+          FPMProfit: _fpmProfit,
+          FPMMargin: _fpmMargin,
+          ...projectData
+        } = props.data;
+        const newForm = { ...projectData };
         if (
           props.data?.AccountManager &&
           typeof props?.data?.AccountManager === "string"
@@ -534,7 +603,13 @@ const ProjectFormPage = (props: any) => {
             newForm.AccountManager = matchedLead;
           }
         }
-        return newForm;
+        return {
+          ...newForm,
+          DealProfit: prev.DealProfit ?? "",
+          DealMargin: prev.DealMargin ?? "",
+          FPMProfit: prev.FPMProfit ?? "",
+          FPMMargin: prev.FPMMargin ?? "",
+        };
       });
       LoadExistingFiles(props?.data?.ID);
     }
@@ -555,22 +630,26 @@ const ProjectFormPage = (props: any) => {
 
   //Deal margin and profit calculation:
   React.useEffect(() => {
-    const budget = Number(formData?.Budget) || 0;
+    const budget = convertBudgetToUSD(
+      formData?.Budget,
+      formData?.Currency || props?.data?.Currency,
+    );
     const totalExecutionCost =
       Number(configurationData?.TotalExecutionCost) || 0;
-    const dealProfit: any = Number(budget - totalExecutionCost).toFixed(2);
+    const dealProfit = Number((budget - totalExecutionCost).toFixed(2));
     const dealMargin =
       budget > 0 ? ((dealProfit / budget) * 100).toFixed(2) : "0";
 
     setFormData((prev: any) => ({
       ...prev,
-      DealProfit: dealProfit,
+      DealProfit: dealProfit.toFixed(2),
       DealMargin: dealMargin,
     }));
   }, [
-    // formData?.Budget,
+    formData?.Budget,
+    formData?.Currency,
     configurationData?.TotalExecutionCost,
-    configurationData?.USDRupees,
+    props?.data?.Currency,
   ]);
 
   //Set FPM Data to formData:
@@ -578,11 +657,11 @@ const ProjectFormPage = (props: any) => {
     if (fpmData?.ID) {
       setFormData((prev: any) => ({
         ...prev,
-        FPMProfit: fpmData.FPMProfit,
-        FPMMargin: fpmData.FPMMargin,
+        FPMProfit: Number(fpmData.FPMProfit).toFixed(2) ?? "",
+        FPMMargin: Number(fpmData.FPMMargin).toFixed(2) ?? "",
       }));
     }
-  }, [fpmData, formData?.Budget]);
+  }, [fpmData]);
 
   //LoadExistingFiles in Library:
   const LoadExistingFiles = async (id: number) => {
@@ -2212,7 +2291,10 @@ const ProjectFormPage = (props: any) => {
       <Dialog
         visible={showFPM}
         style={{ width: "64vw" }}
-        onHide={() => setShowFPM(false)}
+        onHide={() => {
+          setShowFPM(false);
+          getFPMData();
+        }}
         modal
         showHeader={false}
       >

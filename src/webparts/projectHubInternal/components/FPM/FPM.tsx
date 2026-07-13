@@ -80,6 +80,7 @@ const convertBudgetToUSD = (amount: number, currency: string): number => {
 };
 
 const FPM = (props: any) => {
+  console.log("props data in FPM", props?.projectDatas);
   //State:
   const [employeePartialAllocationData, setEmployeePartialAllocationData] =
     useState<any[]>([]);
@@ -97,6 +98,7 @@ const FPM = (props: any) => {
   const [dealConfigData, setDealConfigData] = useState<any>({});
   const [usdValue, setUsdValue] = useState<number>(0);
   const [usdError, setUsdError] = useState<boolean>(false);
+  const [approvedBillingTotal, setApprovedBillingTotal] = useState<number>(0);
 
   //Get internal registry full datas:
   const getInternalRegistryDatas = () => {
@@ -132,9 +134,62 @@ const FPM = (props: any) => {
         });
         getDealSheetConfiguration();
         getFPMMasterData();
+        getCRMBillingsData();
       })
       .catch((err) => {
         console.log("ProjectConfiguration error", err);
+      });
+  };
+
+  //Get approved CRMBillings total based on BillingModel:
+  const getCRMBillingsData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.CRMBillings,
+      Select: "*,Project/Id",
+      Expand: "Project",
+      Orderby: "Modified",
+      Orderbydecorasc: true,
+      Filter: [
+        {
+          FilterKey: "IsDelete",
+          Operator: "eq",
+          FilterValue: "false",
+        },
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.projectDatas?.ID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        const billingModel = props?.projectDatas?.BillingModel;
+        const amountField =
+          billingModel === "T&M"
+            ? "TMAmount"
+            : billingModel === "Milestone"
+              ? "Amount"
+              : billingModel === "FixedMonthly"
+                ? "MonthlyAmount"
+                : null;
+
+        if (!amountField) {
+          setApprovedBillingTotal(0);
+          return;
+        }
+
+        const total = (res || []).reduce((sum: number, item: any) => {
+          if (item?.Status != "1") {
+            return sum;
+          }
+          return sum + parseBudgetAmount(item?.[amountField]);
+        }, 0);
+
+        setApprovedBillingTotal(total);
+      })
+      .catch((err) => {
+        console.log("Get CRMBillings details error in FPM.tsx", err);
+        setApprovedBillingTotal(0);
       });
   };
 
@@ -153,7 +208,7 @@ const FPM = (props: any) => {
       ],
     })
       .then((res: any) => {
-        const data = res[0];
+        const data = res?.[0] || {};
         setDealConfigData({
           TrainingCost: data?.TrainingCost || 0,
           TravelVisaCosts: data?.TravelVisaCosts || 0,
@@ -184,8 +239,8 @@ const FPM = (props: any) => {
       ],
     })
       .then((res: any) => {
-        if (res.length > 0 && res[0]?.USDRupee) {
-          setUsdValue(Number(res[0].USDRupee));
+        if (res.length > 0 && res[0]?.USDRupees) {
+          setUsdValue(Number(res[0].USDRupees));
         }
       })
       .catch((err) => console.log("FPMMaster fetch error", err));
@@ -351,16 +406,20 @@ const FPM = (props: any) => {
     return directCost + indirectCost + travel + badge + misc;
   };
 
-  const rawBudget = parseBudgetAmount(props?.projectDatas?.Budget);
-  const budget = convertBudgetToUSD(rawBudget, props?.projectDatas?.Currency);
+  // Invoice total from approved CRMBillings only (not project Budget)
+  const rawInvoices = approvedBillingTotal;
+  const invoices = convertBudgetToUSD(
+    rawInvoices,
+    props?.projectDatas?.Currency,
+  );
   const executionCost = getExecutionCost();
 
   //Get Net Profit:
-  const netProfit = budget - executionCost;
+  const netProfit = invoices - executionCost;
 
   //Get Gross Margin:
   const grossMargin =
-    budget > 0 ? ((netProfit / budget) * 100).toFixed(2) : "0.00";
+    invoices > 0 ? ((netProfit / invoices) * 100).toFixed(2) : "0.00";
 
   //Save FPM Data:
   const saveFPMData = () => {
@@ -490,8 +549,8 @@ const FPM = (props: any) => {
                 value: projectConfig.costPerPerson || 0,
               },
               {
-                label: "$Budget",
-                value: rawBudget ? budget.toFixed(2) : "0.00",
+                label: "$Invoices",
+                value: rawInvoices ? invoices.toFixed(2) : "0.00",
               },
               {
                 label: "Indirect Cost",

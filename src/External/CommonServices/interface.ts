@@ -239,6 +239,23 @@ export interface AllocationRow extends EmployeeAllocationRecord {
   isEditing?: boolean;
 }
 
+/** One employee on one project — merged from multiple allocation transactions */
+export interface ConsolidatedAllocationRow extends AllocationRow {
+  consolidatedKey: string;
+  sourceTransactions: AllocationRow[];
+  activeTransactionId: number;
+}
+
+/** Planned bench (free capacity) segment derived from cross-project allocations */
+export interface BenchAllocationSegment {
+  allocatedOn: string;
+  releasedOn: string | null;
+  beginDate: Date;
+  endDate: Date;
+  loading: number;
+  allocationJson: AllocationMonth[];
+}
+
 /** CSS module slots for the cross-project availability summary */
 export interface IEmployeeAvailabilitySummaryScss {
   availabilitySummary: string;
@@ -277,6 +294,29 @@ export interface IEmployeeAllocationDashboardScss {
   overAllocated: string;
   projectList: string;
   projectTag: string;
+}
+
+/** CSS module slots for allocation transaction view / edit dialogs */
+export interface IEmployeeAllocationDialogScss {
+  transactionDialog: string;
+  transactionTableWrapper: string;
+  transactionMeta: string;
+  monthChip: string;
+  over: string;
+  high: string;
+  medium: string;
+  formPanel: string;
+  formPanelEdit: string;
+  formGrid: string;
+  formGridThreeCol: string;
+  formField: string;
+  readonlyField: string;
+  formActions: string;
+  btnSecondary: string;
+  btnPrimary: string;
+  btnIcon: string;
+  edit: string;
+  view: string;
 }
 
 /** CSS module slots for the new-allocation form panel */

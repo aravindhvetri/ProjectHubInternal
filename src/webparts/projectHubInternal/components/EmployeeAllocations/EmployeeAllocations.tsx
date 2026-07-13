@@ -12,7 +12,9 @@ import * as React from "react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { InputNumber } from "primereact/inputnumber";
+import { IconField } from "primereact/iconfield";
+import { InputIcon } from "primereact/inputicon";
+import { InputText } from "primereact/inputtext";
 import { PeoplePicker } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import {
@@ -23,40 +25,51 @@ import styles from "./EmployeeAllocations.module.scss";
 
 import type {
   AllocationRow,
+  ConsolidatedAllocationRow,
   DashboardStats,
+  IEmployeeAllocationDialogScss,
 } from "../../../../External/CommonServices/interface";
 
 import {
-  buildCalculatedAllocationJson,
   buildDateConflictMessage,
   computeBeginDate,
   computeDashboardStats,
   computeEmployeeAvailabilitySummary,
   computeEndDate,
   buildInternalRegistryEmailToEmpIdMap,
-  DateInlineEditor,
+  consolidateAllocationsByEmployeeProject,
   EmployeeAllocationDashboard,
+  EmployeeAllocationEditDialog,
   EmployeeAllocationNewFormPanel,
+  EmployeeAllocationTransactionsDialog,
   EmployeeAvailabilitySummaryPanel,
   findCrossProjectDateConflicts,
   formatDate,
   formatDateForSp,
+  getActiveProjectAllocation,
+  getAllocationProjectDisplayLabel,
   getPersonDisplayName,
   getPersonEmail,
   getPickerDefaultEmails,
+  getRowProjectFullId,
+  isBenchAllocationRecord,
+  isDisplayableAllocationRecord,
+  isMeaningfulAllocationRecord,
   lookupEmpIdByEmail,
-  inlineDatePickerStyles,
-  localDateToIso,
   mapSpItemToRow,
   employeeIdsMatch,
   parseMonthLabel,
   recalcDraftFromDates,
   recalcFormDerivedFields,
-  stopTableCellEvent,
+  reconcileEmployeeBenchAllocations,
+  sortEmployeeAllocationSearchRows,
 } from "../../../../External/CommonServices/CommonTemplate";
 
 const PENDING_APPROVAL_MESSAGE =
   "This employee is currently locked because an allocation request is already under the approval process. A new allocation can only be added after the current request has been approved.";
+
+const allocationDialogCss = styles as typeof styles &
+  IEmployeeAllocationDialogScss;
 
 const getRequestedByFromProjectManagers = (projectManagers: any[]): string => {
   if (!Array.isArray(projectManagers) || projectManagers.length === 0) {
@@ -70,7 +83,6 @@ const getRequestedByFromProjectManagers = (projectManagers: any[]): string => {
 
 //  COMPONENT
 const EmployeeAllocations = (props: any) => {
-  console.log("EmployeeAllocations props", props);
   // ── State ────────────────────────────────────────────────────
   const [allRows, setAllRows] = useState<AllocationRow[]>([]);
   const [globalRows, setGlobalRows] = useState<AllocationRow[]>([]);
@@ -98,13 +110,19 @@ const EmployeeAllocations = (props: any) => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<Partial<AllocationRow>>({});
 
-  // Inline edit — ref mirrors state so Save always reads the latest draft
-  const [editingRowId, setEditingRowId] = useState<number | null>(null);
-  const [editDraft, setEditDraft] = useState<AllocationRow | null>(null);
-  const editDraftRef = useRef<AllocationRow | null>(null);
+  // View / edit dialogs for consolidated rows
+  const [viewConsolidatedRow, setViewConsolidatedRow] =
+    useState<ConsolidatedAllocationRow | null>(null);
+  const [editConsolidatedRow, setEditConsolidatedRow] =
+    useState<ConsolidatedAllocationRow | null>(null);
+  const [editTransactionDraft, setEditTransactionDraft] =
+    useState<AllocationRow | null>(null);
+  const editTransactionDraftRef = useRef<AllocationRow | null>(null);
+  const [benchProjectLookupId, setBenchProjectLookupId] = useState(0);
 
   // Dynamic month columns for the DataTable
   const [monthColumns, setMonthColumns] = useState<string[]>([]);
+  const [tableSearchTerm, setTableSearchTerm] = useState("");
 
   // InternalRegistry EmpEmail → EmpID lookup for People Picker selections
   const [registryByEmail, setRegistryByEmail] = useState<
@@ -124,6 +142,38 @@ const EmployeeAllocations = (props: any) => {
       return rowFullId === projectFullId;
     },
     [projectFullId],
+  );
+
+  const isViewingBenchProject = projectFullId === Config.benchProject;
+
+  const displayableGlobalRows = useMemo(
+    () =>
+      globalRows.filter((row) =>
+        isDisplayableAllocationRecord(row, globalRows),
+      ),
+    [globalRows],
+  );
+
+  const displayableProjectRows = useMemo(
+    () =>
+      allRows.filter((row) => isDisplayableAllocationRecord(row, globalRows)),
+    [allRows, globalRows],
+  );
+
+  const countsAsOnCurrentProject = useCallback(
+    (row: AllocationRow) => {
+      if (
+        !isDisplayableAllocationRecord(row, globalRows) ||
+        !isCurrentProjectRow(row)
+      ) {
+        return false;
+      }
+      if (isBenchAllocationRecord(row) && !isViewingBenchProject) {
+        return false;
+      }
+      return true;
+    },
+    [globalRows, isCurrentProjectRow, isViewingBenchProject],
   );
 
   //  DATA FETCHING
@@ -303,10 +353,33 @@ const EmployeeAllocations = (props: any) => {
 
   useEffect(() => {
     clearEmployeeSearch();
-    editDraftRef.current = null;
-    setEditingRowId(null);
-    setEditDraft(null);
+    setTableSearchTerm("");
+    setViewConsolidatedRow(null);
+    setEditConsolidatedRow(null);
+    editTransactionDraftRef.current = null;
+    setEditTransactionDraft(null);
   }, [projectFullId]);
+
+  useEffect(() => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.CRMProjects,
+      Select: "ID,ProjectID",
+      Filter: [
+        {
+          FilterKey: "ProjectID",
+          Operator: "eq",
+          FilterValue: Config.benchProject,
+        },
+      ],
+    })
+      .then((res: any[]) => {
+        const id = Number(res?.[0]?.ID ?? 0);
+        if (id) setBenchProjectLookupId(id);
+      })
+      .catch((err: any) => {
+        console.error("Bench project lookup fetch error:", err);
+      });
+  }, []);
 
   const hasReleasedOnBeforeAllocatedOn = (
     allocatedOn: string | null | undefined,
@@ -335,6 +408,7 @@ const EmployeeAllocations = (props: any) => {
     if (!proposedStart || !proposedEnd) return false;
 
     return allRows.some((row) => {
+      if (!isMeaningfulAllocationRecord(row)) return false;
       if (!employeeIdsMatch(row.EmployeeID, employeeId)) return false;
       if (excludeRowId != null && row.ID === excludeRowId) return false;
       if (!isCurrentProjectRow(row)) return false;
@@ -361,6 +435,8 @@ const EmployeeAllocations = (props: any) => {
   ): Map<string, number> => {
     const totals = new Map<string, number>();
     globalRows.forEach((row) => {
+      if (!isMeaningfulAllocationRecord(row)) return;
+      if (isBenchAllocationRecord(row)) return;
       if (!employeeIdsMatch(row.EmployeeID, employeeId)) return;
       if (excludeRowId != null && row.ID === excludeRowId) return;
       row.AllocationJson.forEach((month) => {
@@ -393,42 +469,57 @@ const EmployeeAllocations = (props: any) => {
       );
   };
 
-  const isLatestAllocationRowForEmployee = useCallback(
-    (row: AllocationRow): boolean => {
-      const employeeRows = globalRows.filter((r) =>
-        employeeIdsMatch(r.EmployeeID, row.EmployeeID),
-      );
-      if (employeeRows.length === 0) return false;
-
-      const sorted = [...employeeRows].sort((a, b) => {
-        const aTime = a.AllocatedOn ? new Date(a.AllocatedOn).getTime() : 0;
-        const bTime = b.AllocatedOn ? new Date(b.AllocatedOn).getTime() : 0;
-        if (bTime !== aTime) return bTime - aTime;
-        return (b.ID ?? 0) - (a.ID ?? 0);
-      });
-
-      return sorted[0]?.ID === row.ID;
+  const syncBenchForEmployee = useCallback(
+    async (employeeId: string, employeeName: string) => {
+      if (!benchProjectLookupId || isViewingBenchProject) return;
+      try {
+        const res: any[] = await SPServices.SPReadItems({
+          Listname: Config.ListNames.EmployeeAllocations,
+          Select:
+            "*,Project/Id,Project/Title,Project/ProjectID,Project/ProjectName",
+          Expand: "Project",
+          Orderby: "EmployeeID",
+          Orderbydecorasc: true,
+        });
+        const rows: AllocationRow[] = (res || []).map((item: any) =>
+          mapSpItemToRow(item, projectFullId, projectTitle),
+        );
+        await reconcileEmployeeBenchAllocations(
+          employeeId,
+          employeeName,
+          rows,
+          benchProjectLookupId,
+        );
+      } catch (err) {
+        console.error("Bench sync error:", err);
+      }
     },
-    [globalRows],
+    [benchProjectLookupId, isViewingBenchProject, projectFullId, projectTitle],
   );
 
   // Recompute dashboard when data or selection changes (cross-project stats)
   useEffect(() => {
     if (!selectedEmployeeId) return;
 
-    const employeeRows = globalRows.filter((r) =>
+    const employeeRows = displayableGlobalRows.filter((r) =>
       employeeIdsMatch(r.EmployeeID, selectedEmployeeId),
     );
-    const projectRows = allRows.filter((r) =>
+    const projectRows = displayableProjectRows.filter((r) =>
       employeeIdsMatch(r.EmployeeID, selectedEmployeeId),
     );
+    const onCurrentProjectRows = projectRows.filter(countsAsOnCurrentProject);
 
-    setIsAlreadyOnProject(projectRows.length > 0);
+    setIsAlreadyOnProject(onCurrentProjectRows.length > 0);
     setIsNewEmployee(employeeRows.length === 0);
     setDashboard(
       employeeRows.length > 0 ? computeDashboardStats(employeeRows) : null,
     );
-  }, [globalRows, allRows, selectedEmployeeId]);
+  }, [
+    displayableGlobalRows,
+    displayableProjectRows,
+    selectedEmployeeId,
+    countsAsOnCurrentProject,
+  ]);
 
   useEffect(() => {
     if (!selectedEmployeeId) {
@@ -439,23 +530,43 @@ const EmployeeAllocations = (props: any) => {
     setIsPendingApproval(employeeHasOpenApprovalRequest(selectedEmployeeId));
   }, [selectedEmployeeId, employeeHasOpenApprovalRequest]);
 
-  // Month columns follow whichever rows are shown in the table
-  useEffect(() => {
-    const rowsForMonths = selectedEmployeeId
-      ? globalRows.filter((r) =>
+  const consolidatedDisplayRows = useMemo(() => {
+    const sourceRows = selectedEmployeeId
+      ? displayableGlobalRows.filter((r) =>
           employeeIdsMatch(r.EmployeeID, selectedEmployeeId),
         )
-      : allRows;
-    refreshMonthColumns(rowsForMonths);
-  }, [selectedEmployeeId, globalRows, allRows]);
+      : displayableProjectRows;
+
+    const consolidated = consolidateAllocationsByEmployeeProject(
+      sourceRows,
+      projectFullId,
+    );
+
+    if (!selectedEmployeeId) return consolidated;
+
+    return sortEmployeeAllocationSearchRows(
+      consolidated,
+      projectFullId,
+    ) as ConsolidatedAllocationRow[];
+  }, [
+    selectedEmployeeId,
+    displayableGlobalRows,
+    displayableProjectRows,
+    projectFullId,
+  ]);
+
+  // Month columns follow consolidated rows shown in the table
+  useEffect(() => {
+    refreshMonthColumns(consolidatedDisplayRows);
+  }, [consolidatedDisplayRows]);
 
   const availabilitySummary = useMemo(() => {
     if (!selectedEmployeeId) return null;
-    const employeeRows = globalRows.filter((r) =>
+    const employeeRows = displayableGlobalRows.filter((r) =>
       employeeIdsMatch(r.EmployeeID, selectedEmployeeId),
     );
     return computeEmployeeAvailabilitySummary(employeeRows);
-  }, [selectedEmployeeId, globalRows]);
+  }, [selectedEmployeeId, displayableGlobalRows]);
 
   // ─── Recompute month columns whenever rows change ─────────────
   const refreshMonthColumns = (rows: AllocationRow[]) => {
@@ -498,7 +609,7 @@ const EmployeeAllocations = (props: any) => {
 
   //  ADD NEW ROW (form-based)
   const handleAddClick = () => {
-    if (isAnyRowEditing()) {
+    if (editConsolidatedRow) {
       props.Notify?.(
         "warn",
         "Warning",
@@ -683,11 +794,12 @@ const EmployeeAllocations = (props: any) => {
         RequestJSON: approvalPayload,
       }),
     ])
-      .then(() => {
+      .then(async () => {
         setShowForm(false);
         setFormData({});
         setFormPickerPeople([]);
         setFormPickerKey((k) => k + 1);
+        await syncBenchForEmployee(employeeId, employeeName);
         refreshData();
       })
       .catch((err: any) => {
@@ -707,26 +819,13 @@ const EmployeeAllocations = (props: any) => {
     setFormPickerKey((k) => k + 1);
   };
 
-  //  INLINE TABLE EDITING
-  const isAnyRowEditing = () =>
-    editingRowId !== null || allRows.some((r) => r.isNewRow);
-
-  const getRowDraft = (row: AllocationRow): AllocationRow | null => {
-    if (editingRowId === row.ID && editDraft) return editDraft;
-    return null;
+  const handleViewRow = (row: ConsolidatedAllocationRow) => {
+    setViewConsolidatedRow(row);
   };
 
-  const updateEditDraft = (updater: (prev: AllocationRow) => AllocationRow) => {
-    setEditDraft((prev) => {
-      if (!prev) return prev;
-      const updated = updater(prev);
-      editDraftRef.current = updated;
-      return updated;
-    });
-  };
-
-  const handleEditRow = (rowData: AllocationRow) => {
-    if (!isCurrentProjectRow(rowData)) {
+  const handleEditRow = (row: ConsolidatedAllocationRow) => {
+    const rowProjectId = getRowProjectFullId(row);
+    if (rowProjectId !== projectFullId) {
       props.Notify?.(
         "info",
         "Read only",
@@ -734,7 +833,7 @@ const EmployeeAllocations = (props: any) => {
       );
       return;
     }
-    if (isAnyRowEditing()) {
+    if (editConsolidatedRow) {
       props.Notify?.(
         "warn",
         "Warning",
@@ -742,36 +841,42 @@ const EmployeeAllocations = (props: any) => {
       );
       return;
     }
-    if (!isLatestAllocationRowForEmployee(rowData)) {
+    const active = getActiveProjectAllocation(row.sourceTransactions);
+    if (!active) {
       props.Notify?.(
-        "info",
-        "Read only",
-        "Only the employee's current allocation can be edited. Earlier allocations are view only.",
+        "warn",
+        "Validation",
+        "No active allocation found to edit.",
       );
       return;
     }
-    const draftCopy = { ...rowData };
-    editDraftRef.current = draftCopy;
-    setEditingRowId(rowData.ID);
-    setEditDraft(draftCopy);
-    setAllRows((prev) =>
-      prev.map((r) => (r.ID === rowData.ID ? { ...r, isEditing: true } : r)),
-    );
+    const draftCopy = { ...active };
+    editTransactionDraftRef.current = draftCopy;
+    setEditTransactionDraft(draftCopy);
+    setEditConsolidatedRow(row);
   };
 
-  const handleCancelRow = (rowData: AllocationRow) => {
-    const id = rowData.ID;
-    editDraftRef.current = null;
-    setEditingRowId(null);
-    setEditDraft(null);
-    setAllRows((prev) =>
-      prev.map((r) => (r.ID === id ? { ...r, isEditing: false } : r)),
-    );
+  const handleCloseEditDialog = () => {
+    editTransactionDraftRef.current = null;
+    setEditTransactionDraft(null);
+    setEditConsolidatedRow(null);
   };
 
-  const handleSaveRow = (rowData: AllocationRow) => {
-    const draft = editingRowId === rowData.ID ? editDraftRef.current : null;
-    if (!draft) return;
+  const updateEditTransactionDraft = (
+    updater: (prev: AllocationRow) => AllocationRow,
+  ) => {
+    setEditTransactionDraft((prev) => {
+      if (!prev) return prev;
+      const updated = updater(prev);
+      editTransactionDraftRef.current = updated;
+      return updated;
+    });
+  };
+
+  const handleEditDialogSave = () => {
+    const draft = editTransactionDraftRef.current;
+    const rowId = draft?.ID;
+    if (!draft || rowId == null) return;
 
     if (!draft.AllocatedOn) {
       props.Notify?.("warn", "Validation", "Allocated On date is required.");
@@ -798,7 +903,7 @@ const EmployeeAllocations = (props: any) => {
         draft.EmployeeID,
         draft.AllocatedOn,
         draft.ReleasedOn,
-        rowData.ID,
+        rowId,
       )
     ) {
       props.Notify?.(
@@ -812,7 +917,7 @@ const EmployeeAllocations = (props: any) => {
     const overAllocatedMonths = getEmployeeOverAllocatedMonths(
       draft.EmployeeID,
       draft.AllocationJson ?? [],
-      rowData.ID,
+      rowId,
     );
     if (overAllocatedMonths.length > 0) {
       props.Notify?.(
@@ -829,7 +934,7 @@ const EmployeeAllocations = (props: any) => {
       draft.AllocatedOn,
       draft.ReleasedOn ?? null,
       projectFullId,
-      rowData.ID,
+      rowId,
     );
     if (dateConflicts.length > 0) {
       props.Notify?.(
@@ -862,22 +967,16 @@ const EmployeeAllocations = (props: any) => {
     SPServices.SPUpdateItem({
       Listname: Config.ListNames.EmployeeAllocations,
       RequestJSON: payload,
-      ID: rowData.ID,
+      ID: rowId,
     })
-      .then(() => {
-        editDraftRef.current = null;
-        setEditingRowId(null);
-        setEditDraft(null);
-        setAllRows((prev) =>
-          prev.map((r) =>
-            r.ID === rowData.ID ? { ...r, isEditing: false } : r,
-          ),
-        );
+      .then(async () => {
+        handleCloseEditDialog();
         props.Notify?.(
           "success",
           "Success",
           "Allocation updated successfully.",
         );
+        await syncBenchForEmployee(draft.EmployeeID, draft.EmployeeName);
         refreshData();
       })
       .catch((err: any) => {
@@ -890,67 +989,22 @@ const EmployeeAllocations = (props: any) => {
       });
   };
 
-  const handleInlineMonthChange = (month: string, value: number | null) => {
-    const frac = value ?? 0;
-    updateEditDraft((prev) => {
-      const hasMonth = prev.AllocationJson.some((m) => m.month === month);
-      const AllocationJson = hasMonth
-        ? prev.AllocationJson.map((m) =>
-            m.month === month ? { ...m, value: frac } : m,
-          )
-        : [...prev.AllocationJson, { month, value: frac }].sort(
-            (a, b) =>
-              parseMonthLabel(a.month).getTime() -
-              parseMonthLabel(b.month).getTime(),
-          );
-      return { ...prev, AllocationJson };
-    });
-  };
-
-  const handleInlineLoadingChange = (loading: number | null) => {
-    updateEditDraft((prev) => {
-      const newLoading = loading ?? 0;
-      const begin = prev.BeginDate ? new Date(prev.BeginDate) : null;
-      const end = prev.EndDate ? new Date(prev.EndDate) : null;
-      if (!begin || !end) return { ...prev, Loading: newLoading };
-      const newJson = buildCalculatedAllocationJson(newLoading, begin, end);
-      return { ...prev, Loading: newLoading, AllocationJson: newJson };
-    });
-  };
-
-  const handleEditAllocatedOnChange = (date: Date | null | undefined) => {
-    updateEditDraft((prev) =>
-      recalcDraftFromDates({
-        ...prev,
-        AllocatedOn: localDateToIso(date ?? null),
-      }),
-    );
-  };
-
-  const handleEditReleasedOnChange = (date: Date | null | undefined) => {
-    updateEditDraft((prev) =>
-      recalcDraftFromDates({
-        ...prev,
-        ReleasedOn: localDateToIso(date ?? null),
-      }),
-    );
-  };
-
   //  COLUMN RENDERERS
   const projectBody = (row: AllocationRow) => {
-    const title =
-      row.ProjectTitle?.trim() ||
-      row.ProjectFullID?.trim() ||
-      row.ProjectID ||
-      "-";
-    const onThisProject = isCurrentProjectRow(row);
+    const title = getAllocationProjectDisplayLabel(row);
+    const isBenchRow = isBenchAllocationRecord(row);
+    const onThisProject = countsAsOnCurrentProject(row);
     return (
       <div>
         <span
           style={{
             fontSize: "12px",
-            fontWeight: onThisProject ? 600 : 400,
-            color: onThisProject ? "#0b6e4f" : "#686766",
+            fontWeight: onThisProject || isBenchRow ? 600 : 400,
+            color: isBenchRow
+              ? "#0d900d"
+              : onThisProject
+                ? "#0b6e4f"
+                : "#686766",
           }}
         >
           {title}
@@ -987,119 +1041,13 @@ const EmployeeAllocations = (props: any) => {
     );
   };
 
-  const employeeIdBody = (row: AllocationRow) => {
-    const draft = getRowDraft(row);
-    const employeeId =
-      draft && editingRowId === row.ID ? draft.EmployeeID : row.EmployeeID;
-    return (
-      <span
-        style={{
-          fontSize: "12px",
-          color: "#686766",
-        }}
-      >
-        {employeeId || "-"}
-      </span>
-    );
-  };
+  const employeeIdBody = (row: ConsolidatedAllocationRow) => (
+    <span style={{ fontSize: "12px", color: "#686766" }}>
+      {row.EmployeeID || "-"}
+    </span>
+  );
 
-  const loadingBody = (row: AllocationRow) => {
-    const draft = getRowDraft(row);
-    if (draft) {
-      return (
-        <InputNumber
-          key={`loading-${row.ID}`}
-          value={(draft.Loading ?? 0) * 100}
-          onValueChange={(e) => handleInlineLoadingChange((e.value ?? 0) / 100)}
-          suffix="%"
-          min={0}
-          max={100}
-          minFractionDigits={0}
-          maxFractionDigits={0}
-          style={{ width: "80px" }}
-        />
-      );
-    }
-    const pct = Math.round((row.Loading ?? 0) * 100);
-    return (
-      <span
-        className={
-          pct >= 100
-            ? `${styles.monthChip} ${styles.over}`
-            : pct >= 50
-              ? `${styles.monthChip} ${styles.high}`
-              : `${styles.monthChip} ${styles.medium}`
-        }
-      >
-        {pct}%
-      </span>
-    );
-  };
-
-  const dateBody =
-    (field: "AllocatedOn" | "ReleasedOn" | "BeginDate" | "EndDate") =>
-    (row: AllocationRow) => {
-      const draft = getRowDraft(row);
-      if (draft && editingRowId === row.ID && field === "AllocatedOn") {
-        return (
-          <div
-            className={styles.inlineEditorCell}
-            onMouseDown={stopTableCellEvent}
-            onClick={stopTableCellEvent}
-          >
-            <DateInlineEditor
-              rowId={row.ID}
-              initialIso={draft.AllocatedOn}
-              onDateChange={handleEditAllocatedOnChange}
-              pickerStyles={inlineDatePickerStyles}
-            />
-          </div>
-        );
-      }
-      if (draft && editingRowId === row.ID && field === "ReleasedOn") {
-        return (
-          <div
-            className={styles.inlineEditorCell}
-            onMouseDown={stopTableCellEvent}
-            onClick={stopTableCellEvent}
-          >
-            <DateInlineEditor
-              rowId={row.ID}
-              initialIso={draft.ReleasedOn}
-              onDateChange={handleEditReleasedOnChange}
-              pickerStyles={inlineDatePickerStyles}
-            />
-          </div>
-        );
-      }
-      return (
-        <span style={{ fontSize: "12px", color: "#686766" }}>
-          {formatDate(row[field] as string)}
-        </span>
-      );
-    };
-
-  const monthBody = (month: string) => (row: AllocationRow) => {
-    const draft = getRowDraft(row);
-    if (draft) {
-      const found = draft.AllocationJson.find((m) => m.month === month);
-      return (
-        <InputNumber
-          key={`month-${row.ID}-${month}`}
-          value={found ? parseFloat((found.value * 100).toFixed(1)) : 0}
-          onValueChange={(e) =>
-            handleInlineMonthChange(month, (e.value ?? 0) / 100)
-          }
-          suffix="%"
-          min={0}
-          max={100}
-          minFractionDigits={0}
-          maxFractionDigits={1}
-          style={{ width: "72px" }}
-        />
-      );
-    }
-
+  const monthBody = (month: string) => (row: ConsolidatedAllocationRow) => {
     const found = row.AllocationJson.find((m) => m.month === month);
     const val = found ? found.value : 0;
     const pct = Math.round(val * 100);
@@ -1121,7 +1069,7 @@ const EmployeeAllocations = (props: any) => {
     );
   };
 
-  const getStatusDisplayValue = (row: AllocationRow): string => {
+  const getStatusDisplayValue = (row: ConsolidatedAllocationRow): string => {
     const employeeId = String(row.EmployeeID ?? "").trim();
     const projectId = String(row.ProjectFullID ?? row.ProjectID ?? "").trim();
 
@@ -1148,7 +1096,7 @@ const EmployeeAllocations = (props: any) => {
     }
   };
 
-  const statusBody = (row: AllocationRow) => {
+  const statusBody = (row: ConsolidatedAllocationRow) => {
     const displayValue = getStatusDisplayValue(row);
     if (displayValue === "-") {
       return <span className={styles.statusEmpty}>-</span>;
@@ -1162,65 +1110,102 @@ const EmployeeAllocations = (props: any) => {
     );
   };
 
-  const actionBody = (row: AllocationRow) => {
-    if (selectedEmployeeId) {
-      return (
-        <span style={{ fontSize: "11px", color: "#afafaf" }} title="View only">
-          -
-        </span>
-      );
+  const getRowSearchableText = useCallback(
+    (row: ConsolidatedAllocationRow): string => {
+      const parts: string[] = [
+        row.EmployeeName,
+        row.EmployeeID,
+        getAllocationProjectDisplayLabel(row),
+        getStatusDisplayValue(row),
+        formatDate(row.AllocatedOn),
+        formatDate(row.ReleasedOn),
+      ];
+
+      row.AllocationJson.forEach((month) => {
+        const pct = Math.round((month.value ?? 0) * 100);
+        parts.push(month.month, `${pct}%`, String(pct));
+      });
+
+      if (countsAsOnCurrentProject(row)) {
+        parts.push("Current project");
+      }
+
+      return parts
+        .filter((part) => part && part !== "-")
+        .join(" ")
+        .toLowerCase();
+    },
+    [approvalStatusByEmployeeProject, countsAsOnCurrentProject],
+  );
+
+  const filteredConsolidatedDisplayRows = useMemo(() => {
+    const term = tableSearchTerm.trim().toLowerCase();
+    if (!term) return consolidatedDisplayRows;
+    return consolidatedDisplayRows.filter((row) =>
+      getRowSearchableText(row).includes(term),
+    );
+  }, [consolidatedDisplayRows, tableSearchTerm, getRowSearchableText]);
+
+  const tableRowCountLabel = useMemo(() => {
+    const total = consolidatedDisplayRows.length;
+    const visible = filteredConsolidatedDisplayRows.length;
+    const noun = visible !== 1 ? "employees" : "employee";
+    const scope = selectedEmployeeId ? " across all projects" : "";
+
+    if (tableSearchTerm.trim() && visible !== total) {
+      return `${visible} of ${total} ${noun}${scope}`;
     }
-    if (row.isEditing) {
-      return (
-        <div style={{ display: "flex", gap: "4px" }}>
-          <button
-            className={`${styles.btnIcon} ${styles.save}`}
-            title="Save"
-            onClick={() => handleSaveRow(row)}
-          >
-            ✓
-          </button>
-          <button
-            className={`${styles.btnIcon} ${styles.cancel}`}
-            title="Cancel"
-            onClick={() => handleCancelRow(row)}
-          >
-            ✕
-          </button>
-        </div>
-      );
-    }
-    if (!isCurrentProjectRow(row)) {
-      return (
-        <span style={{ fontSize: "11px", color: "#afafaf" }} title="View only">
-          -
-        </span>
-      );
-    }
-    if (!isLatestAllocationRowForEmployee(row)) {
-      return (
-        <span
-          style={{ fontSize: "11px", color: "#afafaf" }}
-          title="Only the employee's current allocation is editable"
-        >
-          view only
-        </span>
-      );
-    }
+
+    return `${visible} ${noun}${scope}`;
+  }, [
+    consolidatedDisplayRows.length,
+    filteredConsolidatedDisplayRows.length,
+    selectedEmployeeId,
+    tableSearchTerm,
+  ]);
+
+  const allocatedOnBody = (row: ConsolidatedAllocationRow) => (
+    <span style={{ fontSize: "12px", color: "#686766" }}>
+      {formatDate(row.AllocatedOn)}
+    </span>
+  );
+
+  const releasedOnBody = (row: ConsolidatedAllocationRow) => (
+    <span style={{ fontSize: "12px", color: "#686766" }}>
+      {formatDate(row.ReleasedOn)}
+    </span>
+  );
+
+  const actionBody = (row: ConsolidatedAllocationRow) => {
+    const onCurrentProject = countsAsOnCurrentProject(row);
+    const canEdit = onCurrentProject && !selectedEmployeeId;
+
     return (
-      <button
-        className={`${styles.btnIcon} ${styles.edit}`}
-        title="Edit"
-        onClick={() => handleEditRow(row)}
-      >
-        ✎
-      </button>
+      <div style={{ display: "flex", gap: "4px" }}>
+        <button
+          className={`${styles.btnIcon} ${allocationDialogCss.view}`}
+          title="View transactions"
+          onClick={() => handleViewRow(row)}
+        >
+          <i className="pi pi-eye" style={{ fontSize: "13px" }}></i>
+        </button>
+        {canEdit ? (
+          <button
+            className={`${styles.btnIcon} ${styles.edit}`}
+            title="Edit active allocation"
+            onClick={() => handleEditRow(row)}
+          >
+            ✎
+          </button>
+        ) : null}
+      </div>
     );
   };
 
   const monthFooter = (month: string) => () => {
     if (selectedEmployeeId) return null;
-    const total = allRows.reduce((sum, row) => {
+    const total = filteredConsolidatedDisplayRows.reduce((sum, row) => {
+      if (isBenchAllocationRecord(row)) return sum;
       const found = row.AllocationJson.find((m) => m.month === month);
       return sum + (found ? found.value : 0);
     }, 0);
@@ -1228,22 +1213,16 @@ const EmployeeAllocations = (props: any) => {
     return <span className={styles.totalChip}>{pct}%</span>;
   };
 
-  const displayRows = useMemo(() => {
-    if (!selectedEmployeeId) return allRows;
-
-    const employeeRows = globalRows.filter((r) =>
-      employeeIdsMatch(r.EmployeeID, selectedEmployeeId),
+  const viewDialogMonthColumns = useMemo(() => {
+    if (!viewConsolidatedRow) return monthColumns;
+    const monthSet = new Set<string>();
+    viewConsolidatedRow.sourceTransactions.forEach((row) =>
+      row.AllocationJson.forEach((m) => monthSet.add(m.month)),
     );
-    return [...employeeRows].sort((a, b) => {
-      const byProject = (a.ProjectTitle || a.ProjectFullID || "").localeCompare(
-        b.ProjectTitle || b.ProjectFullID || "",
-      );
-      if (byProject !== 0) return byProject;
-      const aTime = a.AllocatedOn ? new Date(a.AllocatedOn).getTime() : 0;
-      const bTime = b.AllocatedOn ? new Date(b.AllocatedOn).getTime() : 0;
-      return bTime - aTime;
-    });
-  }, [selectedEmployeeId, globalRows, allRows]);
+    return Array.from(monthSet).sort(
+      (a, b) => parseMonthLabel(a).getTime() - parseMonthLabel(b).getTime(),
+    );
+  }, [viewConsolidatedRow, monthColumns]);
 
   const webAbsoluteUrl =
     props?.spfxContext?._pageContext?._web?.absoluteUrl ?? "";
@@ -1337,7 +1316,8 @@ const EmployeeAllocations = (props: any) => {
                 Employee Dashboard - {selectedEmployeeDisplayName}
               </div>
               <span style={{ fontSize: "12px", color: "#686766" }}>
-                {displayRows.length} record{displayRows.length !== 1 ? "s" : ""}
+                {consolidatedDisplayRows.length} employee
+                {consolidatedDisplayRows.length !== 1 ? "s" : ""}
               </span>
             </div>
             <EmployeeAllocationDashboard dashboard={dashboard} css={styles} />
@@ -1349,7 +1329,8 @@ const EmployeeAllocations = (props: any) => {
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>Add resource form</div>
               <span style={{ fontSize: "12px", color: "#686766" }}>
-                {displayRows.length} record{displayRows.length !== 1 ? "s" : ""}
+                {consolidatedDisplayRows.length} employee
+                {consolidatedDisplayRows.length !== 1 ? "s" : ""}
               </span>
             </div>
             <EmployeeAllocationNewFormPanel
@@ -1381,10 +1362,21 @@ const EmployeeAllocations = (props: any) => {
               ? `All allocations for ${selectedEmployeeDisplayName}`
               : "Resource Allocations"}
           </div>
-          <span style={{ fontSize: "12px", color: "#686766" }}>
-            {displayRows.length} record{displayRows.length !== 1 ? "s" : ""}
-            {selectedEmployeeId ? " across all projects" : ""}
-          </span>
+          <div className={styles.sectionHeaderActions}>
+            <div className={styles.tableSearch}>
+              <IconField iconPosition="left">
+                <InputIcon className="pi pi-search" />
+                <InputText
+                  value={tableSearchTerm}
+                  onChange={(e) => setTableSearchTerm(e.target.value)}
+                  placeholder="Search table..."
+                />
+              </IconField>
+            </div>
+            <span style={{ fontSize: "12px", color: "#686766" }}>
+              {tableRowCountLabel}
+            </span>
+          </div>
         </div>
 
         <div className={styles.tableWrapper}>
@@ -1395,23 +1387,22 @@ const EmployeeAllocations = (props: any) => {
             </div>
           ) : (
             <DataTable
-              value={displayRows}
-              dataKey="ID"
+              value={filteredConsolidatedDisplayRows}
+              dataKey="consolidatedKey"
               className="EmployeeAllocationsDataTable"
-              paginator={displayRows.length > 8}
+              paginator={filteredConsolidatedDisplayRows.length > 8}
               rows={8}
               scrollable
               scrollHeight="600px"
-              rowClassName={(row: AllocationRow) =>
-                row.isEditing ? styles.editingRow : ""
-              }
               emptyMessage={
                 <div className={styles.emptyState}>
                   <div className={styles.emptyIcon}>📋</div>
                   <p>
-                    {selectedEmployeeId
-                      ? `No allocation records found for ${selectedEmployeeDisplayName}.`
-                      : "No allocations found for this project."}
+                    {tableSearchTerm.trim()
+                      ? "No allocations match your search."
+                      : selectedEmployeeId
+                        ? `No allocation records found for ${selectedEmployeeDisplayName}.`
+                        : "No allocations found for this project."}
                   </p>
                 </div>
               }
@@ -1419,7 +1410,7 @@ const EmployeeAllocations = (props: any) => {
               <Column
                 header="Actions"
                 body={actionBody}
-                style={{ minWidth: "80px", width: "80px" }}
+                style={{ minWidth: "96px", width: "96px" }}
               />
               {selectedEmployeeId && (
                 <Column
@@ -1447,33 +1438,15 @@ const EmployeeAllocations = (props: any) => {
                 style={{ minWidth: "95px" }}
               />
               <Column
-                field="Loading"
-                header="Loading %"
-                body={loadingBody}
-                style={{ minWidth: "100px" }}
-              />
-              <Column
                 field="AllocatedOn"
                 header="Allocated On"
-                body={dateBody("AllocatedOn")}
-                style={{ minWidth: "142px" }}
+                body={allocatedOnBody}
+                style={{ minWidth: "120px" }}
               />
               <Column
                 field="ReleasedOn"
                 header="Released On"
-                body={dateBody("ReleasedOn")}
-                style={{ minWidth: "142px" }}
-              />
-              <Column
-                field="BeginDate"
-                header="Begin Date"
-                body={dateBody("BeginDate")}
-                style={{ minWidth: "120px" }}
-              />
-              <Column
-                field="EndDate"
-                header="End Date"
-                body={dateBody("EndDate")}
+                body={releasedOnBody}
                 style={{ minWidth: "120px" }}
               />
               {monthColumns.map((month) => (
@@ -1495,6 +1468,43 @@ const EmployeeAllocations = (props: any) => {
             />
           )}
         </div>
+
+        <EmployeeAllocationTransactionsDialog
+          visible={!!viewConsolidatedRow}
+          employeeName={viewConsolidatedRow?.EmployeeName ?? ""}
+          projectLabel={
+            viewConsolidatedRow
+              ? getAllocationProjectDisplayLabel(viewConsolidatedRow)
+              : ""
+          }
+          transactions={viewConsolidatedRow?.sourceTransactions ?? []}
+          monthColumns={viewDialogMonthColumns}
+          css={allocationDialogCss}
+          onHide={() => setViewConsolidatedRow(null)}
+        />
+
+        <EmployeeAllocationEditDialog
+          visible={!!editConsolidatedRow && !!editTransactionDraft}
+          draft={editTransactionDraft}
+          css={allocationDialogCss}
+          onHide={handleCloseEditDialog}
+          onSave={handleEditDialogSave}
+          onLoadingChange={(fraction) =>
+            updateEditTransactionDraft((prev) =>
+              recalcDraftFromDates({ ...prev, Loading: fraction }),
+            )
+          }
+          onAllocatedOnChange={(iso) =>
+            updateEditTransactionDraft((prev) =>
+              recalcDraftFromDates({ ...prev, AllocatedOn: iso }),
+            )
+          }
+          onReleasedOnChange={(iso) =>
+            updateEditTransactionDraft((prev) =>
+              recalcDraftFromDates({ ...prev, ReleasedOn: iso }),
+            )
+          }
+        />
       </div>
     </div>
   );

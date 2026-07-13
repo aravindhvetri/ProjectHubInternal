@@ -341,7 +341,6 @@ const ApproveRejectScreen = (props: IProps) => {
   return (
     <div className={styles.wrapper}>
       <div className={styles.titleRow}>
-        <h2>Allocation Approval Requests</h2>
         <div className={styles.titleRowRight}>
           <Dropdown
             className={styles.statusFilter}
