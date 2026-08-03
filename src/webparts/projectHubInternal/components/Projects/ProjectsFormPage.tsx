@@ -47,6 +47,8 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 import FPM from "../FPM/FPM";
 
+const FolderImage: string = require("../../../../External/Images/openFolder.png");
+
 const CURRENCY_TO_USD_RATES: Record<string, number> = {
   USD: 1,
   INR: 0.01047,
@@ -193,6 +195,40 @@ const ProjectFormPage = (props: any) => {
     });
     props?.refresh();
     props?.goBack();
+  };
+
+  //Open Project Folder function:
+  const handleOpenProjectFolder = async (rowData: any, spfxContext: any) => {
+    try {
+      const accountName = rowData?.ClientName?.trim();
+      const libraryName = Config.LibraryNames.ProjectFolderStructure;
+      const siteUrl = spfxContext?.pageContext?.web?.absoluteUrl;
+      const serverRelativeUrl =
+        spfxContext?.pageContext?.web?.serverRelativeUrl;
+
+      const folderServerRelativeUrl = `${serverRelativeUrl}/${libraryName}/${accountName}`;
+
+      //Check if folder exists
+      const folderExists = await sp.web
+        .getFolderByServerRelativePath(folderServerRelativeUrl)
+        .select("Exists")
+        .get()
+        .then((res) => res?.Exists)
+        .catch(() => false);
+
+      //Open the folder or library based on existence
+      if (folderExists) {
+        window.open(`${siteUrl}/${libraryName}/${accountName}`, "_blank");
+      } else {
+        window.open(`${siteUrl}/${libraryName}/Forms/AllItems.aspx`, "_blank");
+      }
+    } catch (err) {
+      console.error("Error opening project folder:", err);
+      window.open(
+        `${spfxContext?.pageContext?.web?.absoluteUrl}/ProjectFolderStructure/Forms/AllItems.aspx`,
+        "_blank",
+      );
+    }
   };
 
   //Get Billings Data:
@@ -828,6 +864,7 @@ const ProjectFormPage = (props: any) => {
             formData?.ProjectStatus,
       BillingModel: formData?.BillingModel,
       Status: formData?.Status || "",
+      Technology: formData?.Technology || "",
       Budget: formData?.Budget,
       Hours: formData?.Hours,
       ProjectType: formData?.ProjectType || "",
@@ -1259,14 +1296,37 @@ const ProjectFormPage = (props: any) => {
     }
   };
 
-  //DownLoad File Function:
+  const getFileUrl = (file: any): string => {
+    return file?.ulr || file?.url || file?.objectURL || "";
+  };
+
+  const appendQueryParam = (url: string, param: string): string => {
+    if (!url || url.startsWith("blob:")) return url;
+    if (url.includes(param)) return url;
+    return url.includes("?") ? `${url}&${param}` : `${url}?${param}`;
+  };
+
+  // Open file in a new tab (SharePoint browser view mode):
+  const viewFile = (file: any) => {
+    const fileUrl = getFileUrl(file);
+    if (!fileUrl) return;
+    window.open(appendQueryParam(fileUrl, "web=1"), "_blank");
+  };
+
+  // Force download the file:
   const downloadFile = (file: any) => {
+    const fileUrl = getFileUrl(file);
+    if (!fileUrl) return;
+
     const anchortag = document.createElement("a");
-    anchortag.setAttribute("href", file?.ulr ? file?.ulr : file?.objectURL);
-    anchortag.setAttribute("target", "_blank");
-    anchortag.setAttribute("download", "");
+    anchortag.href = file?.objectURL
+      ? fileUrl
+      : appendQueryParam(fileUrl, "download=1");
+    anchortag.setAttribute("download", file?.name || "");
+    anchortag.style.display = "none";
+    document.body.appendChild(anchortag);
     anchortag.click();
-    anchortag.remove();
+    document.body.removeChild(anchortag);
   };
 
   // Temporary Remove File (state only):
@@ -1408,6 +1468,42 @@ const ProjectFormPage = (props: any) => {
                 {formData?.Hours > 500 && "Project Size - High"}
               </span>
             )}
+            {(props?.isView || props?.isEdit) &&
+              (props?.data?.ProjectStatus == "6" ||
+                formData?.ProjectStatus == "6") && (
+                <div
+                  className={selfComponentStyles.projectFoldersAction}
+                  onClick={() =>
+                    handleOpenProjectFolder(
+                      {
+                        ClientName:
+                          formData?.ClientName || props?.data?.ClientName,
+                      },
+                      props?.spfxContext,
+                    )
+                  }
+                  title="Project Folder Structure"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenProjectFolder(
+                        {
+                          ClientName:
+                            formData?.ClientName || props?.data?.ClientName,
+                        },
+                        props?.spfxContext,
+                      );
+                    }
+                  }}
+                >
+                  <img src={FolderImage} alt="Project folders" />
+                  <span className={selfComponentStyles.projectFoldersLabel}>
+                    Project Folders
+                  </span>
+                </div>
+              )}
           </div>
           <div
             style={{ height: "auto" }}
@@ -2031,6 +2127,25 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Technology</Label>
+                <Dropdown
+                  options={
+                    props?.initialCRMProjectsListDropContainer?.Technology
+                  }
+                  optionLabel="name"
+                  value={props?.initialCRMProjectsListDropContainer?.Technology.find(
+                    (item: any) => item.name === formData?.Technology,
+                  )}
+                  onChange={(e) => handleOnChange("Technology", e?.value?.name)}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser) ||
+                    props?.data?.ProjectStatus == "6"
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>CR amount</Label>
                 <InputText value={crDetails.amount?.toString()} disabled />
               </div>
@@ -2080,7 +2195,7 @@ const ProjectFormPage = (props: any) => {
                     <li className={selfComponentStyles?.fileList} key={index}>
                       <div className={selfComponentStyles.filNameTag}>
                         <div
-                          onClick={() => downloadFile(file)}
+                          onClick={() => viewFile(file)}
                           style={{
                             cursor: "pointer",
                           }}
@@ -2090,18 +2205,24 @@ const ProjectFormPage = (props: any) => {
                             ? `${file?.name.slice(0, 23)}...`
                             : file?.name}
                         </div>
-                        {!props?.isView &&
-                        (file?.objectURL ||
-                          file?.authorEmail === props?.loginUserEmail) ? (
-                          <div className={selfComponentStyles.filesIconDiv}>
-                            <i
-                              className="pi pi-times"
-                              onClick={() => removeFile(file?.name)}
-                            ></i>
-                          </div>
-                        ) : (
-                          ""
-                        )}
+                        <div className={selfComponentStyles.filesIconDiv}>
+                          <i
+                            className="pi pi-download"
+                            title="Download"
+                            style={{ cursor: "pointer", fontSize: "12px" }}
+                            onClick={() => downloadFile(file)}
+                          ></i>
+                          {!props?.isView &&
+                            (file?.objectURL ||
+                              file?.authorEmail === props?.loginUserEmail) && (
+                              <i
+                                className="pi pi-times"
+                                title="Remove"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => removeFile(file?.name)}
+                              ></i>
+                            )}
+                        </div>
                       </div>
                     </li>
                   ))}

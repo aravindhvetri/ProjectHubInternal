@@ -54,6 +54,7 @@ interface IProps {
   spfxContext: any;
   pageName: string;
   loginUserEmail: string;
+  LoginUserName: string;
   PageNavigation: (pageName: string, data?: IProjectData) => void;
 }
 //Global Image Variables:
@@ -67,6 +68,7 @@ const FilterImage: string = require("../../../../External/Images/filter.png");
 const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
 
 const Projects = (props: IProps): JSX.Element => {
+  const loginUserName = props?.LoginUserName;
   const loginEmail = props?.loginUserEmail?.toLowerCase();
   const adminUsers = [
     "sreedhar.sk@technorucs.com",
@@ -134,22 +136,40 @@ const Projects = (props: IProps): JSX.Element => {
 
   //Get Project Details:
   const getProjectDetails = () => {
-    SPServices.SPReadItems({
-      Listname: Config.ListNames.CRMProjects,
-      Select:
-        "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
-      Expand: "ProjectManager,DeliveryHead,BA",
-      Orderby: "ID",
-      Orderbydecorasc: true,
-      Filter: [
-        {
-          FilterKey: "IsDelete",
-          Operator: "eq",
-          FilterValue: "false",
-        },
-      ],
-    })
-      .then((res: any) => {
+    Promise.all([
+      SPServices.SPReadItems({
+        Listname: Config.ListNames.CRMProjects,
+        Select:
+          "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
+        Expand: "ProjectManager,DeliveryHead,BA",
+        Orderby: "ID",
+        Orderbydecorasc: true,
+        Filter: [
+          {
+            FilterKey: "IsDelete",
+            Operator: "eq",
+            FilterValue: "false",
+          },
+        ],
+      }),
+      SPServices.SPReadItems({
+        Listname: Config.ListNames.EmployeeAllocations,
+        Select: "ProjectID,EmployeeName",
+      }).catch((err: any) => {
+        console.log(
+          err,
+          "EmployeeAllocations Error in Projects.tsx getProjectDetails",
+        );
+        return [];
+      }),
+      SPServices.getSPGroupMember({
+        GroupName: "DLSales",
+      }).catch((err: any) => {
+        console.log(err, "Get DLSales group users error in Projects.tsx");
+        return [];
+      }),
+    ])
+      .then(([res, allocationRes, dlSalesUsers]: [any, any, any]) => {
         let projectDetails: IProjectData[] = [];
         res?.forEach((items: any) => {
           let _ProjectManager: IPeoplePickerDetails[] = [];
@@ -188,6 +208,7 @@ const Projects = (props: IProps): JSX.Element => {
             AccountManager: items?.AccountManager,
             AccountName: items?.AccountName,
             ProjectName: items?.ProjectName,
+            Technology: items?.Technology,
             StartDate: items?.StartDate,
             PlannedEndDate: items?.PlannedEndDate,
             ProjectManager: _ProjectManager ? _ProjectManager : [],
@@ -216,7 +237,30 @@ const Projects = (props: IProps): JSX.Element => {
             FPMMargin: items?.FPMMargin,
           });
         });
-        const filteredProjects = adminUsers.includes(loginEmail)
+
+        const normalizedLoginUserName = loginUserName?.trim()?.toLowerCase();
+        const allocatedProjectIds = new Set(
+          (allocationRes || [])
+            .filter(
+              (item: any) =>
+                !!normalizedLoginUserName &&
+                item?.EmployeeName?.trim()?.toLowerCase() ===
+                  normalizedLoginUserName,
+            )
+            .map((item: any) => String(item?.ProjectID ?? "").trim())
+            .filter((projectId: string) => !!projectId),
+        );
+
+        const isDLSalesUser =
+          !!loginEmail &&
+          (dlSalesUsers || []).some(
+            (user: any) =>
+              user?.Email?.trim()?.toLowerCase() === loginEmail,
+          );
+        const hasAdminPermissions =
+          adminUsers.includes(loginEmail) || isDLSalesUser;
+
+        const filteredProjects = hasAdminPermissions
           ? projectDetails
           : projectDetails.filter(
               (project) =>
@@ -226,7 +270,10 @@ const Projects = (props: IProps): JSX.Element => {
                 project.DeliveryHead?.some(
                   (u) => u.email?.toLowerCase() === loginEmail,
                 ) ||
-                project.BA?.some((u) => u.email?.toLowerCase() === loginEmail),
+                project.BA?.some(
+                  (u) => u.email?.toLowerCase() === loginEmail,
+                ) ||
+                allocatedProjectIds.has(String(project.ProjectID ?? "").trim()),
             );
         setProjectDetails([...filteredProjects]);
         setMasterProjectDetails([...filteredProjects]);
@@ -381,8 +428,34 @@ const Projects = (props: IProps): JSX.Element => {
                           }),
                         );
                         setLoader(false);
-                        getPMOGroupUsers();
-                        getBillingsListDetails();
+                        SPServices.SPGetChoices({
+                          Listname: Config.ListNames.CRMProjects,
+                          FieldName: "Technology",
+                        })
+                          .then((res: any) => {
+                            let tempTechnology: IBasicDropDown[] = [];
+                            if (res?.Choices?.length) {
+                              res?.Choices?.forEach((val: any) => {
+                                tempTechnology.push({
+                                  name: val,
+                                });
+                              });
+                            }
+                            setinitialCRMProjectsListDropContainer(
+                              (prev: ICRMProjectsListDrop) => ({
+                                ...prev,
+                                Technology: tempTechnology,
+                              }),
+                            );
+                            getPMOGroupUsers();
+                            getBillingsListDetails();
+                          })
+                          .catch((err) => {
+                            console.log(
+                              err,
+                              "Get choice error from CRMProjects list",
+                            );
+                          });
                       })
                       .catch((err) => {
                         console.log(

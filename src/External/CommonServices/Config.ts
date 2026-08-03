@@ -79,6 +79,7 @@ export namespace Config {
     Currency: [],
     ProjectType: [],
     Status: [],
+    Technology: [],
   };
 
   //CRMProjectsRisks List DropDown:

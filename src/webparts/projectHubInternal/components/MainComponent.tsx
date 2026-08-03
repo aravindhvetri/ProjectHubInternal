@@ -15,6 +15,8 @@ const MainComponent = (props: any) => {
 
   // Logged in User Email
   const loginUserEmail: string = props?.spfxContext?._pageContext?._user?.email;
+  const LoginUserName: string =
+    props?.spfxContext?._pageContext?._user?.displayName;
 
   // Notification Function
   const Notify = (
@@ -50,6 +52,7 @@ const MainComponent = (props: any) => {
           {pageName === "Projects" ? (
             <div>
               <Projects
+                LoginUserName={LoginUserName}
                 loginUserEmail={loginUserEmail}
                 spfxContext={props.spfxContext}
                 pageName={pageName}

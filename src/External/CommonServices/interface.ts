@@ -14,6 +14,7 @@ export interface IProjectData {
   ProjectName: string;
   StartDate: string;
   PlannedEndDate: string;
+  Technology: string;
   ProjectType: string;
   UpWork: boolean;
   InternalProject: boolean;
@@ -50,6 +51,7 @@ export interface ICRMProjectsListDrop {
   Currency: IBasicDropDown[];
   ProjectType: IBasicDropDown[];
   Status: IBasicDropDown[];
+  Technology: IBasicDropDown[];
 }
 
 export interface ICRMProjectRisksListDrop {
@@ -194,6 +196,12 @@ export interface EmployeeAllocationRecord {
   BeginDate: string | null;
   EndDate: string | null;
   AllocationJson: AllocationMonth[];
+  /** Choice column from EmployeeAllocations list */
+  Deployment?: string;
+  /** Yes/No column — set by Power Automate for newly onboarded employees */
+  NewEmployee?: string;
+  /** Yes/No column — set by Power Automate for employees with a fixed availability end */
+  ExistingEmployee?: string;
 }
 
 export interface DashboardStats {
@@ -343,10 +351,14 @@ export interface IEmployeeAllocationNewFormPanelProps {
   webAbsoluteUrl: string;
   context: any;
   defaultSelectedEmails: string[];
+  deploymentOptions: IBasicDropDown[];
   onPeopleChange: (items: any[]) => void;
   onLoadingPctChange: (fraction: number) => void;
   onAllocatedOnIsoChange: (iso: string | null) => void;
   onReleasedOnIsoChange: (iso: string | null) => void;
+  /** Earliest allowed Allocated On date for new employees (from list record) */
+  allocatedOnMinDate?: string | null;
+  onDeploymentChange: (value: string) => void;
   onCancel: () => void;
   onSave: () => void;
 }

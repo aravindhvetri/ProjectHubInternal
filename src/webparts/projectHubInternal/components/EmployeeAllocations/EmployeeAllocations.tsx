@@ -27,6 +27,7 @@ import type {
   AllocationRow,
   ConsolidatedAllocationRow,
   DashboardStats,
+  IBasicDropDown,
   IEmployeeAllocationDialogScss,
 } from "../../../../External/CommonServices/interface";
 
@@ -67,6 +68,79 @@ import {
 
 const PENDING_APPROVAL_MESSAGE =
   "This employee is currently locked because an allocation request is already under the approval process. A new allocation can only be added after the current request has been approved.";
+
+const isSpYesValue = (value: unknown): boolean => {
+  if (value === true || value === 1) return true;
+  return (
+    String(value ?? "")
+      .trim()
+      .toLowerCase() === "yes"
+  );
+};
+
+const isAllocationJsonColumnEmpty = (row: AllocationRow): boolean => {
+  const json = row.AllocationJson;
+  return !Array.isArray(json) || json.length === 0;
+};
+
+const startOfLocalDay = (iso: string | null | undefined): Date | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const hasReleaseDatePassed = (
+  releasedOn: string | null | undefined,
+): boolean => {
+  const releaseDay = startOfLocalDay(releasedOn);
+  if (!releaseDay) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.getTime() > releaseDay.getTime();
+};
+
+const isAllocatedOnAfterReleaseDate = (
+  allocatedOn: string | null | undefined,
+  releasedOn: string | null | undefined,
+): boolean => {
+  const allocDay = startOfLocalDay(allocatedOn);
+  const releaseDay = startOfLocalDay(releasedOn);
+  if (!allocDay || !releaseDay) return false;
+  return allocDay.getTime() > releaseDay.getTime();
+};
+
+const isAllocatedOnBeforeMinDate = (
+  allocatedOn: string | null | undefined,
+  minAllocatedOn: string | null | undefined,
+): boolean => {
+  const allocDay = startOfLocalDay(allocatedOn);
+  const minDay = startOfLocalDay(minAllocatedOn);
+  if (!allocDay || !minDay) return false;
+  return allocDay.getTime() < minDay.getTime();
+};
+
+const findExistingEmployeeFlaggedRow = (
+  rows: AllocationRow[],
+  employeeId: string,
+): AllocationRow | undefined =>
+  rows.find(
+    (r) =>
+      employeeIdsMatch(r.EmployeeID, employeeId) &&
+      isSpYesValue(r.ExistingEmployee),
+  );
+
+const findNewEmployeeFlaggedRow = (
+  rows: AllocationRow[],
+  employeeId: string,
+): AllocationRow | undefined =>
+  rows.find(
+    (r) =>
+      employeeIdsMatch(r.EmployeeID, employeeId) &&
+      isSpYesValue(r.NewEmployee) &&
+      isAllocationJsonColumnEmpty(r),
+  );
 
 const allocationDialogCss = styles as typeof styles &
   IEmployeeAllocationDialogScss;
@@ -109,6 +183,12 @@ const EmployeeAllocations = (props: any) => {
   // New row form
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<Partial<AllocationRow>>({});
+  const [newEmployeeMinAllocatedOn, setNewEmployeeMinAllocatedOn] = useState<
+    string | null
+  >(null);
+  const [deploymentOptions, setDeploymentOptions] = useState<IBasicDropDown[]>(
+    [],
+  );
 
   // View / edit dialogs for consolidated rows
   const [viewConsolidatedRow, setViewConsolidatedRow] =
@@ -305,6 +385,26 @@ const EmployeeAllocations = (props: any) => {
       })
       .catch((err: any) => {
         console.error("InternalRegistry fetch error:", err);
+      });
+  }, []);
+
+  // Get Deployment choice values from EmployeeAllocations list
+  useEffect(() => {
+    SPServices.SPGetChoices({
+      Listname: Config.ListNames.EmployeeAllocations,
+      FieldName: "Deployment",
+    })
+      .then((res: any) => {
+        const tempDeployment: IBasicDropDown[] = [];
+        if (res?.Choices?.length) {
+          res.Choices.forEach((val: string) => {
+            tempDeployment.push({ name: val });
+          });
+        }
+        setDeploymentOptions(tempDeployment);
+      })
+      .catch((err: any) => {
+        console.log(err, "Get choice error from EmployeeAllocations list");
       });
   }, []);
 
@@ -604,7 +704,30 @@ const EmployeeAllocations = (props: any) => {
     setFormPickerPeople(items);
     const name = items?.length ? getPersonDisplayName(items[0]) : "";
     const empId = items?.length ? resolveEmpIdFromPerson(items[0]) : "";
-    setFormData((prev) => ({ ...prev, EmployeeName: name, EmployeeID: empId }));
+
+    let minAllocatedOn: string | null = null;
+    let allocatedOn: string | null = null;
+    if (empId) {
+      const newEmployeeRow = findNewEmployeeFlaggedRow(globalRows, empId);
+      if (newEmployeeRow?.AllocatedOn) {
+        minAllocatedOn = newEmployeeRow.AllocatedOn;
+        allocatedOn = newEmployeeRow.AllocatedOn;
+      }
+    }
+    setNewEmployeeMinAllocatedOn(minAllocatedOn);
+
+    setFormData((prev) => {
+      const updated: Partial<AllocationRow> = {
+        ...prev,
+        EmployeeName: name,
+        EmployeeID: empId,
+      };
+      if (allocatedOn) {
+        updated.AllocatedOn = allocatedOn;
+        return recalcFormDerivedFields(updated);
+      }
+      return updated;
+    });
   };
 
   //  ADD NEW ROW (form-based)
@@ -629,22 +752,81 @@ const EmployeeAllocations = (props: any) => {
       return;
     }
 
+    let prefilledAllocatedOn: string | null = null;
+    let minAllocatedOn: string | null = null;
+
+    if (prefillEmpId) {
+      const existingEmployeeRow = findExistingEmployeeFlaggedRow(
+        globalRows,
+        prefillEmpId,
+      );
+      if (
+        existingEmployeeRow?.ReleasedOn &&
+        hasReleaseDatePassed(existingEmployeeRow.ReleasedOn)
+      ) {
+        props.Notify?.(
+          "warn",
+          "Validation",
+          `This employee was available for allocation only until ${formatDate(existingEmployeeRow.ReleasedOn)} and cannot be allocated after the release date.`,
+        );
+        return;
+      }
+
+      const newEmployeeRow = findNewEmployeeFlaggedRow(
+        globalRows,
+        prefillEmpId,
+      );
+      if (newEmployeeRow) {
+        const benchFromDate = formatDate(newEmployeeRow.AllocatedOn);
+        props.Notify?.(
+          "info",
+          "New Employee",
+          benchFromDate
+            ? `This is a new employee who has been 100% on the bench from ${benchFromDate}.`
+            : "This is a new employee who has been 100% on the bench.",
+        );
+        if (newEmployeeRow.AllocatedOn) {
+          prefilledAllocatedOn = newEmployeeRow.AllocatedOn;
+          minAllocatedOn = newEmployeeRow.AllocatedOn;
+        }
+      }
+    }
+
     const initialForm: Partial<AllocationRow> = {
       EmployeeName: prefillName,
       EmployeeID: prefillEmpId,
       ProjectID: projectFullId,
       ProjectFullID: projectFullId,
       Loading: 1,
-      AllocatedOn: null,
+      AllocatedOn: prefilledAllocatedOn,
       ReleasedOn: null,
       BeginDate: null,
       EndDate: null,
       AllocationJson: [],
+      Deployment: "",
     };
     setFormPickerPeople(prefillName ? [...searchPickerPeople] : []);
     setFormPickerKey((k) => k + 1);
-    setFormData(initialForm);
+    setNewEmployeeMinAllocatedOn(minAllocatedOn);
+    setFormData(
+      prefilledAllocatedOn ? recalcFormDerivedFields(initialForm) : initialForm,
+    );
     setShowForm(true);
+  };
+
+  const handleAllocatedOnChange = (iso: string | null) => {
+    if (
+      newEmployeeMinAllocatedOn &&
+      isAllocatedOnBeforeMinDate(iso, newEmployeeMinAllocatedOn)
+    ) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        `Allocated On cannot be earlier than ${formatDate(newEmployeeMinAllocatedOn)}.`,
+      );
+      return;
+    }
+    handleFormChange("AllocatedOn", iso);
   };
 
   const handleFormChange = (field: keyof AllocationRow, value: any) => {
@@ -679,6 +861,50 @@ const EmployeeAllocations = (props: any) => {
       props.Notify?.("warn", "Validation", PENDING_APPROVAL_MESSAGE);
       return;
     }
+
+    if (
+      newEmployeeMinAllocatedOn &&
+      isAllocatedOnBeforeMinDate(
+        formData.AllocatedOn,
+        newEmployeeMinAllocatedOn,
+      )
+    ) {
+      props.Notify?.(
+        "warn",
+        "Validation",
+        `Allocated On cannot be earlier than ${formatDate(newEmployeeMinAllocatedOn)}.`,
+      );
+      return;
+    }
+
+    const existingEmployeeRow = findExistingEmployeeFlaggedRow(
+      globalRows,
+      employeeId,
+    );
+    if (existingEmployeeRow?.ReleasedOn) {
+      if (hasReleaseDatePassed(existingEmployeeRow.ReleasedOn)) {
+        props.Notify?.(
+          "warn",
+          "Validation",
+          `This employee was available for allocation only until ${formatDate(existingEmployeeRow.ReleasedOn)} and cannot be allocated after the release date.`,
+        );
+        return;
+      }
+      if (
+        isAllocatedOnAfterReleaseDate(
+          formData.AllocatedOn,
+          existingEmployeeRow.ReleasedOn,
+        )
+      ) {
+        props.Notify?.(
+          "warn",
+          "Validation",
+          `This employee can only be allocated until ${formatDate(existingEmployeeRow.ReleasedOn)}. Please choose an Allocated On date on or before the release date.`,
+        );
+        return;
+      }
+    }
+
     if (!formData.AllocatedOn) {
       props.Notify?.("warn", "Validation", "Allocated On date is required.");
       return;
@@ -766,6 +992,7 @@ const EmployeeAllocations = (props: any) => {
       BeginDate: formatDateForSp(formData.BeginDate),
       EndDate: formatDateForSp(formData.EndDate),
       AllocationJson: JSON.stringify(formData.AllocationJson || []),
+      Deployment: formData.Deployment || "",
     };
 
     const approvalPayload = {
@@ -797,8 +1024,34 @@ const EmployeeAllocations = (props: any) => {
       .then(async () => {
         setShowForm(false);
         setFormData({});
+        setNewEmployeeMinAllocatedOn(null);
         setFormPickerPeople([]);
         setFormPickerKey((k) => k + 1);
+        try {
+          const existingRecords: any[] = await SPServices.SPReadItems({
+            Listname: Config.ListNames.EmployeeAllocations,
+            Select: "ID,EmployeeID,NewEmployee",
+            Filter: [
+              {
+                FilterKey: "EmployeeID",
+                Operator: "eq",
+                FilterValue: employeeId,
+              },
+            ],
+          });
+          const newEmployeeRecord = (existingRecords || []).find((item) =>
+            isSpYesValue(item.NewEmployee),
+          );
+          if (newEmployeeRecord?.ID) {
+            await SPServices.SPUpdateItem({
+              Listname: Config.ListNames.EmployeeAllocations,
+              ID: newEmployeeRecord.ID,
+              RequestJSON: { NewEmployee: false },
+            });
+          }
+        } catch (clearErr) {
+          console.error("Failed to clear NewEmployee flag:", clearErr);
+        }
         await syncBenchForEmployee(employeeId, employeeName);
         refreshData();
       })
@@ -815,6 +1068,7 @@ const EmployeeAllocations = (props: any) => {
   const handleFormCancel = () => {
     setShowForm(false);
     setFormData({});
+    setNewEmployeeMinAllocatedOn(null);
     setFormPickerPeople([]);
     setFormPickerKey((k) => k + 1);
   };
@@ -962,6 +1216,7 @@ const EmployeeAllocations = (props: any) => {
       BeginDate: formatDateForSp(beginDate),
       EndDate: formatDateForSp(endDate),
       AllocationJson: JSON.stringify(allocationJson),
+      Deployment: draft.Deployment || "",
     };
 
     SPServices.SPUpdateItem({
@@ -1340,15 +1595,18 @@ const EmployeeAllocations = (props: any) => {
               webAbsoluteUrl={webAbsoluteUrl}
               context={props?.spfxContext}
               defaultSelectedEmails={getPickerDefaultEmails(formPickerPeople)}
+              deploymentOptions={deploymentOptions}
               onPeopleChange={handleFormPickerChange}
               onLoadingPctChange={(fraction) =>
                 handleFormChange("Loading", fraction)
               }
-              onAllocatedOnIsoChange={(iso) =>
-                handleFormChange("AllocatedOn", iso)
-              }
+              onAllocatedOnIsoChange={handleAllocatedOnChange}
+              allocatedOnMinDate={newEmployeeMinAllocatedOn}
               onReleasedOnIsoChange={(iso) =>
                 handleFormChange("ReleasedOn", iso)
+              }
+              onDeploymentChange={(value) =>
+                handleFormChange("Deployment", value)
               }
               onCancel={handleFormCancel}
               onSave={handleFormSave}
@@ -1487,6 +1745,7 @@ const EmployeeAllocations = (props: any) => {
           visible={!!editConsolidatedRow && !!editTransactionDraft}
           draft={editTransactionDraft}
           css={allocationDialogCss}
+          deploymentOptions={deploymentOptions}
           onHide={handleCloseEditDialog}
           onSave={handleEditDialogSave}
           onLoadingChange={(fraction) =>
@@ -1503,6 +1762,12 @@ const EmployeeAllocations = (props: any) => {
             updateEditTransactionDraft((prev) =>
               recalcDraftFromDates({ ...prev, ReleasedOn: iso }),
             )
+          }
+          onDeploymentChange={(value) =>
+            updateEditTransactionDraft((prev) => ({
+              ...prev,
+              Deployment: value,
+            }))
           }
         />
       </div>

@@ -179,7 +179,11 @@ const FPM = (props: any) => {
         }
 
         const total = (res || []).reduce((sum: number, item: any) => {
-          if (item?.Status != "1") {
+          if (
+            item?.Status != "1" &&
+            item?.Status != "2" &&
+            item?.Status != "3"
+          ) {
             return sum;
           }
           return sum + parseBudgetAmount(item?.[amountField]);
@@ -549,7 +553,7 @@ const FPM = (props: any) => {
                 value: projectConfig.costPerPerson || 0,
               },
               {
-                label: "$Invoices",
+                label: "$Invoice Raised",
                 value: rawInvoices ? invoices.toFixed(2) : "0.00",
               },
               {

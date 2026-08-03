@@ -37,6 +37,7 @@ import type {
   EmployeeAllocationRecord,
   EmployeeAvailabilitySummary,
   EmployeeAvailabilityWindow,
+  IBasicDropDown,
   IEmployeeAllocationDashboardScss,
   IEmployeeAllocationDialogScss,
   IEmployeeAvailabilitySummaryScss,
@@ -48,6 +49,7 @@ import { Dialog } from "primereact/dialog";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputNumber } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
 import * as React from "react";
 import { Config, DatePickerStyles, peoplePickerStyles } from "./Config";
 import SPServices from "./SPServices";
@@ -1854,6 +1856,9 @@ export const mapSpItemToRow = (
     BeginDate: item.BeginDate || null,
     EndDate: item.EndDate || null,
     AllocationJson: safeParseJson(item.AllocationJson),
+    Deployment: item.Deployment || "",
+    NewEmployee: item.NewEmployee || "",
+    ExistingEmployee: item.ExistingEmployee || "",
   };
 
   const range = getRecordAllocationRange(row);
@@ -2095,10 +2100,13 @@ export const EmployeeAllocationNewFormPanel: React.FC<
   webAbsoluteUrl,
   context,
   defaultSelectedEmails,
+  deploymentOptions,
   onPeopleChange,
   onLoadingPctChange,
   onAllocatedOnIsoChange,
   onReleasedOnIsoChange,
+  allocatedOnMinDate,
+  onDeploymentChange,
   onCancel,
   onSave,
 }) => (
@@ -2150,9 +2158,23 @@ export const EmployeeAllocationNewFormPanel: React.FC<
       </div>
 
       <div className={css.formField}>
+        <label>Deployment</label>
+        <Dropdown
+          options={deploymentOptions}
+          optionLabel="name"
+          placeholder="Select Deployment"
+          value={deploymentOptions.find(
+            (item) => item.name === formData?.Deployment,
+          )}
+          onChange={(e) => onDeploymentChange(e?.value?.name ?? "")}
+        />
+      </div>
+
+      <div className={css.formField}>
         <label>Allocated On *</label>
         <DatePicker
           value={isoToLocalDate(formData.AllocatedOn) ?? undefined}
+          minDate={isoToLocalDate(allocatedOnMinDate) ?? undefined}
           onSelectDate={(date) =>
             onAllocatedOnIsoChange(localDateToIso(date ?? null))
           }
@@ -2384,20 +2406,24 @@ export const EmployeeAllocationEditDialog: React.FC<{
   visible: boolean;
   draft: AllocationRow | null;
   css: IEmployeeAllocationDialogScss;
+  deploymentOptions: IBasicDropDown[];
   onHide: () => void;
   onSave: () => void;
   onLoadingChange: (fraction: number) => void;
   onAllocatedOnChange: (iso: string | null) => void;
   onReleasedOnChange: (iso: string | null) => void;
+  onDeploymentChange: (value: string) => void;
 }> = ({
   visible,
   draft,
   css,
+  deploymentOptions,
   onHide,
   onSave,
   onLoadingChange,
   onAllocatedOnChange,
   onReleasedOnChange,
+  onDeploymentChange,
 }) => {
   if (!draft) return null;
 
@@ -2423,6 +2449,18 @@ export const EmployeeAllocationEditDialog: React.FC<{
               max={100}
               minFractionDigits={0}
               maxFractionDigits={0}
+            />
+          </div>
+          <div className={css.formField}>
+            <label>Deployment</label>
+            <Dropdown
+              options={deploymentOptions}
+              optionLabel="name"
+              placeholder="Select Deployment"
+              value={deploymentOptions.find(
+                (item) => item.name === draft.Deployment,
+              )}
+              onChange={(e) => onDeploymentChange(e?.value?.name ?? "")}
             />
           </div>
           <div className={css.formField}>
