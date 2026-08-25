@@ -170,38 +170,48 @@ const Projects = (props: IProps): JSX.Element => {
       }),
     ])
       .then(([res, allocationRes, dlSalesUsers]: [any, any, any]) => {
+        const normalizePeopleField = (
+          fieldValue: any,
+        ): IPeoplePickerDetails[] => {
+          const users = Array.isArray(fieldValue)
+            ? fieldValue
+            : fieldValue
+              ? [fieldValue]
+              : [];
+          const mapped: IPeoplePickerDetails[] = [];
+          const seen = new Set<string>();
+
+          users.forEach((user: any) => {
+            const id = Number(user?.Id ?? user?.id) || 0;
+            const email = String(user?.EMail ?? user?.email ?? "")
+              .trim()
+              .toLowerCase();
+            const dedupeKey = id
+              ? `id:${id}`
+              : email
+                ? `email:${email}`
+                : "";
+            if (!dedupeKey || seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+            mapped.push({
+              id,
+              name: String(user?.Title ?? user?.name ?? "").trim(),
+              email: String(user?.EMail ?? user?.email ?? "").trim(),
+            });
+          });
+
+          return mapped;
+        };
+
         let projectDetails: IProjectData[] = [];
         res?.forEach((items: any) => {
-          let _ProjectManager: IPeoplePickerDetails[] = [];
-          if (items?.ProjectManager) {
-            items?.ProjectManager.forEach((user: any) => {
-              _ProjectManager.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-          let _DeliveryHead: IPeoplePickerDetails[] = [];
-          if (items?.DeliveryHead) {
-            items?.DeliveryHead.forEach((user: any) => {
-              _DeliveryHead.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-          let _BA: IPeoplePickerDetails[] = [];
-          if (items?.BA) {
-            items?.BA.forEach((user: any) => {
-              _BA.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
+          let _ProjectManager: IPeoplePickerDetails[] = normalizePeopleField(
+            items?.ProjectManager,
+          );
+          let _DeliveryHead: IPeoplePickerDetails[] = normalizePeopleField(
+            items?.DeliveryHead,
+          );
+          let _BA: IPeoplePickerDetails[] = normalizePeopleField(items?.BA);
           projectDetails.push({
             ID: items?.ID,
             ProjectID: items?.ProjectID,
@@ -211,9 +221,9 @@ const Projects = (props: IProps): JSX.Element => {
             Technology: items?.Technology,
             StartDate: items?.StartDate,
             PlannedEndDate: items?.PlannedEndDate,
-            ProjectManager: _ProjectManager ? _ProjectManager : [],
-            DeliveryHead: _DeliveryHead ? _DeliveryHead : [],
-            BA: _BA ? _BA : [],
+            ProjectManager: _ProjectManager,
+            DeliveryHead: _DeliveryHead,
+            BA: _BA,
             ProjectStatus: items?.ProjectStatus,
             BillingModel: items?.BillingModel,
             Budget: items?.Budget,

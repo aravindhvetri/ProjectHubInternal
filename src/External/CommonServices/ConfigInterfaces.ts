@@ -20,6 +20,7 @@ interface IList {
   EmployeePartialAllocation: string;
   InternalRegistry: string;
   FPMMaster: string;
+  Employees: string;
   ProjectChecklist: string;
   EmployeeAllocations: string;
   AllocationsApproval: string;

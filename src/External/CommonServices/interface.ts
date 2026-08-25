@@ -239,6 +239,20 @@ export interface DateRangeConflict {
   projectTitle: string;
   allocatedOn: string | null;
   releasedOn: string | null;
+  loading: number;
+}
+
+/** Result when proposed loading would push an employee over 100% on overlap days */
+export interface LoadingCapacityBreach {
+  /** True when existing allocations already total >= 100% on some day in the proposed range */
+  alreadyAtMax: boolean;
+  /** Highest existing loading found on any day in the proposed range */
+  peakExistingLoading: number;
+  /** Highest existing + proposed loading found on any day in the proposed range */
+  peakCombinedLoading: number;
+  /** Lowest remaining capacity (0–1) across days in the proposed range */
+  minAvailableLoading: number;
+  overlappingAllocations: DateRangeConflict[];
 }
 
 /** Table row shape for employee allocation UI */

@@ -182,7 +182,7 @@ const ChildTabs = (props: any) => {
           }}
         />
         <Button
-          label="Partial Allocation"
+          label="Allocations View"
           className={`${styles.tabButton} ${
             activeTab === "Allocation" ? styles.active : ""
           }`}

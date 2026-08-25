@@ -32,7 +32,7 @@ import type {
 } from "../../../../External/CommonServices/interface";
 
 import {
-  buildDateConflictMessage,
+  buildLoadingCapacityBreachMessage,
   computeBeginDate,
   computeDashboardStats,
   computeEmployeeAvailabilitySummary,
@@ -44,7 +44,7 @@ import {
   EmployeeAllocationNewFormPanel,
   EmployeeAllocationTransactionsDialog,
   EmployeeAvailabilitySummaryPanel,
-  findCrossProjectDateConflicts,
+  findCrossProjectLoadingCapacityBreach,
   formatDate,
   formatDateForSp,
   getActiveProjectAllocation,
@@ -149,10 +149,16 @@ const getRequestedByFromProjectManagers = (projectManagers: any[]): string => {
   if (!Array.isArray(projectManagers) || projectManagers.length === 0) {
     return "";
   }
-  return projectManagers
-    .map((pm) => String(pm?.name || pm?.text || "").trim())
-    .filter(Boolean)
-    .join(", ");
+  const names: string[] = [];
+  const seen = new Set<string>();
+  projectManagers.forEach((pm) => {
+    const name = String(pm?.name || pm?.text || "").trim();
+    const key = name.toLowerCase();
+    if (!name || seen.has(key)) return;
+    seen.add(key);
+    names.push(name);
+  });
+  return names.join(", ");
 };
 
 //  COMPONENT
@@ -377,7 +383,7 @@ const EmployeeAllocations = (props: any) => {
 
   useEffect(() => {
     SPServices.SPReadItems({
-      Listname: Config.ListNames.InternalRegistry,
+      Listname: Config.ListNames.Employees,
       Select: "EmpID,EmpEmail",
     })
       .then((res: any[]) => {
@@ -554,15 +560,24 @@ const EmployeeAllocations = (props: any) => {
     candidateMonths: { month: string; value: number }[],
     excludeRowId?: number,
   ): string[] => {
+    if (!candidateMonths.length) return [];
+
     const totals = buildEmployeeMonthlyTotals(employeeId, excludeRowId);
+    const proposedMonthKeys = new Set(
+      candidateMonths.map((month) => month.month),
+    );
+
     candidateMonths.forEach((month) => {
       totals.set(
         month.month,
         (totals.get(month.month) ?? 0) + (month.value ?? 0),
       );
     });
+
     return Array.from(totals.entries())
-      .filter(([, value]) => value > 1 + 0.00001)
+      .filter(
+        ([month, value]) => proposedMonthKeys.has(month) && value > 1 + 0.00001,
+      )
       .map(([month]) => month)
       .sort(
         (a, b) => parseMonthLabel(a).getTime() - parseMonthLabel(b).getTime(),
@@ -955,21 +970,25 @@ const EmployeeAllocations = (props: any) => {
       return;
     }
 
-    const dateConflicts = findCrossProjectDateConflicts(
+    const loadingCapacityBreach = findCrossProjectLoadingCapacityBreach(
       globalRows,
       employeeId,
       formData.AllocatedOn,
       formData.ReleasedOn ?? null,
-      projectFullId,
+      formData.Loading ?? 0,
     );
-    if (dateConflicts.length > 0) {
+    if (loadingCapacityBreach) {
       props.Notify?.(
         "warn",
-        "Date conflict",
-        buildDateConflictMessage(
-          dateConflicts,
+        loadingCapacityBreach.alreadyAtMax
+          ? "Maximum allocation"
+          : "Validation",
+        buildLoadingCapacityBreachMessage(
+          employeeName,
+          loadingCapacityBreach,
           formData.AllocatedOn,
           formData.ReleasedOn ?? null,
+          formData.Loading ?? 0,
         ),
       );
       return;
@@ -1182,22 +1201,26 @@ const EmployeeAllocations = (props: any) => {
       return;
     }
 
-    const dateConflicts = findCrossProjectDateConflicts(
+    const loadingCapacityBreach = findCrossProjectLoadingCapacityBreach(
       globalRows,
       draft.EmployeeID,
       draft.AllocatedOn,
       draft.ReleasedOn ?? null,
-      projectFullId,
+      draft.Loading ?? 0,
       rowId,
     );
-    if (dateConflicts.length > 0) {
+    if (loadingCapacityBreach) {
       props.Notify?.(
         "warn",
-        "Date conflict",
-        buildDateConflictMessage(
-          dateConflicts,
+        loadingCapacityBreach.alreadyAtMax
+          ? "Maximum allocation"
+          : "Validation",
+        buildLoadingCapacityBreachMessage(
+          draft.EmployeeName,
+          loadingCapacityBreach,
           draft.AllocatedOn,
           draft.ReleasedOn ?? null,
+          draft.Loading ?? 0,
         ),
       );
       return;

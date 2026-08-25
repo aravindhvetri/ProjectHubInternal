@@ -44,6 +44,7 @@ import type {
   IEmployeeAllocationNewFormPanelProps,
   IEmployeeAllocationNewFormScss,
   IPeoplePickerDetails,
+  LoadingCapacityBreach,
 } from "./interface";
 import { Dialog } from "primereact/dialog";
 import { DataTable } from "primereact/datatable";
@@ -65,6 +66,7 @@ export type {
   EmployeeAllocationRecord,
   EmployeeAvailabilitySummary,
   EmployeeAvailabilityWindow,
+  LoadingCapacityBreach,
   IEmployeeAllocationDashboardScss,
   IEmployeeAllocationDialogScss,
   IEmployeeAvailabilitySummaryScss,
@@ -1771,12 +1773,112 @@ export const recalcDraftFromDates = (draft: AllocationRow): AllocationRow => {
   };
 };
 
+const LOADING_CAPACITY_EPSILON = 0.00001;
+
+const formatLoadingPct = (fraction: number): string =>
+  `${parseFloat((Math.max(0, fraction) * 100).toFixed(1))}%`;
+
+/**
+ * Overlapping date ranges across projects are allowed when combined Loading %
+ * stays at or under 100%. Returns a breach only when existing + proposed
+ * loading would exceed 100% on any day in the proposed period.
+ */
+export const findCrossProjectLoadingCapacityBreach = (
+  records: AllocationRow[],
+  employeeId: string,
+  allocatedOn: string | null,
+  releasedOn: string | null,
+  proposedLoading: number,
+  excludeRowId?: number,
+): LoadingCapacityBreach | null => {
+  const proposedStart = computeBeginDate(allocatedOn);
+  const proposedEnd = computeEndDate(allocatedOn, releasedOn);
+  if (!proposedStart || !proposedEnd) return null;
+  if ((proposedLoading ?? 0) <= 0) return null;
+
+  const capacityRecords = getCapacityAllocationRecords(records).filter(
+    (row) =>
+      employeeIdsMatch(row.EmployeeID, employeeId) &&
+      (excludeRowId == null || row.ID !== excludeRowId),
+  ) as AllocationRow[];
+
+  if (capacityRecords.length === 0) return null;
+
+  const proposedStartDay = normalizeDay(proposedStart);
+  const proposedEndDay = normalizeDay(proposedEnd);
+
+  const overlappingAllocations: DateRangeConflict[] = [];
+  capacityRecords.forEach((row) => {
+    const existing = getRowEffectiveRange(row);
+    if (!existing) return;
+    if (
+      rangesOverlap(
+        proposedStartDay,
+        proposedEndDay,
+        existing.start,
+        existing.end,
+      )
+    ) {
+      overlappingAllocations.push({
+        projectTitle: getAllocationProjectDisplayLabel(row),
+        allocatedOn: row.AllocatedOn,
+        releasedOn: row.ReleasedOn,
+        loading: row.Loading ?? 0,
+      });
+    }
+  });
+
+  if (overlappingAllocations.length === 0) return null;
+
+  const boundaries = collectBoundaryDatesInRange(
+    capacityRecords,
+    proposedStartDay,
+    proposedEndDay,
+  );
+  const checkDays =
+    boundaries.length > 0 ? boundaries : [proposedStartDay, proposedEndDay];
+
+  let peakExistingLoading = 0;
+  let peakCombinedLoading = 0;
+  let minAvailableLoading = 1;
+
+  checkDays.forEach((day) => {
+    const dayNorm = normalizeDay(day);
+    if (
+      dayNorm.getTime() < proposedStartDay.getTime() ||
+      dayNorm.getTime() > proposedEndDay.getTime()
+    ) {
+      return;
+    }
+
+    const existing = calcTotalAllocationOnDate(capacityRecords, dayNorm);
+    const combined = existing + proposedLoading;
+    peakExistingLoading = Math.max(peakExistingLoading, existing);
+    peakCombinedLoading = Math.max(peakCombinedLoading, combined);
+    minAvailableLoading = Math.min(
+      minAvailableLoading,
+      Math.max(0, 1 - existing),
+    );
+  });
+
+  if (peakCombinedLoading <= 1 + LOADING_CAPACITY_EPSILON) return null;
+
+  return {
+    alreadyAtMax: peakExistingLoading >= 1 - LOADING_CAPACITY_EPSILON,
+    peakExistingLoading,
+    peakCombinedLoading,
+    minAvailableLoading,
+    overlappingAllocations,
+  };
+};
+
+/** @deprecated Prefer findCrossProjectLoadingCapacityBreach — kept for callers that only need overlap rows. */
 export const findCrossProjectDateConflicts = (
   records: AllocationRow[],
   employeeId: string,
   allocatedOn: string | null,
   releasedOn: string | null,
-  currentProjectFullId: string,
+  _currentProjectFullId: string,
   excludeRowId?: number,
 ): DateRangeConflict[] => {
   const proposedStart = computeBeginDate(allocatedOn);
@@ -1790,7 +1892,6 @@ export const findCrossProjectDateConflicts = (
     if (isBenchAllocationRecord(row)) return;
     if (!employeeIdsMatch(row.EmployeeID, employeeId)) return;
     if (excludeRowId != null && row.ID === excludeRowId) return;
-    if (isSameProjectRow(row, currentProjectFullId)) return;
 
     const existing = getRowEffectiveRange(row);
     if (!existing) return;
@@ -1802,6 +1903,7 @@ export const findCrossProjectDateConflicts = (
         projectTitle: getAllocationProjectDisplayLabel(row),
         allocatedOn: row.AllocatedOn,
         releasedOn: row.ReleasedOn,
+        loading: row.Loading ?? 0,
       });
     }
   });
@@ -1809,6 +1911,32 @@ export const findCrossProjectDateConflicts = (
   return conflicts;
 };
 
+export const buildLoadingCapacityBreachMessage = (
+  employeeName: string,
+  breach: LoadingCapacityBreach,
+  proposedAllocatedOn: string,
+  proposedReleasedOn: string | null,
+  proposedLoading: number,
+): string => {
+  const proposed = formatAllocationPeriod(
+    proposedAllocatedOn,
+    proposedReleasedOn,
+  );
+  const conflictDetails = breach.overlappingAllocations
+    .map(
+      (c) =>
+        `${c.projectTitle} (${formatAllocationPeriod(c.allocatedOn, c.releasedOn)}, ${formatLoadingPct(c.loading)})`,
+    )
+    .join("; ");
+
+  if (breach.alreadyAtMax) {
+    return `${employeeName || "This employee"} has already reached the maximum allocation (100%) for the selected period and cannot be assigned to another project. Selected period: ${proposed}. Existing allocation(s): ${conflictDetails}.`;
+  }
+
+  return `Total allocation across projects cannot exceed 100% for ${employeeName || "this employee"}. Available capacity during the overlapping period is ${formatLoadingPct(breach.minAvailableLoading)}, but selected loading is ${formatLoadingPct(proposedLoading)}. Selected period: ${proposed}. Existing allocation(s): ${conflictDetails}.`;
+};
+
+/** @deprecated Prefer buildLoadingCapacityBreachMessage. */
 export const buildDateConflictMessage = (
   conflicts: DateRangeConflict[],
   proposedAllocatedOn: string,
@@ -1821,7 +1949,7 @@ export const buildDateConflictMessage = (
   const conflictDetails = conflicts
     .map(
       (c) =>
-        `${c.projectTitle} (${formatAllocationPeriod(c.allocatedOn, c.releasedOn)})`,
+        `${c.projectTitle} (${formatAllocationPeriod(c.allocatedOn, c.releasedOn)}${c.loading != null ? `, ${formatLoadingPct(c.loading)}` : ""})`,
     )
     .join("; ");
   return `This employee is already allocated to another project on overlapping dates. Selected period: ${proposed}. Conflicting allocation(s): ${conflictDetails}.`;

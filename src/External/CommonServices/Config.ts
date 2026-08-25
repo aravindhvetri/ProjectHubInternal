@@ -51,6 +51,7 @@ export namespace Config {
     EmployeePartialAllocation: "EmployeePartialAllocation",
     InternalRegistry: "InternalRegistry",
     FPMMaster: "FPMMaster",
+    Employees: "Employees",
     ProjectChecklist: "CRMProjectChecklist",
     EmployeeAllocations: "EmployeeAllocations",
     AllocationsApproval: "AllocationsApproval",

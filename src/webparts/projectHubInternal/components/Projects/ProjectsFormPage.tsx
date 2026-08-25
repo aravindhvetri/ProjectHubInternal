@@ -581,24 +581,53 @@ const ProjectFormPage = (props: any) => {
     secondaryText: user.email,
   });
 
+  // Normalize SPFx PeoplePicker items into IPeoplePickerDetails (deduped by id/email)
+  const mapPeoplePickerItems = (items: any[]): IPeoplePickerDetails[] => {
+    const mapped: IPeoplePickerDetails[] = [];
+    const seen = new Set<string>();
+
+    (items || []).forEach((item: any) => {
+      const id = Number(item?.id ?? item?.key ?? item?.Id) || 0;
+      const email = String(
+        item?.email || item?.secondaryText || item?.EMail || "",
+      ).trim();
+      const name = String(item?.name || item?.text || item?.Title || "").trim();
+      const dedupeKey = id
+        ? `id:${id}`
+        : email
+          ? `email:${email.toLowerCase()}`
+          : "";
+
+      if (!dedupeKey || seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
+      mapped.push({ id, name, email });
+    });
+
+    return mapped;
+  };
+
+  const getPersonEmail = (user: any): string =>
+    String(user?.email || user?.secondaryText || user?.EMail || "")
+      .trim()
+      .toLowerCase();
+
   //Set default user in peoplepicker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
     fallbackUsers: any[],
   ) => {
     let selectedEmails: string[] = [];
-    if (selectedUsers?.length) {
-      selectedUsers.forEach((user: IPeoplePickerDetails) => {
-        selectedEmails.push(user?.email);
-      });
-    } else if (fallbackUsers?.length) {
-      // formData?.ProjectManager case (secondaryText contains email)
-      fallbackUsers.forEach((user: any) => {
-        if (user?.secondaryText) {
-          selectedEmails.push(user.secondaryText);
-        }
-      });
-    }
+    const source =
+      selectedUsers?.length > 0
+        ? selectedUsers
+        : fallbackUsers?.length > 0
+          ? fallbackUsers
+          : [];
+
+    source.forEach((user: any) => {
+      const email = getPersonEmail(user);
+      if (email) selectedEmails.push(email);
+    });
 
     return selectedEmails;
   };
@@ -744,6 +773,7 @@ const ProjectFormPage = (props: any) => {
       case "ProjectStatus":
       case "BillingModel":
       case "Currency":
+      case "Technology":
       case "Budget":
       case "ProjectName":
         return value && typeof value === "string" && value.trim() !== "";
@@ -790,6 +820,8 @@ const ProjectFormPage = (props: any) => {
     if (!isValidField("BillingModel", formData?.BillingModel))
       errors.BillingModel = true;
     if (!isValidField("Currency", formData?.Currency)) errors.Currency = true;
+    if (!isValidField("Technology", formData?.Technology))
+      errors.Technology = true;
     if (!isValidField("Hours", formData?.Hours)) errors.Hours = true;
 
     //Start/End Date validation
@@ -831,20 +863,16 @@ const ProjectFormPage = (props: any) => {
   //Json Generations:
   const generateJson = () => {
     setLoader(true);
-    let ProjectManagerIds: number[] = JSON.parse(
-      JSON.stringify(formData?.ProjectManager),
-    )
-      .map((user: IPeoplePickerDetails) => user.id)
-      .sort((a: any, b: any) => a - b);
-    let DeliveryHeadIds: number[] = JSON.parse(
-      JSON.stringify(formData?.DeliveryHead),
-    )
-      .map((user: any) => (user.id ? user?.id : user?.key))
-      .sort((a: any, b: any) => a - b);
+    const toUniqueUserIds = (users: any[]): number[] => {
+      const ids = (users || [])
+        .map((user: any) => Number(user?.id ?? user?.key ?? user?.Id) || 0)
+        .filter((id: number) => id > 0);
+      return Array.from(new Set(ids)).sort((a, b) => a - b);
+    };
 
-    let BAIds: number[] = JSON.parse(JSON.stringify(formData?.BA))
-      .map((user: any) => (user.id ? user?.id : user?.key))
-      .sort((a: any, b: any) => a - b);
+    let ProjectManagerIds: number[] = toUniqueUserIds(formData?.ProjectManager);
+    let DeliveryHeadIds: number[] = toUniqueUserIds(formData?.DeliveryHead);
+    let BAIds: number[] = toUniqueUserIds(formData?.BA);
 
     let json: any = {
       ProjectID: formData?.ProjectID,
@@ -1388,14 +1416,14 @@ const ProjectFormPage = (props: any) => {
   //     user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   // );
 
+  const loginEmail = props?.loginUserEmail?.toLowerCase() || "";
+
   const isProjectManager = formData?.ProjectManager?.some(
-    (pm: IPeoplePickerDetails) =>
-      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+    (pm: IPeoplePickerDetails) => getPersonEmail(pm) === loginEmail,
   );
 
   const isDeliveryHead = formData?.DeliveryHead?.some(
-    (user: IPeoplePickerDetails) =>
-      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+    (user: IPeoplePickerDetails) => getPersonEmail(user) === loginEmail,
   );
 
   //Initial Render:
@@ -1617,8 +1645,8 @@ const ProjectFormPage = (props: any) => {
                         : peoplePickerStyles
                     }
                     ensureUser
-                    placeholder="Select the Person"
-                    personSelectionLimit={1}
+                    placeholder="Select one or more people"
+                    personSelectionLimit={2}
                     context={props.spfxContext}
                     defaultSelectedUsers={getSelectedEmails(
                       props?.data?.ProjectManager,
@@ -1629,7 +1657,10 @@ const ProjectFormPage = (props: any) => {
                     }
                     resolveDelay={100}
                     onChange={(items: any[]) =>
-                      handleOnChange("ProjectManager", items)
+                      handleOnChange(
+                        "ProjectManager",
+                        mapPeoplePickerItems(items),
+                      )
                     }
                     disabled={
                       props?.isView ||
@@ -1759,7 +1790,6 @@ const ProjectFormPage = (props: any) => {
                   }}
                   disabled={
                     props?.isView ||
-                    // isProjectManager ||
                     (isProjectManager && !isPMOUser) ||
                     (isDeliveryHead && !isPMOUser)
                   }
@@ -2043,6 +2073,7 @@ const ProjectFormPage = (props: any) => {
                         <InputText value={formData?.FPMProfit} disabled />
                       </div>
                       {props?.data?.Budget > 0 &&
+                        isPMOUser &&
                         (props?.isView || props?.isEdit) && (
                           <div>
                             <img
@@ -2127,7 +2158,7 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
-                <Label>Technology</Label>
+                <Label>Practice</Label>
                 <Dropdown
                   options={
                     props?.initialCRMProjectsListDropContainer?.Technology
@@ -2140,8 +2171,12 @@ const ProjectFormPage = (props: any) => {
                   disabled={
                     props?.isView ||
                     (isProjectManager && !isPMOUser) ||
-                    (isDeliveryHead && !isPMOUser) ||
-                    props?.data?.ProjectStatus == "6"
+                    (isDeliveryHead && !isPMOUser)
+                  }
+                  style={
+                    errorMessage["Technology"]
+                      ? { border: "2px solid #ff0000" }
+                      : undefined
                   }
                 />
               </div>
