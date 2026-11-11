@@ -26,6 +26,7 @@ import { InputText } from "primereact/inputtext";
 import { DatePicker, Label, PrimaryButton } from "@fluentui/react";
 import { Dropdown } from "primereact/dropdown";
 import { InputTextarea } from "primereact/inputtextarea";
+import { Checkbox } from "primereact/checkbox";
 import Loading from "../../../../External/Loader/Loading";
 
 const BillingsForm = (props: any) => {
@@ -279,6 +280,7 @@ const BillingsForm = (props: any) => {
       Status: formData?.Status
         ? Config.statusReverseMap[formData?.Status] || formData?.Status
         : "",
+      DummyInvoice: formData?.DummyInvoice === true,
     };
     if (props?.isEdit) {
       handleUpdate(json);
@@ -388,6 +390,7 @@ const BillingsForm = (props: any) => {
         ResourceType: "",
         StartMonth: null,
         Status: "Not generated invoice",
+        DummyInvoice: false,
       });
     }
   }, []);
@@ -841,6 +844,18 @@ const BillingsForm = (props: any) => {
                   placeholder="Enter notes"
                   disabled={props?.isView}
                   autoResize
+                />
+              </div>
+              <div
+                style={{ width: "22%" }}
+                className={`${projectFormStyles.allField} dealFormPage`}
+              >
+                <Label>Dummy invoice</Label>
+                <Checkbox
+                  inputId="dummyInvoice"
+                  checked={formData?.DummyInvoice === true}
+                  onChange={(e) => handleOnChange("DummyInvoice", e.checked)}
+                  disabled={props?.isView}
                 />
               </div>
             </div>

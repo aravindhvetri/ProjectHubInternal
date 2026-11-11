@@ -47,6 +47,64 @@ import { Dialog } from "primereact/dialog";
 import { Web } from "@pnp/sp/webs";
 import FPM from "../FPM/FPM";
 
+const FolderImage: string = require("../../../../External/Images/openFolder.png");
+
+const CURRENCY_TO_USD_RATES: Record<string, number> = {
+  USD: 1,
+  INR: 0.01047,
+  EURO: 1.08,
+  EUR: 1.08,
+  BHD: 2.65119,
+  CAD: 0.72,
+  AED: 0.2723,
+  AUD: 0.65,
+};
+
+const normalizeCurrency = (currency: string): string => {
+  const trimmed = (currency || "").trim();
+  if (!trimmed) {
+    return "USD";
+  }
+
+  const upper = trimmed.toUpperCase();
+  const aliases: Record<string, string> = {
+    USD: "USD",
+    INR: "INR",
+    EURO: "EURO",
+    EUR: "EURO",
+    BHD: "BHD",
+    CAD: "CAD",
+    AED: "AED",
+    AUD: "AUD",
+  };
+
+  return aliases[upper] || upper;
+};
+
+const parseBudgetAmount = (value: any): number => {
+  if (value == null || value === "") {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleaned = String(value).replace(/,/g, "").trim();
+  const parsed = Number(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const convertBudgetToUSD = (amount: number, currency: string): number => {
+  const parsedAmount = parseBudgetAmount(amount);
+  if (!parsedAmount) {
+    return 0;
+  }
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const rate = CURRENCY_TO_USD_RATES[normalizedCurrency] ?? 1;
+  return Number((parsedAmount * rate).toFixed(2));
+};
+
 const ProjectFormPage = (props: any) => {
   // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
   const TARGET_SITE_URL =
@@ -139,6 +197,40 @@ const ProjectFormPage = (props: any) => {
     props?.goBack();
   };
 
+  //Open Project Folder function:
+  const handleOpenProjectFolder = async (rowData: any, spfxContext: any) => {
+    try {
+      const accountName = rowData?.ClientName?.trim();
+      const libraryName = Config.LibraryNames.ProjectFolderStructure;
+      const siteUrl = spfxContext?.pageContext?.web?.absoluteUrl;
+      const serverRelativeUrl =
+        spfxContext?.pageContext?.web?.serverRelativeUrl;
+
+      const folderServerRelativeUrl = `${serverRelativeUrl}/${libraryName}/${accountName}`;
+
+      //Check if folder exists
+      const folderExists = await sp.web
+        .getFolderByServerRelativePath(folderServerRelativeUrl)
+        .select("Exists")
+        .get()
+        .then((res) => res?.Exists)
+        .catch(() => false);
+
+      //Open the folder or library based on existence
+      if (folderExists) {
+        window.open(`${siteUrl}/${libraryName}/${accountName}`, "_blank");
+      } else {
+        window.open(`${siteUrl}/${libraryName}/Forms/AllItems.aspx`, "_blank");
+      }
+    } catch (err) {
+      console.error("Error opening project folder:", err);
+      window.open(
+        `${spfxContext?.pageContext?.web?.absoluteUrl}/ProjectFolderStructure/Forms/AllItems.aspx`,
+        "_blank",
+      );
+    }
+  };
+
   //Get Billings Data:
   const getBillingsAddDetails = (details: any) => {
     setBillingsData(details);
@@ -216,11 +308,17 @@ const ProjectFormPage = (props: any) => {
       .then((res: any) => {
         if (res && res.length > 0) {
           const item = res[0];
-          setFPMData({
+          const nextFpmData = {
             ID: item.ID,
-            FPMProfit: item.FPMProfit,
-            FPMMargin: item.FPMMargin,
-          });
+            FPMProfit: item.FPMProfit ?? "",
+            FPMMargin: item.FPMMargin ?? "",
+          };
+          setFPMData(nextFpmData);
+          setFormData((prev: any) => ({
+            ...prev,
+            FPMProfit: nextFpmData.FPMProfit,
+            FPMMargin: nextFpmData.FPMMargin,
+          }));
         }
       })
       .catch((err) => {
@@ -483,24 +581,53 @@ const ProjectFormPage = (props: any) => {
     secondaryText: user.email,
   });
 
+  // Normalize SPFx PeoplePicker items into IPeoplePickerDetails (deduped by id/email)
+  const mapPeoplePickerItems = (items: any[]): IPeoplePickerDetails[] => {
+    const mapped: IPeoplePickerDetails[] = [];
+    const seen = new Set<string>();
+
+    (items || []).forEach((item: any) => {
+      const id = Number(item?.id ?? item?.key ?? item?.Id) || 0;
+      const email = String(
+        item?.email || item?.secondaryText || item?.EMail || "",
+      ).trim();
+      const name = String(item?.name || item?.text || item?.Title || "").trim();
+      const dedupeKey = id
+        ? `id:${id}`
+        : email
+          ? `email:${email.toLowerCase()}`
+          : "";
+
+      if (!dedupeKey || seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
+      mapped.push({ id, name, email });
+    });
+
+    return mapped;
+  };
+
+  const getPersonEmail = (user: any): string =>
+    String(user?.email || user?.secondaryText || user?.EMail || "")
+      .trim()
+      .toLowerCase();
+
   //Set default user in peoplepicker:
   const getSelectedEmails = (
     selectedUsers: IPeoplePickerDetails[],
     fallbackUsers: any[],
   ) => {
     let selectedEmails: string[] = [];
-    if (selectedUsers?.length) {
-      selectedUsers.forEach((user: IPeoplePickerDetails) => {
-        selectedEmails.push(user?.email);
-      });
-    } else if (fallbackUsers?.length) {
-      // formData?.ProjectManager case (secondaryText contains email)
-      fallbackUsers.forEach((user: any) => {
-        if (user?.secondaryText) {
-          selectedEmails.push(user.secondaryText);
-        }
-      });
-    }
+    const source =
+      selectedUsers?.length > 0
+        ? selectedUsers
+        : fallbackUsers?.length > 0
+          ? fallbackUsers
+          : [];
+
+    source.forEach((user: any) => {
+      const email = getPersonEmail(user);
+      if (email) selectedEmails.push(email);
+    });
 
     return selectedEmails;
   };
@@ -522,7 +649,14 @@ const ProjectFormPage = (props: any) => {
   React.useEffect(() => {
     if (props?.data && leadOptions.length > 0) {
       setFormData((prev: any) => {
-        const newForm = { ...props.data };
+        const {
+          DealProfit: _dealProfit,
+          DealMargin: _dealMargin,
+          FPMProfit: _fpmProfit,
+          FPMMargin: _fpmMargin,
+          ...projectData
+        } = props.data;
+        const newForm = { ...projectData };
         if (
           props.data?.AccountManager &&
           typeof props?.data?.AccountManager === "string"
@@ -534,7 +668,13 @@ const ProjectFormPage = (props: any) => {
             newForm.AccountManager = matchedLead;
           }
         }
-        return newForm;
+        return {
+          ...newForm,
+          DealProfit: prev.DealProfit ?? "",
+          DealMargin: prev.DealMargin ?? "",
+          FPMProfit: prev.FPMProfit ?? "",
+          FPMMargin: prev.FPMMargin ?? "",
+        };
       });
       LoadExistingFiles(props?.data?.ID);
     }
@@ -555,22 +695,26 @@ const ProjectFormPage = (props: any) => {
 
   //Deal margin and profit calculation:
   React.useEffect(() => {
-    const budget = Number(formData?.Budget) || 0;
+    const budget = convertBudgetToUSD(
+      formData?.Budget,
+      formData?.Currency || props?.data?.Currency,
+    );
     const totalExecutionCost =
       Number(configurationData?.TotalExecutionCost) || 0;
-    const dealProfit: any = Number(budget - totalExecutionCost).toFixed(2);
+    const dealProfit = Number((budget - totalExecutionCost).toFixed(2));
     const dealMargin =
       budget > 0 ? ((dealProfit / budget) * 100).toFixed(2) : "0";
 
     setFormData((prev: any) => ({
       ...prev,
-      DealProfit: dealProfit,
+      DealProfit: dealProfit.toFixed(2),
       DealMargin: dealMargin,
     }));
   }, [
-    // formData?.Budget,
+    formData?.Budget,
+    formData?.Currency,
     configurationData?.TotalExecutionCost,
-    configurationData?.USDRupees,
+    props?.data?.Currency,
   ]);
 
   //Set FPM Data to formData:
@@ -578,11 +722,11 @@ const ProjectFormPage = (props: any) => {
     if (fpmData?.ID) {
       setFormData((prev: any) => ({
         ...prev,
-        FPMProfit: fpmData.FPMProfit,
-        FPMMargin: fpmData.FPMMargin,
+        FPMProfit: Number(fpmData.FPMProfit).toFixed(2) ?? "",
+        FPMMargin: Number(fpmData.FPMMargin).toFixed(2) ?? "",
       }));
     }
-  }, [fpmData, formData?.Budget]);
+  }, [fpmData]);
 
   //LoadExistingFiles in Library:
   const LoadExistingFiles = async (id: number) => {
@@ -629,6 +773,7 @@ const ProjectFormPage = (props: any) => {
       case "ProjectStatus":
       case "BillingModel":
       case "Currency":
+      case "Technology":
       case "Budget":
       case "ProjectName":
         return value && typeof value === "string" && value.trim() !== "";
@@ -675,6 +820,8 @@ const ProjectFormPage = (props: any) => {
     if (!isValidField("BillingModel", formData?.BillingModel))
       errors.BillingModel = true;
     if (!isValidField("Currency", formData?.Currency)) errors.Currency = true;
+    if (!isValidField("Technology", formData?.Technology))
+      errors.Technology = true;
     if (!isValidField("Hours", formData?.Hours)) errors.Hours = true;
 
     //Start/End Date validation
@@ -716,20 +863,16 @@ const ProjectFormPage = (props: any) => {
   //Json Generations:
   const generateJson = () => {
     setLoader(true);
-    let ProjectManagerIds: number[] = JSON.parse(
-      JSON.stringify(formData?.ProjectManager),
-    )
-      .map((user: IPeoplePickerDetails) => user.id)
-      .sort((a: any, b: any) => a - b);
-    let DeliveryHeadIds: number[] = JSON.parse(
-      JSON.stringify(formData?.DeliveryHead),
-    )
-      .map((user: any) => (user.id ? user?.id : user?.key))
-      .sort((a: any, b: any) => a - b);
+    const toUniqueUserIds = (users: any[]): number[] => {
+      const ids = (users || [])
+        .map((user: any) => Number(user?.id ?? user?.key ?? user?.Id) || 0)
+        .filter((id: number) => id > 0);
+      return Array.from(new Set(ids)).sort((a, b) => a - b);
+    };
 
-    let BAIds: number[] = JSON.parse(JSON.stringify(formData?.BA))
-      .map((user: any) => (user.id ? user?.id : user?.key))
-      .sort((a: any, b: any) => a - b);
+    let ProjectManagerIds: number[] = toUniqueUserIds(formData?.ProjectManager);
+    let DeliveryHeadIds: number[] = toUniqueUserIds(formData?.DeliveryHead);
+    let BAIds: number[] = toUniqueUserIds(formData?.BA);
 
     let json: any = {
       ProjectID: formData?.ProjectID,
@@ -749,6 +892,7 @@ const ProjectFormPage = (props: any) => {
             formData?.ProjectStatus,
       BillingModel: formData?.BillingModel,
       Status: formData?.Status || "",
+      Technology: formData?.Technology || "",
       Budget: formData?.Budget,
       Hours: formData?.Hours,
       ProjectType: formData?.ProjectType || "",
@@ -1180,14 +1324,37 @@ const ProjectFormPage = (props: any) => {
     }
   };
 
-  //DownLoad File Function:
+  const getFileUrl = (file: any): string => {
+    return file?.ulr || file?.url || file?.objectURL || "";
+  };
+
+  const appendQueryParam = (url: string, param: string): string => {
+    if (!url || url.startsWith("blob:")) return url;
+    if (url.includes(param)) return url;
+    return url.includes("?") ? `${url}&${param}` : `${url}?${param}`;
+  };
+
+  // Open file in a new tab (SharePoint browser view mode):
+  const viewFile = (file: any) => {
+    const fileUrl = getFileUrl(file);
+    if (!fileUrl) return;
+    window.open(appendQueryParam(fileUrl, "web=1"), "_blank");
+  };
+
+  // Force download the file:
   const downloadFile = (file: any) => {
+    const fileUrl = getFileUrl(file);
+    if (!fileUrl) return;
+
     const anchortag = document.createElement("a");
-    anchortag.setAttribute("href", file?.ulr ? file?.ulr : file?.objectURL);
-    anchortag.setAttribute("target", "_blank");
-    anchortag.setAttribute("download", "");
+    anchortag.href = file?.objectURL
+      ? fileUrl
+      : appendQueryParam(fileUrl, "download=1");
+    anchortag.setAttribute("download", file?.name || "");
+    anchortag.style.display = "none";
+    document.body.appendChild(anchortag);
     anchortag.click();
-    anchortag.remove();
+    document.body.removeChild(anchortag);
   };
 
   // Temporary Remove File (state only):
@@ -1249,14 +1416,14 @@ const ProjectFormPage = (props: any) => {
   //     user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
   // );
 
+  const loginEmail = props?.loginUserEmail?.toLowerCase() || "";
+
   const isProjectManager = formData?.ProjectManager?.some(
-    (pm: IPeoplePickerDetails) =>
-      pm?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+    (pm: IPeoplePickerDetails) => getPersonEmail(pm) === loginEmail,
   );
 
   const isDeliveryHead = formData?.DeliveryHead?.some(
-    (user: IPeoplePickerDetails) =>
-      user?.email?.toLowerCase() === props?.loginUserEmail?.toLowerCase(),
+    (user: IPeoplePickerDetails) => getPersonEmail(user) === loginEmail,
   );
 
   //Initial Render:
@@ -1329,6 +1496,42 @@ const ProjectFormPage = (props: any) => {
                 {formData?.Hours > 500 && "Project Size - High"}
               </span>
             )}
+            {(props?.isView || props?.isEdit) &&
+              (props?.data?.ProjectStatus == "6" ||
+                formData?.ProjectStatus == "6") && (
+                <div
+                  className={selfComponentStyles.projectFoldersAction}
+                  onClick={() =>
+                    handleOpenProjectFolder(
+                      {
+                        ClientName:
+                          formData?.ClientName || props?.data?.ClientName,
+                      },
+                      props?.spfxContext,
+                    )
+                  }
+                  title="Project Folder Structure"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenProjectFolder(
+                        {
+                          ClientName:
+                            formData?.ClientName || props?.data?.ClientName,
+                        },
+                        props?.spfxContext,
+                      );
+                    }
+                  }}
+                >
+                  <img src={FolderImage} alt="Project folders" />
+                  <span className={selfComponentStyles.projectFoldersLabel}>
+                    Project Folders
+                  </span>
+                </div>
+              )}
           </div>
           <div
             style={{ height: "auto" }}
@@ -1442,8 +1645,8 @@ const ProjectFormPage = (props: any) => {
                         : peoplePickerStyles
                     }
                     ensureUser
-                    placeholder="Select the Person"
-                    personSelectionLimit={1}
+                    placeholder="Select one or more people"
+                    personSelectionLimit={2}
                     context={props.spfxContext}
                     defaultSelectedUsers={getSelectedEmails(
                       props?.data?.ProjectManager,
@@ -1454,7 +1657,10 @@ const ProjectFormPage = (props: any) => {
                     }
                     resolveDelay={100}
                     onChange={(items: any[]) =>
-                      handleOnChange("ProjectManager", items)
+                      handleOnChange(
+                        "ProjectManager",
+                        mapPeoplePickerItems(items),
+                      )
                     }
                     disabled={
                       props?.isView ||
@@ -1584,7 +1790,6 @@ const ProjectFormPage = (props: any) => {
                   }}
                   disabled={
                     props?.isView ||
-                    // isProjectManager ||
                     (isProjectManager && !isPMOUser) ||
                     (isDeliveryHead && !isPMOUser)
                   }
@@ -1868,6 +2073,7 @@ const ProjectFormPage = (props: any) => {
                         <InputText value={formData?.FPMProfit} disabled />
                       </div>
                       {props?.data?.Budget > 0 &&
+                        isPMOUser &&
                         (props?.isView || props?.isEdit) && (
                           <div>
                             <img
@@ -1952,6 +2158,29 @@ const ProjectFormPage = (props: any) => {
                 />
               </div>
               <div className={`${selfComponentStyles.allField} dealFormPage`}>
+                <Label>Practice</Label>
+                <Dropdown
+                  options={
+                    props?.initialCRMProjectsListDropContainer?.Technology
+                  }
+                  optionLabel="name"
+                  value={props?.initialCRMProjectsListDropContainer?.Technology.find(
+                    (item: any) => item.name === formData?.Technology,
+                  )}
+                  onChange={(e) => handleOnChange("Technology", e?.value?.name)}
+                  disabled={
+                    props?.isView ||
+                    (isProjectManager && !isPMOUser) ||
+                    (isDeliveryHead && !isPMOUser)
+                  }
+                  style={
+                    errorMessage["Technology"]
+                      ? { border: "2px solid #ff0000" }
+                      : undefined
+                  }
+                />
+              </div>
+              <div className={`${selfComponentStyles.allField} dealFormPage`}>
                 <Label>CR amount</Label>
                 <InputText value={crDetails.amount?.toString()} disabled />
               </div>
@@ -2001,7 +2230,7 @@ const ProjectFormPage = (props: any) => {
                     <li className={selfComponentStyles?.fileList} key={index}>
                       <div className={selfComponentStyles.filNameTag}>
                         <div
-                          onClick={() => downloadFile(file)}
+                          onClick={() => viewFile(file)}
                           style={{
                             cursor: "pointer",
                           }}
@@ -2011,18 +2240,24 @@ const ProjectFormPage = (props: any) => {
                             ? `${file?.name.slice(0, 23)}...`
                             : file?.name}
                         </div>
-                        {!props?.isView &&
-                        (file?.objectURL ||
-                          file?.authorEmail === props?.loginUserEmail) ? (
-                          <div className={selfComponentStyles.filesIconDiv}>
-                            <i
-                              className="pi pi-times"
-                              onClick={() => removeFile(file?.name)}
-                            ></i>
-                          </div>
-                        ) : (
-                          ""
-                        )}
+                        <div className={selfComponentStyles.filesIconDiv}>
+                          <i
+                            className="pi pi-download"
+                            title="Download"
+                            style={{ cursor: "pointer", fontSize: "12px" }}
+                            onClick={() => downloadFile(file)}
+                          ></i>
+                          {!props?.isView &&
+                            (file?.objectURL ||
+                              file?.authorEmail === props?.loginUserEmail) && (
+                              <i
+                                className="pi pi-times"
+                                title="Remove"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => removeFile(file?.name)}
+                              ></i>
+                            )}
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -2212,7 +2447,10 @@ const ProjectFormPage = (props: any) => {
       <Dialog
         visible={showFPM}
         style={{ width: "64vw" }}
-        onHide={() => setShowFPM(false)}
+        onHide={() => {
+          setShowFPM(false);
+          getFPMData();
+        }}
         modal
         showHeader={false}
       >

@@ -15,6 +15,8 @@ const MainComponent = (props: any) => {
 
   // Logged in User Email
   const loginUserEmail: string = props?.spfxContext?._pageContext?._user?.email;
+  const LoginUserName: string =
+    props?.spfxContext?._pageContext?._user?.displayName;
 
   // Notification Function
   const Notify = (
@@ -46,10 +48,16 @@ const MainComponent = (props: any) => {
         <Loading />
       ) : (
         <div>
-          <Toast ref={toast} />
+          <Toast
+            ref={toast}
+            position="top-right"
+            appendTo={typeof document !== "undefined" ? document.body : null}
+            baseZIndex={100000}
+          />
           {pageName === "Projects" ? (
             <div>
               <Projects
+                LoginUserName={LoginUserName}
                 loginUserEmail={loginUserEmail}
                 spfxContext={props.spfxContext}
                 pageName={pageName}

@@ -1,0 +1,1430 @@
+// ── Theme tokens ──────────────────────────────────────────────
+$ThemePrimeryColor: #00a99d;
+$ThemePrimeryHover: #009a8f;
+$ThemeDarkTeal: #056861;
+$ThemeDarkTealDeep: #045a54;
+$ThemePrimerySoft: rgba(0, 169, 157, 0.1);
+$ThemePrimeryBorder: rgba(0, 169, 157, 0.22);
+$borderColor: #e8e8e8;
+$textMuted: #686766;
+$textDark: #333;
+$danger: #aa1f1f;
+$success: #0d900d;
+$radius: 8px;
+$radiusSm: 6px;
+$sidebarWidth: 280px;
+$sidebarHeaderMin: 168px;
+$sidebarBg: #e8f2f1;
+$shadowSm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadowMd: 0 4px 16px rgba(0, 0, 0, 0.08);
+$mainPaddingX: 30px;
+$mainPaddingY: 24px;
+
+// ── Page shell: absolute sidebar + main content flow ──────────
+.pageWrapper {
+  position: relative;
+  min-height: 88vh;
+  padding-left: $sidebarWidth;
+  background-color: #f4f6f6;
+  color: $textDark;
+  font-family:
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  // Full-height sidebar backdrop
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: $sidebarWidth;
+    min-height: 100%;
+    z-index: 0;
+    background: linear-gradient(
+      180deg,
+      $ThemeDarkTeal 0,
+      $ThemeDarkTealDeep $sidebarHeaderMin,
+      $sidebarBg $sidebarHeaderMin,
+      $sidebarBg 100%
+    );
+    border-right: 1px solid rgba(5, 104, 97, 0.12);
+    box-shadow: 4px 0 20px rgba(5, 104, 97, 0.07);
+    pointer-events: none;
+  }
+}
+
+.container {
+  display: block;
+  width: 100%;
+  height: 638px;
+  overflow: auto;
+  min-width: 0;
+  padding: $mainPaddingY $mainPaddingX 40px;
+}
+
+// ── Left sidebar: navigation + search / actions ───────────────
+.navBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: $sidebarWidth;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 18px;
+
+  .backBtn {
+    width: 40px;
+    height: 36px;
+    border-radius: $radiusSm;
+    background-color: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    padding: 0;
+    flex-shrink: 0;
+    transition:
+      background 0.15s ease,
+      transform 0.12s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.28);
+      transform: translateX(-2px);
+    }
+
+    &:active {
+      transform: translateX(0);
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #fff;
+    letter-spacing: -0.02em;
+
+    span {
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 500;
+    }
+  }
+}
+
+.projectMeta {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.projectLabel {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c8e7e5;
+  padding-left: 4px;
+}
+
+.projectTitleChip {
+  padding: 2px 10px 5px 10px;
+  border-radius: 6px;
+  font-weight: 400 !important;
+  background: #0c7870;
+  font-size: 13px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+// Anchored to pageWrapper (not .container) so controls stay in the sidebar
+.pickerCard {
+  position: absolute;
+  top: $sidebarHeaderMin;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  width: $sidebarWidth;
+  padding: 20px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.pickerLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: $ThemeDarkTeal;
+  margin-bottom: 10px;
+}
+
+.peoplePicker {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+
+  button {
+    background: none;
+    border: none;
+  }
+
+  // Neutralize global picker accent border inside sidebar
+  :global(.ms-BasePicker) {
+    border-left-color: $ThemePrimeryColor !important;
+    border-left-width: 3px !important;
+    border-radius: $radiusSm !important;
+    background: #fff !important;
+    min-height: 36px;
+  }
+
+  :global(.ms-BasePicker-text) {
+    min-height: 34px;
+  }
+}
+
+.pickerInputWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  width: 100%;
+
+  .pickerIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $textMuted;
+    font-size: 14px;
+    pointer-events: none;
+  }
+}
+
+.pickerInput {
+  flex: 1;
+  width: 100%;
+  height: 36px;
+  border: 1px solid $ThemePrimeryBorder;
+  border-radius: $radiusSm;
+  background: #fff;
+  color: #000;
+  font-size: 13px;
+  padding: 0 12px 0 36px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: #afafaf;
+  }
+
+  &:focus {
+    border-color: $ThemePrimeryColor;
+    box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.15);
+  }
+}
+
+.pickerDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid $borderColor;
+  border-radius: $radiusSm;
+  box-shadow: $shadowMd;
+  z-index: 200;
+  overflow: hidden;
+  animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pickerOption {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: $textDark;
+  border-bottom: 1px solid $borderColor;
+  transition: background 0.12s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $ThemePrimerySoft;
+    color: $ThemeDarkTeal;
+  }
+
+  .optionAvatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $ThemePrimeryColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+}
+
+.benchBadge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(13, 144, 13, 0.35);
+  border-radius: $radiusSm;
+  padding: 10px 12px;
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $success;
+  background: rgba(13, 144, 13, 0.06);
+  animation: fadeIn 0.3s ease;
+  width: 100%;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: $success;
+    flex-shrink: 0;
+    animation: pulse 1.8s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btnAdd {
+  width: 100%;
+  height: 38px;
+  padding: 0 16px;
+  justify-content: center;
+  background: $ThemePrimeryColor;
+  border: 1px solid $ThemePrimeryColor;
+  border-radius: $radiusSm;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 169, 157, 0.28);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $ThemePrimeryHover;
+    box-shadow: 0 4px 12px rgba(0, 169, 157, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid $borderColor;
+
+  .sectionHeaderActions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+  }
+
+  .tableSearch {
+    min-width: 220px;
+
+    :global {
+      .p-icon-field {
+        width: 100%;
+      }
+
+      .p-inputtext {
+        width: 100%;
+        min-width: 220px;
+        font-size: 13px;
+        padding: 8px 12px 8px 2.25rem;
+        border: 1px solid $borderColor;
+        border-radius: $radiusSm;
+        color: $textDark;
+        background: #fff;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+
+        &::placeholder {
+          color: #9a9a9a;
+        }
+
+        &:enabled:hover {
+          border-color: darken($borderColor, 8%);
+        }
+
+        &:enabled:focus {
+          outline: none;
+          border-color: $ThemePrimeryColor;
+          box-shadow: 0 0 0 2px rgba($ThemePrimeryColor, 0.12);
+        }
+      }
+
+      .p-input-icon {
+        color: #8a8a8a;
+        left: 0.75rem;
+      }
+    }
+  }
+
+  .sectionTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ThemeDarkTeal;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    &::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, $ThemePrimeryColor, $ThemeDarkTeal);
+      display: block;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// ── Dashboard stat cards ──────────────────────────────────────
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(200px, 1.4fr);
+  gap: 14px;
+  margin: 0 0 24px;
+  padding: 0;
+  animation: fadeIn 0.4s ease;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  border: 1px solid $borderColor;
+  border-radius: $radius;
+  background: #fff;
+  padding: 18px 20px;
+  box-shadow: $shadowSm;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    box-shadow: $shadowMd;
+    transform: translateY(-1px);
+  }
+
+  .statIcon {
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+  }
+
+  .statLabel {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $textMuted;
+    margin-bottom: 6px;
+  }
+
+  .statValue {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: $ThemePrimeryColor;
+    margin-bottom: 6px;
+  }
+
+  .statSub {
+    font-size: 11px;
+    color: $textMuted;
+    line-height: 1.4;
+  }
+
+  &.tealCard {
+    border-top: 3px solid $ThemePrimeryColor;
+
+    .statValue {
+      color: #5d478b;
+    }
+  }
+
+  &.goldCard {
+    border-top: 3px solid $ThemeDarkTeal;
+
+    .statValue {
+      color: $ThemeDarkTeal;
+    }
+  }
+
+  &.sageCard {
+    border-top: 3px solid $success;
+
+    .statValue {
+      color: $success;
+    }
+  }
+
+  &.crimsonCard {
+    border-top: 3px solid $textMuted;
+  }
+
+  &.projectsCard {
+    grid-column: 5;
+
+    @media (max-width: 1280px) {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 900px) {
+      grid-column: span 1;
+    }
+
+    .projectList {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 120px;
+      overflow-y: auto;
+
+      .projectTag {
+        border: 1px solid $ThemePrimeryBorder;
+        border-radius: $radiusSm;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: $textDark;
+        background: $ThemePrimerySoft;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+// ── Availability summary ──────────────────────────────────────
+.availabilitySummary {
+  padding: 20px 24px;
+  margin-top: 0;
+  border-top: 1px solid $borderColor;
+  background: linear-gradient(180deg, #fafbfb 0%, #fff 100%);
+  animation: fadeIn 0.35s ease;
+}
+
+.availabilitySummaryHeader {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $ThemeDarkTeal;
+  margin-bottom: 16px;
+}
+
+.availabilitySummaryGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 36px;
+}
+
+.availabilityStat {
+  min-width: 160px;
+}
+
+.availabilityStatLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $textMuted;
+  margin-bottom: 6px;
+}
+
+.availabilityStatValue {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: $ThemePrimeryColor;
+  margin-bottom: 4px;
+}
+
+.availabilityStatSub {
+  font-size: 11px;
+  color: $textMuted;
+  max-width: 240px;
+  line-height: 1.45;
+}
+
+.availabilityAvailableNow {
+  color: $success !important;
+}
+
+.availabilityFullyBooked {
+  color: $danger !important;
+}
+
+.availabilityWindowsSection {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid $borderColor;
+}
+
+.availabilityWindowsTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $ThemeDarkTeal;
+  margin-bottom: 10px;
+}
+
+.availabilityWindowRow {
+  border: 1px solid $borderColor;
+  border-radius: $radiusSm;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: #fff;
+  box-shadow: $shadowSm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.availabilityWindowDates {
+  font-size: 13px;
+  font-weight: 600;
+  color: $textDark;
+  margin-bottom: 6px;
+}
+
+.availabilityWindowMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 12px;
+  color: $textMuted;
+  line-height: 1.45;
+}
+
+.miniChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 44px;
+  margin-top: 10px;
+
+  .bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    transition: height 0.4s ease;
+    background: rgba(58, 57, 85, 0.45);
+
+    &.overAllocated {
+      background: rgba(170, 31, 31, 0.55);
+    }
+  }
+}
+
+// ── New allocation form ───────────────────────────────────────
+.formPanel {
+  border: 1px solid $ThemePrimeryBorder;
+  border-radius: $radius;
+  padding: 28px 24px 24px;
+  margin: 0 0 24px;
+  background: #fff;
+  box-shadow: $shadowSm;
+  animation: fadeIn 0.35s ease;
+  position: relative;
+
+  &::before {
+    content: "NEW ALLOCATION";
+    position: absolute;
+    top: -11px;
+    left: 24px;
+    background: linear-gradient(135deg, $ThemePrimeryColor, $ThemeDarkTeal);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 4px 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 169, 157, 0.3);
+  }
+}
+
+.formPanelEdit {
+  padding-top: 24px;
+  margin-bottom: 0;
+
+  &::before {
+    display: none;
+  }
+}
+
+@mixin formGridFieldControls {
+  .formField {
+    min-width: 0;
+
+    :global(.ms-DatePicker) {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    :global(.p-inputnumber) {
+      width: 100%;
+    }
+
+    :global(.p-inputnumber .p-inputnumber-input) {
+      width: 100%;
+      height: 36px;
+      border: 1px solid $ThemePrimeryColor;
+      border-radius: $radiusSm;
+      color: #000;
+      font-size: 13px;
+      padding: 0 12px;
+      outline: none;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
+      }
+    }
+  }
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+
+  @include formGridFieldControls;
+}
+
+.formGridThreeCol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+
+  @include formGridFieldControls;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: $textMuted;
+  }
+
+  .peoplePicker {
+    min-height: 36px;
+  }
+
+  input,
+  select {
+    height: 36px;
+    // border: 1px solid $borderColor;
+    border-radius: $radiusSm;
+    color: #000;
+    font-size: 13px;
+    padding: 0 12px;
+    outline: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+
+    &::placeholder {
+      color: #afafaf;
+    }
+
+    &:focus {
+      border-color: $ThemePrimeryColor;
+      box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
+    }
+
+    option {
+      color: #000;
+    }
+  }
+
+  .readonlyField {
+    height: 36px;
+    border: 1px dashed $borderColor;
+    border-radius: $radiusSm;
+    background: #f9fafb;
+    color: $textMuted;
+    font-size: 13px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid $borderColor;
+  margin-top: 4px;
+  padding-top: 16px;
+}
+
+.btnPrimary {
+  height: 36px;
+  padding: 0 22px;
+  background: $ThemePrimeryColor;
+  border: 1px solid $ThemePrimeryColor;
+  border-radius: $radiusSm;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    background: $ThemePrimeryHover;
+    box-shadow: 0 2px 8px rgba(0, 169, 157, 0.3);
+  }
+}
+
+.btnSecondary {
+  height: 36px;
+  padding: 0 18px;
+  background: #fff;
+  border: 1px solid #c4c4c4;
+  border-radius: $radiusSm;
+  color: $textMuted;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    border-color: $ThemePrimeryColor;
+    color: $ThemeDarkTeal;
+  }
+}
+
+// ── Data table ────────────────────────────────────────────────
+.btnIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: $radiusSm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: background 0.15s ease;
+
+  &.view {
+    color: $textMuted;
+
+    &:hover {
+      background: rgba(104, 103, 102, 0.1);
+    }
+  }
+
+  &.edit {
+    color: $ThemePrimeryColor;
+
+    &:hover {
+      background: $ThemePrimerySoft;
+    }
+  }
+
+  &.save {
+    color: $success;
+
+    &:hover {
+      background: rgba(13, 144, 13, 0.1);
+    }
+  }
+
+  &.cancel {
+    color: $danger;
+
+    &:hover {
+      background: rgba(170, 31, 31, 0.08);
+    }
+  }
+}
+
+.tableWrapper {
+  border: 1px solid $borderColor;
+  border-radius: $radius;
+  overflow: hidden;
+  margin: 0;
+  background: #fff;
+  box-shadow: $shadowSm;
+
+  :global {
+    .p-datatable {
+      background: transparent;
+      color: $textDark;
+      font-family: inherit;
+    }
+
+    .p-datatable .p-datatable-header {
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+
+    .p-datatable .p-datatable-thead > tr > th {
+      background: #f7fafa;
+      color: $ThemeDarkTeal;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: none;
+      border-bottom: 2px solid $ThemePrimeryBorder;
+      padding: 14px 16px;
+      white-space: nowrap;
+    }
+
+    .p-datatable .p-datatable-tbody > tr {
+      background: #fff;
+      transition: background 0.12s ease;
+      border-bottom: 1px solid $borderColor;
+
+      &:nth-child(even) {
+        background: #fcfdfd;
+      }
+
+      &:hover {
+        background: rgba(0, 169, 157, 0.05) !important;
+      }
+    }
+
+    .p-datatable .p-datatable-tbody > tr > td {
+      border: none;
+      padding: 12px 16px;
+      color: $textDark;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .p-datatable .p-datatable-tfoot > tr > td {
+      border: none;
+      padding: 10px;
+      background: #f7fafa;
+      font-weight: 600;
+      font-size: 12px;
+      color: $ThemeDarkTeal;
+    }
+
+    .p-paginator {
+      background: #fafbfb;
+      border: none;
+      border-top: 1px solid $borderColor;
+      padding: 10px 16px;
+
+      .p-paginator-element {
+        color: $textMuted;
+        border-radius: $radiusSm;
+        min-width: 2rem;
+        height: 2rem;
+
+        &:hover {
+          background: $ThemePrimerySoft;
+          color: $ThemePrimeryColor;
+        }
+
+        &.p-highlight {
+          background: $ThemePrimeryColor;
+          color: #fff;
+        }
+      }
+    }
+
+    .p-inputnumber-input {
+      width: 64px;
+      height: 34px;
+      border: 1px solid $ThemePrimeryColor;
+      border-radius: $radiusSm;
+      color: #000;
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.15);
+      }
+    }
+
+    .p-dropdown {
+      border: 1px solid $ThemePrimeryColor;
+      border-radius: $radiusSm;
+      min-width: 160px;
+
+      .p-dropdown-label {
+        color: #000;
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+
+      .p-dropdown-trigger {
+        color: $textMuted;
+      }
+
+      &:not(.p-disabled):hover {
+        border-color: $ThemeDarkTeal;
+      }
+
+      &:not(.p-disabled).p-focus {
+        box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
+      }
+    }
+
+    .p-dropdown-panel {
+      background: #fff;
+      border: 1px solid $borderColor;
+      border-radius: $radiusSm;
+      box-shadow: $shadowMd;
+
+      .p-dropdown-items .p-dropdown-item {
+        color: $textDark;
+        font-size: 13px;
+        padding: 10px 14px;
+
+        &:hover,
+        &.p-highlight {
+          background: $ThemePrimerySoft;
+          color: $ThemeDarkTeal;
+        }
+      }
+    }
+  }
+}
+
+.editingRow {
+  background: rgba(0, 169, 157, 0.06) !important;
+  box-shadow: inset 3px 0 0 $ThemePrimeryColor;
+}
+
+.monthChip {
+  font-size: 12px;
+  font-weight: 500;
+  color: $textMuted;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid $borderColor;
+  background: #fff;
+
+  &.high {
+    color: $ThemePrimeryColor;
+    border-color: rgba(0, 169, 157, 0.45);
+    background: rgba(0, 169, 157, 0.06);
+  }
+
+  &.medium {
+    color: $ThemeDarkTeal;
+    border-color: rgba(5, 104, 97, 0.35);
+    background: rgba(5, 104, 97, 0.06);
+  }
+
+  &.over {
+    color: $danger;
+    border-color: rgba(170, 31, 31, 0.4);
+    background: rgba(170, 31, 31, 0.06);
+  }
+}
+
+.totalChip {
+  font-size: 13px;
+  font-weight: 700;
+  color: $ThemePrimeryColor;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: $ThemePrimerySoft;
+}
+
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.statusLocked {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.statusApproved {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.statusRejected {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.statusEmpty {
+  color: #afafaf;
+  font-size: 12px;
+}
+
+.emptyState {
+  text-align: center;
+  color: $textMuted;
+
+  .emptyIcon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.45;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+}
+
+.timelineBar {
+  height: 6px;
+  border-radius: 3px;
+  background: $borderColor;
+  overflow: hidden;
+  margin-top: 8px;
+
+  .fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, $ThemePrimeryColor, $ThemeDarkTeal);
+    transition: width 0.4s ease;
+  }
+}
+
+.loadingOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  gap: 12px;
+  color: $textMuted;
+  font-size: 14px;
+  background: #fff;
+
+  .spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid $borderColor;
+    border-top-color: $ThemePrimeryColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.employeeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $ThemePrimeryColor, $ThemeDarkTeal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 169, 157, 0.25);
+  }
+
+  .name {
+    font-size: 13px;
+    font-weight: 500;
+    color: $textDark;
+  }
+}
+
+.projectTagSmall {
+  display: inline-block;
+  border: 1px solid $ThemePrimeryBorder;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: $ThemeDarkTeal;
+  background: $ThemePrimerySoft;
+}
+
+.inlineEditorCell {
+  width: 100%;
+
+  :global(.ms-TextField),
+  :global(.ms-DatePicker) {
+    width: 100%;
+  }
+}
+
+.inlineEditInput {
+  width: 100%;
+  max-width: 110px;
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+  border-color: $ThemePrimeryColor !important;
+  border-radius: $radiusSm !important;
+  color: #000 !important;
+}
+
+.inlineCalendar {
+  width: 100%;
+  max-width: 150px;
+
+  :global(.p-inputtext) {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+    border-color: $ThemePrimeryColor !important;
+    border-radius: $radiusSm !important;
+    color: #000 !important;
+  }
+
+  :global(.p-datepicker-trigger) {
+    color: $ThemePrimeryColor;
+  }
+}
+
+.formCalendar {
+  width: 100%;
+
+  :global(.p-inputtext) {
+    width: 100%;
+    font-size: 13px;
+    border-color: $ThemePrimeryColor;
+    border-radius: $radiusSm;
+    color: #000;
+  }
+}
+
+// ── Responsive: stack sidebar on narrow viewports ─────────────
+@media (max-width: 1024px) {
+  .pageWrapper {
+    padding-left: 0;
+    min-height: 0;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .navBar {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(135deg, $ThemeDarkTeal, $ThemePrimeryColor);
+    box-shadow: $shadowMd;
+  }
+
+  .pickerCard {
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    padding: 20px;
+    background: $sidebarBg;
+    border-bottom: 1px solid $borderColor;
+    overflow: visible;
+  }
+
+  .container {
+    padding: 20px 16px 32px;
+  }
+
+  .sectionHeader {
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 16px 12px 28px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.transactionDialog {
+  :global(.p-dialog-header) {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid $borderColor;
+  }
+
+  :global(.p-dialog-content) {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+}
+
+.transactionMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: $textMuted;
+}
+
+.transactionTableWrapper {
+  border: 1px solid $borderColor;
+  border-radius: $radiusSm;
+  overflow: hidden;
+}

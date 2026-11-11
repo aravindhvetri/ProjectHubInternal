@@ -14,6 +14,7 @@ export interface IProjectData {
   ProjectName: string;
   StartDate: string;
   PlannedEndDate: string;
+  Technology: string;
   ProjectType: string;
   UpWork: boolean;
   InternalProject: boolean;
@@ -50,6 +51,7 @@ export interface ICRMProjectsListDrop {
   Currency: IBasicDropDown[];
   ProjectType: IBasicDropDown[];
   Status: IBasicDropDown[];
+  Technology: IBasicDropDown[];
 }
 
 export interface ICRMProjectRisksListDrop {
@@ -103,6 +105,7 @@ export interface IBillingsDetails {
   Notes: string;
   Currency: string;
   MonthlyAmount: number;
+  DummyInvoice: boolean;
   StartMonth: string;
   EndMonth: string;
   BillingFrequency: string;
@@ -169,4 +172,207 @@ export interface IChangeRequestDetails {
   CreatedDate: string;
   LastUpdatedBy: IPeoplePickerDetails[];
   LastUpdatedDate: string;
+}
+
+// ─── Employee allocation (CommonTemplate / EmployeeAllocations) ───
+
+export interface AllocationMonth {
+  month: string; // "Apr-2025"
+  value: number; // 0–1 (fraction of full-time)
+}
+
+export interface EmployeeAllocationRecord {
+  ID: number;
+  EmployeeName: string;
+  EmployeeID: string;
+  /** CRM project id from EmployeeAllocations list column ProjectID (e.g. PRJ-xxx) */
+  ProjectID: string;
+  ProjectTitle?: string;
+  /** Same value as ProjectID — used for matching the open project */
+  ProjectFullID?: string;
+  Loading: number; // 0–1
+  AllocatedOn: string | null; // ISO date string
+  ReleasedOn: string | null;
+  BeginDate: string | null;
+  EndDate: string | null;
+  AllocationJson: AllocationMonth[];
+  /** Choice column from EmployeeAllocations list */
+  Deployment?: string;
+  /** Yes/No column — set by Power Automate for newly onboarded employees */
+  NewEmployee?: string;
+  /** Yes/No column — set by Power Automate for employees with a fixed availability end */
+  ExistingEmployee?: string;
+}
+
+export interface DashboardStats {
+  currentAllocation: number; // 0–1
+  freePercent: number; // 0–1
+  benchPercent: number; // 0–1
+  activeProjects: string[];
+  allocationHistory: { month: string; total: number }[];
+  monthlyDistribution: AllocationMonth[];
+}
+
+/** Assignable capacity for a contiguous date range */
+export interface EmployeeAvailabilityWindow {
+  fromDate: string;
+  toDate: string;
+  allocatedPercent: number;
+  usableCapacityPercent: number;
+}
+
+/** Cross-project availability for a searched employee */
+export interface EmployeeAvailabilitySummary {
+  totalAllocationToday: number;
+  freePercent: number;
+  isAvailableNow: boolean;
+  /** When currently available: first day of the current free-capacity period */
+  availableFrom: string | null;
+  /** When fully booked: first future day free capacity is expected */
+  availableAfter: string | null;
+  activeProjectCount: number;
+  /** Periods where capacity can be assigned to another project */
+  availabilityWindows: EmployeeAvailabilityWindow[];
+}
+
+export interface DateRangeConflict {
+  projectTitle: string;
+  allocatedOn: string | null;
+  releasedOn: string | null;
+  loading: number;
+}
+
+/** Result when proposed loading would push an employee over 100% on overlap days */
+export interface LoadingCapacityBreach {
+  /** True when existing allocations already total >= 100% on some day in the proposed range */
+  alreadyAtMax: boolean;
+  /** Highest existing loading found on any day in the proposed range */
+  peakExistingLoading: number;
+  /** Highest existing + proposed loading found on any day in the proposed range */
+  peakCombinedLoading: number;
+  /** Lowest remaining capacity (0–1) across days in the proposed range */
+  minAvailableLoading: number;
+  overlappingAllocations: DateRangeConflict[];
+}
+
+/** Table row shape for employee allocation UI */
+export interface AllocationRow extends EmployeeAllocationRecord {
+  isNewRow?: boolean;
+  isEditing?: boolean;
+}
+
+/** One employee on one project — merged from multiple allocation transactions */
+export interface ConsolidatedAllocationRow extends AllocationRow {
+  consolidatedKey: string;
+  sourceTransactions: AllocationRow[];
+  activeTransactionId: number;
+}
+
+/** Planned bench (free capacity) segment derived from cross-project allocations */
+export interface BenchAllocationSegment {
+  allocatedOn: string;
+  releasedOn: string | null;
+  beginDate: Date;
+  endDate: Date;
+  loading: number;
+  allocationJson: AllocationMonth[];
+}
+
+/** CSS module slots for the cross-project availability summary */
+export interface IEmployeeAvailabilitySummaryScss {
+  availabilitySummary: string;
+  availabilitySummaryHeader: string;
+  availabilitySummaryGrid: string;
+  availabilityStat: string;
+  availabilityStatLabel: string;
+  availabilityStatValue: string;
+  availabilityStatSub: string;
+  availabilityAvailableNow: string;
+  availabilityFullyBooked: string;
+  availabilityWindowsSection: string;
+  availabilityWindowsTitle: string;
+  availabilityWindowRow: string;
+  availabilityWindowDates: string;
+  availabilityWindowMetrics: string;
+}
+
+/** CSS module slots for the employee allocation dashboard */
+export interface IEmployeeAllocationDashboardScss {
+  dashboard: string;
+  statCard: string;
+  tealCard: string;
+  sageCard: string;
+  goldCard: string;
+  crimsonCard: string;
+  projectsCard: string;
+  statIcon: string;
+  statLabel: string;
+  statValue: string;
+  statSub: string;
+  timelineBar: string;
+  fill: string;
+  miniChart: string;
+  bar: string;
+  overAllocated: string;
+  projectList: string;
+  projectTag: string;
+}
+
+/** CSS module slots for allocation transaction view / edit dialogs */
+export interface IEmployeeAllocationDialogScss {
+  transactionDialog: string;
+  transactionTableWrapper: string;
+  transactionMeta: string;
+  monthChip: string;
+  over: string;
+  high: string;
+  medium: string;
+  formPanel: string;
+  formPanelEdit: string;
+  formGrid: string;
+  formGridThreeCol: string;
+  formField: string;
+  readonlyField: string;
+  formActions: string;
+  btnSecondary: string;
+  btnPrimary: string;
+  btnIcon: string;
+  edit: string;
+  view: string;
+}
+
+/** CSS module slots for the new-allocation form panel */
+export interface IEmployeeAllocationNewFormScss {
+  formPanel: string;
+  formGrid: string;
+  formField: string;
+  peoplePicker: string;
+  readonlyField: string;
+  formActions: string;
+  btnSecondary: string;
+  btnPrimary: string;
+  monthChip: string;
+  over: string;
+  high: string;
+  medium: string;
+}
+
+/** Props for `EmployeeAllocationNewFormPanel` in CommonTemplate */
+export interface IEmployeeAllocationNewFormPanelProps {
+  css: IEmployeeAllocationNewFormScss;
+  formData: Partial<AllocationRow>;
+  formPickerKey: number;
+  webAbsoluteUrl: string;
+  context: any;
+  defaultSelectedEmails: string[];
+  deploymentOptions: IBasicDropDown[];
+  onPeopleChange: (items: any[]) => void;
+  onLoadingPctChange: (fraction: number) => void;
+  onAllocatedOnIsoChange: (iso: string | null) => void;
+  onReleasedOnIsoChange: (iso: string | null) => void;
+  /** Earliest allowed Allocated On date for new employees (from list record) */
+  allocatedOnMinDate?: string | null;
+  onDeploymentChange: (value: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
 }

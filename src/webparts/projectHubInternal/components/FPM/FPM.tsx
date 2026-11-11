@@ -22,7 +22,65 @@ import { PrimaryButton } from "@fluentui/react";
 import projectComponentStyles from "../Projects/Projects.module.scss";
 import { InputText } from "primereact/inputtext";
 
+// Fixed conversion rates: 1 unit of currency = X USD
+const CURRENCY_TO_USD_RATES: Record<string, number> = {
+  USD: 1,
+  INR: 0.01047,
+  EURO: 1.08,
+  EUR: 1.08,
+  BHD: 2.65119,
+  CAD: 0.72,
+  AED: 0.2723,
+  AUD: 0.65,
+};
+
+const normalizeCurrency = (currency: string): string => {
+  const trimmed = (currency || "").trim();
+  if (!trimmed) {
+    return "USD";
+  }
+
+  const upper = trimmed.toUpperCase();
+  const aliases: Record<string, string> = {
+    USD: "USD",
+    INR: "INR",
+    EURO: "EURO",
+    EUR: "EURO",
+    BHD: "BHD",
+    CAD: "CAD",
+    AED: "AED",
+    AUD: "AUD",
+  };
+
+  return aliases[upper] || upper;
+};
+
+const parseBudgetAmount = (value: any): number => {
+  if (value == null || value === "") {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleaned = String(value).replace(/,/g, "").trim();
+  const parsed = Number(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const convertBudgetToUSD = (amount: number, currency: string): number => {
+  const parsedAmount = parseBudgetAmount(amount);
+  if (!parsedAmount) {
+    return 0;
+  }
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const rate = CURRENCY_TO_USD_RATES[normalizedCurrency] ?? 1;
+  return Number((parsedAmount * rate).toFixed(2));
+};
+
 const FPM = (props: any) => {
+  console.log("props data in FPM", props?.projectDatas);
   //State:
   const [employeePartialAllocationData, setEmployeePartialAllocationData] =
     useState<any[]>([]);
@@ -40,6 +98,7 @@ const FPM = (props: any) => {
   const [dealConfigData, setDealConfigData] = useState<any>({});
   const [usdValue, setUsdValue] = useState<number>(0);
   const [usdError, setUsdError] = useState<boolean>(false);
+  const [approvedBillingTotal, setApprovedBillingTotal] = useState<number>(0);
 
   //Get internal registry full datas:
   const getInternalRegistryDatas = () => {
@@ -75,9 +134,66 @@ const FPM = (props: any) => {
         });
         getDealSheetConfiguration();
         getFPMMasterData();
+        getCRMBillingsData();
       })
       .catch((err) => {
         console.log("ProjectConfiguration error", err);
+      });
+  };
+
+  //Get approved CRMBillings total based on BillingModel:
+  const getCRMBillingsData = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.CRMBillings,
+      Select: "*,Project/Id",
+      Expand: "Project",
+      Orderby: "Modified",
+      Orderbydecorasc: true,
+      Filter: [
+        {
+          FilterKey: "IsDelete",
+          Operator: "eq",
+          FilterValue: "false",
+        },
+        {
+          FilterKey: "ProjectId",
+          Operator: "eq",
+          FilterValue: `${props?.projectDatas?.ID}`,
+        },
+      ],
+    })
+      .then((res: any) => {
+        const billingModel = props?.projectDatas?.BillingModel;
+        const amountField =
+          billingModel === "T&M"
+            ? "TMAmount"
+            : billingModel === "Milestone"
+              ? "Amount"
+              : billingModel === "FixedMonthly"
+                ? "MonthlyAmount"
+                : null;
+
+        if (!amountField) {
+          setApprovedBillingTotal(0);
+          return;
+        }
+
+        const total = (res || []).reduce((sum: number, item: any) => {
+          if (
+            item?.Status != "1" &&
+            item?.Status != "2" &&
+            item?.Status != "3"
+          ) {
+            return sum;
+          }
+          return sum + parseBudgetAmount(item?.[amountField]);
+        }, 0);
+
+        setApprovedBillingTotal(total);
+      })
+      .catch((err) => {
+        console.log("Get CRMBillings details error in FPM.tsx", err);
+        setApprovedBillingTotal(0);
       });
   };
 
@@ -96,7 +212,7 @@ const FPM = (props: any) => {
       ],
     })
       .then((res: any) => {
-        const data = res[0];
+        const data = res?.[0] || {};
         setDealConfigData({
           TrainingCost: data?.TrainingCost || 0,
           TravelVisaCosts: data?.TravelVisaCosts || 0,
@@ -127,8 +243,8 @@ const FPM = (props: any) => {
       ],
     })
       .then((res: any) => {
-        if (res.length > 0 && res[0]?.USDRupee) {
-          setUsdValue(Number(res[0].USDRupee));
+        if (res.length > 0 && res[0]?.USDRupees) {
+          setUsdValue(Number(res[0].USDRupees));
         }
       })
       .catch((err) => console.log("FPMMaster fetch error", err));
@@ -294,14 +410,20 @@ const FPM = (props: any) => {
     return directCost + indirectCost + travel + badge + misc;
   };
 
+  // Invoice total from approved CRMBillings only (not project Budget)
+  const rawInvoices = approvedBillingTotal;
+  const invoices = convertBudgetToUSD(
+    rawInvoices,
+    props?.projectDatas?.Currency,
+  );
+  const executionCost = getExecutionCost();
+
   //Get Net Profit:
-  const netProfit =
-    (props?.projectDatas?.Budget || 0) - getExecutionCost().toFixed(2);
+  const netProfit = invoices - executionCost;
 
   //Get Gross Margin:
-  const grossMargin = props?.projectDatas?.Budget
-    ? ((netProfit / props?.projectDatas?.Budget) * 100).toFixed(2)
-    : "0";
+  const grossMargin =
+    invoices > 0 ? ((netProfit / invoices) * 100).toFixed(2) : "0.00";
 
   //Save FPM Data:
   const saveFPMData = () => {
@@ -431,8 +553,8 @@ const FPM = (props: any) => {
                 value: projectConfig.costPerPerson || 0,
               },
               {
-                label: "Project Budget",
-                value: props?.projectDatas?.Budget || 0,
+                label: "$Invoice Raised",
+                value: rawInvoices ? invoices.toFixed(2) : "0.00",
               },
               {
                 label: "Indirect Cost",
@@ -447,17 +569,11 @@ const FPM = (props: any) => {
               },
               {
                 label: "Net Profit (USD $)",
-                value: (
-                  props?.projectDatas?.Budget - getExecutionCost()
-                ).toFixed(2),
+                value: netProfit.toFixed(2),
               },
               {
                 label: "Gross Margin %",
-                value: (
-                  ((props?.projectDatas?.Budget - getExecutionCost()) /
-                    props?.projectDatas?.Budget) *
-                  100
-                ).toFixed(2),
+                value: grossMargin,
               },
             ].map((item, index) => (
               <div key={index} className={styles.summaryCard}>

@@ -414,7 +414,7 @@ const Utilization = (props: any) => {
                   );
                   // Utilization: current month and past months only
                   if (itemDate <= now) {
-                    const finalValue = (value || 0) * 100;
+                    const finalValue = Config.toMonthPercentage(value);
                     baseObj[key] = finalValue;
                     if (finalValue !== 0) {
                       hasValue = true;
@@ -699,6 +699,7 @@ const Utilization = (props: any) => {
                     sortable
                     field={month}
                     header={Config.formatColLabel(month)}
+                    body={Config.monthColumnBodyTemplate(month)}
                     style={{ minWidth: "120px" }}
                   />
                 ),

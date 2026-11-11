@@ -44,6 +44,7 @@ import { Dialog } from "primereact/dialog";
 import { sp } from "@pnp/sp";
 import ProjectFormAndTabs from "../ProjectFormAndTabsModule/ProjectFormAndTabs";
 import DealSheet from "../DealSheet/DealSheet";
+import ApproveRejectScreen from "../EmployeeAllocationsApproveReject/ApproveRejectScreen";
 interface IProps {
   Notify: (
     type: "info" | "success" | "warn" | "error" | "secondary" | "contrast",
@@ -53,6 +54,7 @@ interface IProps {
   spfxContext: any;
   pageName: string;
   loginUserEmail: string;
+  LoginUserName: string;
   PageNavigation: (pageName: string, data?: IProjectData) => void;
 }
 //Global Image Variables:
@@ -66,6 +68,7 @@ const FilterImage: string = require("../../../../External/Images/filter.png");
 const FilterNoneImage: string = require("../../../../External/Images/filternone.png");
 
 const Projects = (props: IProps): JSX.Element => {
+  const loginUserName = props?.LoginUserName;
   const loginEmail = props?.loginUserEmail?.toLowerCase();
   const adminUsers = [
     "sreedhar.sk@technorucs.com",
@@ -81,6 +84,7 @@ const Projects = (props: IProps): JSX.Element => {
   const [projectDetails, setProjectDetails] = React.useState<IProjectData[]>(
     [],
   );
+  const [DHusers, setDHusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [PMOusers, setPMOusers] = React.useState<IPeoplePickerDetails[]>([]);
   const [masterProjectDetails, setMasterProjectDetails] = React.useState<
     IProjectData[]
@@ -126,68 +130,100 @@ const Projects = (props: IProps): JSX.Element => {
     ...Config.initialModal,
   });
   const [isCmtsLoader, setIsCmtsLoader] = React.useState(false);
+  const [isApprovalPopupOpen, setIsApprovalPopupOpen] =
+    React.useState<boolean>(false);
+  const [openApprovalCount, setOpenApprovalCount] = React.useState<number>(0);
 
   //Get Project Details:
   const getProjectDetails = () => {
-    SPServices.SPReadItems({
-      Listname: Config.ListNames.CRMProjects,
-      Select:
-        "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
-      Expand: "ProjectManager,DeliveryHead,BA",
-      Orderby: "ID",
-      Orderbydecorasc: true,
-      Filter: [
-        {
-          FilterKey: "IsDelete",
-          Operator: "eq",
-          FilterValue: "false",
-        },
-      ],
-    })
-      .then((res: any) => {
+    Promise.all([
+      SPServices.SPReadItems({
+        Listname: Config.ListNames.CRMProjects,
+        Select:
+          "*,ProjectManager/Id,ProjectManager/EMail,ProjectManager/Title,DeliveryHead/Id,DeliveryHead/EMail,DeliveryHead/Title,BA/Id,BA/EMail,BA/Title",
+        Expand: "ProjectManager,DeliveryHead,BA",
+        Orderby: "ID",
+        Orderbydecorasc: true,
+        Filter: [
+          {
+            FilterKey: "IsDelete",
+            Operator: "eq",
+            FilterValue: "false",
+          },
+        ],
+      }),
+      SPServices.SPReadItems({
+        Listname: Config.ListNames.EmployeeAllocations,
+        Select: "ProjectID,EmployeeName",
+      }).catch((err: any) => {
+        console.log(
+          err,
+          "EmployeeAllocations Error in Projects.tsx getProjectDetails",
+        );
+        return [];
+      }),
+      SPServices.getSPGroupMember({
+        GroupName: "DLSales",
+      }).catch((err: any) => {
+        console.log(err, "Get DLSales group users error in Projects.tsx");
+        return [];
+      }),
+    ])
+      .then(([res, allocationRes, dlSalesUsers]: [any, any, any]) => {
+        const normalizePeopleField = (
+          fieldValue: any,
+        ): IPeoplePickerDetails[] => {
+          const users = Array.isArray(fieldValue)
+            ? fieldValue
+            : fieldValue
+              ? [fieldValue]
+              : [];
+          const mapped: IPeoplePickerDetails[] = [];
+          const seen = new Set<string>();
+
+          users.forEach((user: any) => {
+            const id = Number(user?.Id ?? user?.id) || 0;
+            const email = String(user?.EMail ?? user?.email ?? "")
+              .trim()
+              .toLowerCase();
+            const dedupeKey = id
+              ? `id:${id}`
+              : email
+                ? `email:${email}`
+                : "";
+            if (!dedupeKey || seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+            mapped.push({
+              id,
+              name: String(user?.Title ?? user?.name ?? "").trim(),
+              email: String(user?.EMail ?? user?.email ?? "").trim(),
+            });
+          });
+
+          return mapped;
+        };
+
         let projectDetails: IProjectData[] = [];
         res?.forEach((items: any) => {
-          let _ProjectManager: IPeoplePickerDetails[] = [];
-          if (items?.ProjectManager) {
-            items?.ProjectManager.forEach((user: any) => {
-              _ProjectManager.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-          let _DeliveryHead: IPeoplePickerDetails[] = [];
-          if (items?.DeliveryHead) {
-            items?.DeliveryHead.forEach((user: any) => {
-              _DeliveryHead.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
-          let _BA: IPeoplePickerDetails[] = [];
-          if (items?.BA) {
-            items?.BA.forEach((user: any) => {
-              _BA.push({
-                id: user?.Id,
-                name: user?.Title,
-                email: user?.EMail,
-              });
-            });
-          }
+          let _ProjectManager: IPeoplePickerDetails[] = normalizePeopleField(
+            items?.ProjectManager,
+          );
+          let _DeliveryHead: IPeoplePickerDetails[] = normalizePeopleField(
+            items?.DeliveryHead,
+          );
+          let _BA: IPeoplePickerDetails[] = normalizePeopleField(items?.BA);
           projectDetails.push({
             ID: items?.ID,
             ProjectID: items?.ProjectID,
             AccountManager: items?.AccountManager,
             AccountName: items?.AccountName,
             ProjectName: items?.ProjectName,
+            Technology: items?.Technology,
             StartDate: items?.StartDate,
             PlannedEndDate: items?.PlannedEndDate,
-            ProjectManager: _ProjectManager ? _ProjectManager : [],
-            DeliveryHead: _DeliveryHead ? _DeliveryHead : [],
-            BA: _BA ? _BA : [],
+            ProjectManager: _ProjectManager,
+            DeliveryHead: _DeliveryHead,
+            BA: _BA,
             ProjectStatus: items?.ProjectStatus,
             BillingModel: items?.BillingModel,
             Budget: items?.Budget,
@@ -211,7 +247,30 @@ const Projects = (props: IProps): JSX.Element => {
             FPMMargin: items?.FPMMargin,
           });
         });
-        const filteredProjects = adminUsers.includes(loginEmail)
+
+        const normalizedLoginUserName = loginUserName?.trim()?.toLowerCase();
+        const allocatedProjectIds = new Set(
+          (allocationRes || [])
+            .filter(
+              (item: any) =>
+                !!normalizedLoginUserName &&
+                item?.EmployeeName?.trim()?.toLowerCase() ===
+                  normalizedLoginUserName,
+            )
+            .map((item: any) => String(item?.ProjectID ?? "").trim())
+            .filter((projectId: string) => !!projectId),
+        );
+
+        const isDLSalesUser =
+          !!loginEmail &&
+          (dlSalesUsers || []).some(
+            (user: any) =>
+              user?.Email?.trim()?.toLowerCase() === loginEmail,
+          );
+        const hasAdminPermissions =
+          adminUsers.includes(loginEmail) || isDLSalesUser;
+
+        const filteredProjects = hasAdminPermissions
           ? projectDetails
           : projectDetails.filter(
               (project) =>
@@ -221,7 +280,10 @@ const Projects = (props: IProps): JSX.Element => {
                 project.DeliveryHead?.some(
                   (u) => u.email?.toLowerCase() === loginEmail,
                 ) ||
-                project.BA?.some((u) => u.email?.toLowerCase() === loginEmail),
+                project.BA?.some(
+                  (u) => u.email?.toLowerCase() === loginEmail,
+                ) ||
+                allocatedProjectIds.has(String(project.ProjectID ?? "").trim()),
             );
         setProjectDetails([...filteredProjects]);
         setMasterProjectDetails([...filteredProjects]);
@@ -376,8 +438,34 @@ const Projects = (props: IProps): JSX.Element => {
                           }),
                         );
                         setLoader(false);
-                        getPMOGroupUsers();
-                        getBillingsListDetails();
+                        SPServices.SPGetChoices({
+                          Listname: Config.ListNames.CRMProjects,
+                          FieldName: "Technology",
+                        })
+                          .then((res: any) => {
+                            let tempTechnology: IBasicDropDown[] = [];
+                            if (res?.Choices?.length) {
+                              res?.Choices?.forEach((val: any) => {
+                                tempTechnology.push({
+                                  name: val,
+                                });
+                              });
+                            }
+                            setinitialCRMProjectsListDropContainer(
+                              (prev: ICRMProjectsListDrop) => ({
+                                ...prev,
+                                Technology: tempTechnology,
+                              }),
+                            );
+                            getPMOGroupUsers();
+                            getBillingsListDetails();
+                          })
+                          .catch((err) => {
+                            console.log(
+                              err,
+                              "Get choice error from CRMProjects list",
+                            );
+                          });
                       })
                       .catch((err) => {
                         console.log(
@@ -801,9 +889,53 @@ const Projects = (props: IProps): JSX.Element => {
   };
 
   //Initial Render:
+  const getOpenAllocationsApprovalCount = () => {
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.AllocationsApproval,
+      Select: "ID,Status",
+      Filter: [
+        {
+          FilterKey: "Status",
+          Operator: "eq",
+          FilterValue: "Open",
+        },
+      ],
+    })
+      .then((res: any[]) => {
+        setOpenApprovalCount(res?.length || 0);
+        getDHGroupMembers();
+      })
+      .catch((err: any) => {
+        console.log("Error while fetching open approvals count", err);
+      });
+  };
+
+  //Get DH Group members:
+  const getDHGroupMembers = () => {
+    SPServices.getSPGroupMember({
+      GroupName: Config.GroupNames.DH,
+    })
+      .then((res) => {
+        const tempDHusers: IPeoplePickerDetails[] = [];
+        res.forEach((items: any) => {
+          tempDHusers.push({
+            id: items?.Id,
+            email: items?.Email,
+            name: items?.Title,
+          });
+        });
+        setDHusers([...tempDHusers]);
+      })
+      .catch((err) => {
+        console.log(err, "Get DH group users errro in projectsFormPage.tsx");
+      });
+  };
+
+  //Initial Render:
   React.useEffect(() => {
     setLoader(true);
     getProjectDetails();
+    getOpenAllocationsApprovalCount();
   }, []);
 
   //Filter changes render:
@@ -824,6 +956,27 @@ const Projects = (props: IProps): JSX.Element => {
           >
             <div className={styles.filterBar}>
               <h2>Projects</h2>
+              {DHusers?.some(
+                (user) =>
+                  user?.email?.toLowerCase() ===
+                  props?.loginUserEmail?.toLowerCase(),
+              ) && (
+                <div
+                  className={styles.bellIconWrap}
+                  title="Allocation Approvals"
+                  onClick={() => setIsApprovalPopupOpen(true)}
+                >
+                  <img
+                    src={require("../../../../External/Images/bell.png")}
+                    alt="notification bell"
+                  />
+                  {openApprovalCount > 0 && (
+                    <span className={styles.notificationBadge}>
+                      {openApprovalCount > 99 ? "99+" : openApprovalCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className={styles.filterBtns}>
               <div className={styles.btnAndText}>
@@ -1425,6 +1578,30 @@ const Projects = (props: IProps): JSX.Element => {
             </div>
           </div>
         )}
+      </Dialog>
+
+      <Dialog
+        className="modal-template"
+        header={
+          <div className={styles.approvalDialogHeader}>
+            <h3>Employee Allocation Approvals</h3>
+            <span>Review and action pending allocation requests</span>
+          </div>
+        }
+        draggable={false}
+        blockScroll={false}
+        resizable={false}
+        visible={isApprovalPopupOpen}
+        style={{ width: "70vw" }}
+        onHide={() => {
+          setIsApprovalPopupOpen(false);
+          getOpenAllocationsApprovalCount();
+        }}
+      >
+        <ApproveRejectScreen
+          Notify={props.Notify}
+          refreshCount={getOpenAllocationsApprovalCount}
+        />
       </Dialog>
     </>
   );

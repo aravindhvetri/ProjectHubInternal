@@ -212,6 +212,23 @@ const BenchReport = () => {
     setTempEmpTags((prev) => prev.filter((t) => t !== tag));
   };
 
+  const hasNonZeroInColumnRange = (
+    item: any,
+    from: string,
+    to: string,
+    allCols: string[],
+  ): boolean => {
+    if (!from || !to || !allCols.length) return true;
+    const fromD = Config.colKeyToDate(from).getTime();
+    const toD = Config.colKeyToDate(to).getTime();
+    const colsInRange = allCols.filter((c) => {
+      const d = Config.colKeyToDate(c).getTime();
+      return d >= fromD && d <= toD;
+    });
+    if (!colsInRange.length) return true;
+    return colsInRange.some((col) => Number(item[col]) !== 0);
+  };
+
   // ── Apply filters ─────────────────────────────────────────────────────────
   const applyFilters = (
     data: any[],
@@ -270,6 +287,12 @@ const BenchReport = () => {
         ),
       );
     }
+
+    const rangeFrom = from || Config.getDefaultFromTo(allCols).from;
+    const rangeTo = to || Config.getDefaultFromTo(allCols).to;
+    filtered = filtered.filter((item) =>
+      hasNonZeroInColumnRange(item, rangeFrom, rangeTo, allCols),
+    );
 
     setEmployeePartialAllocationData([...filtered]);
 
@@ -470,21 +493,21 @@ const BenchReport = () => {
                     EmployeeID: items?.EmployeeID || "",
                     EmployeeName: items?.EmployeeName || "",
                     ProjectID: items?.ProjectID || "",
-                    APR2025: (items?.April2025 || 0) * 100,
-                    MAY2025: (items?.Maymonth2025 || 0) * 100,
-                    JUN2025: (items?.June2025 || 0) * 100,
-                    JUL2025: (items?.July2025 || 0) * 100,
-                    AUG2025: (items?.August2025 || 0) * 100,
-                    SEP2025: (items?.September2025 || 0) * 100,
-                    OCT2025: (items?.Octobar2025 || 0) * 100,
-                    NOV2025: (items?.November2025 || 0) * 100,
-                    DEC2025: (items?.December2025 || 0) * 100,
-                    JAN2026: (items?.January2026 || 0) * 100,
-                    FEB2026: (items?.February2026 || 0) * 100,
-                    MAR2026: (items?.March2026 || 0) * 100,
-                    APR2026: (items?.April2026 || 0) * 100,
-                    MAY2026: (items?.Maymonth2026 || 0) * 100,
-                    JUN2026: (items?.June2026 || 0) * 100,
+                    APR2025: Config.toMonthPercentage(items?.April2025),
+                    MAY2025: Config.toMonthPercentage(items?.Maymonth2025),
+                    JUN2025: Config.toMonthPercentage(items?.June2025),
+                    JUL2025: Config.toMonthPercentage(items?.July2025),
+                    AUG2025: Config.toMonthPercentage(items?.August2025),
+                    SEP2025: Config.toMonthPercentage(items?.September2025),
+                    OCT2025: Config.toMonthPercentage(items?.Octobar2025),
+                    NOV2025: Config.toMonthPercentage(items?.November2025),
+                    DEC2025: Config.toMonthPercentage(items?.December2025),
+                    JAN2026: Config.toMonthPercentage(items?.January2026),
+                    FEB2026: Config.toMonthPercentage(items?.February2026),
+                    MAR2026: Config.toMonthPercentage(items?.March2026),
+                    APR2026: Config.toMonthPercentage(items?.April2026),
+                    MAY2026: Config.toMonthPercentage(items?.Maymonth2026),
+                    JUN2026: Config.toMonthPercentage(items?.June2026),
                     // InternalRegistry enriched fields
                     Designation: regData.Designation,
                     Function: regData.Function,
@@ -729,6 +752,7 @@ const BenchReport = () => {
                     sortable
                     field={month}
                     header={Config.formatColLabel(month)}
+                    body={Config.monthColumnBodyTemplate(month)}
                     style={{ minWidth: "120px" }}
                   />
                 ),
