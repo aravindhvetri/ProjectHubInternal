@@ -48,7 +48,12 @@ const MainComponent = (props: any) => {
         <Loading />
       ) : (
         <div>
-          <Toast ref={toast} />
+          <Toast
+            ref={toast}
+            position="top-right"
+            appendTo={typeof document !== "undefined" ? document.body : null}
+            baseZIndex={100000}
+          />
           {pageName === "Projects" ? (
             <div>
               <Projects

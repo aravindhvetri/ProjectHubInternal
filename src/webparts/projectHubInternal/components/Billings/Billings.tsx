@@ -211,12 +211,16 @@ const Billings = (props: any) => {
 
   //Handle Invoice Trigger function:
   const handleInvoiceTrigger = (Id: number) => {
+    const projectManager = props?.data?.ProjectManager?.find(
+      (user: any) => user?.email === props?.loginUserEmail,
+    );
     SPServices.SPUpdateItem({
       Listname: Config.ListNames?.CRMBillings,
       ID: Id,
       RequestJSON: {
         InvoiceTrigger: true,
         Status: "1",
+        InvoiceProjectManager: projectManager?.email,
       },
     })
       .then(() => {

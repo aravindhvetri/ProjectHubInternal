@@ -32,7 +32,7 @@ div[role="contentinfo"] {
 }
 
 [data-automation-id="contentScrollRegion"] {
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
 }
 
 div[data-sp-feature-tag="Site header host"] {
@@ -527,6 +527,17 @@ h4 {
 
 .stageButton .pi {
   font-size: 12px !important;
+}
+
+/* Toast - portal above SharePoint chrome; avoid clipping under suite nav */
+.p-toast {
+  z-index: 100000 !important;
+  top: 2px !important;
+  right: 4px !important;
+}
+
+.p-toast .p-toast-message {
+  margin: 0 0 1rem 0;
 }
 
 /* Tostify */

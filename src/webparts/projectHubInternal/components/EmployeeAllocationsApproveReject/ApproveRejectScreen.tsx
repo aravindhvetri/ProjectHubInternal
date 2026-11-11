@@ -26,7 +26,7 @@ import {
   multiPeoplePickerTemplate,
   peoplePickerTemplate,
 } from "../../../../External/CommonServices/CommonTemplate";
-const styles: any = require("./ApproveRejectScreen.module.scss");
+import styles from "./ApproveRejectScreen.module.scss";
 
 interface IPeople {
   id: number;
@@ -441,7 +441,7 @@ const ApproveRejectScreen = (props: IProps) => {
 
       <Dialog
         visible={isRejectModalOpen}
-        className={styles.rejectDialog}
+        // className={styles.rejectDialog}
         style={{ width: "35vw" }}
         draggable={false}
         resizable={false}
@@ -484,7 +484,7 @@ const ApproveRejectScreen = (props: IProps) => {
 
       <Dialog
         visible={isCommentsModalOpen}
-        className={styles.commentsDialog}
+        // className={styles.commentsDialog}
         style={{ width: "50vw" }}
         draggable={false}
         resizable={false}
