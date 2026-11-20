@@ -9,6 +9,7 @@ interface IList {
   PMOpportunity: string;
   CRMProjects: string;
   CRMBillings: string;
+  CRMItemDetails: string;
   RejectComments: string;
   CRMProjectRisks: string;
   QuickLinks: string;

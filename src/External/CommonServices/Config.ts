@@ -40,6 +40,7 @@ export namespace Config {
     PipeLineConfig: "PipeLineConfig",
     PMOpportunity: "PMOpportunity",
     CRMBillings: "CRMBillings",
+    CRMItemDetails: "CRMItemDetails",
     RejectComments: "RejectComments",
     CRMProjectRisks: "CRMProjectRisks",
     QuickLinks: "QuickLinks",

@@ -21,6 +21,7 @@ import {
 import {
   IBasicDropDown,
   ICRMBillingsListDrop,
+  ICRMItemDetailRow,
 } from "../../../../External/CommonServices/interface";
 import { InputText } from "primereact/inputtext";
 import { DatePicker, Label, PrimaryButton } from "@fluentui/react";
@@ -28,6 +29,13 @@ import { Dropdown } from "primereact/dropdown";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Checkbox } from "primereact/checkbox";
 import Loading from "../../../../External/Loader/Loading";
+import CRMItemDetails, {
+  buildCRMItemDetailsPayload,
+  calcItemDetailsSummary,
+  calcRowAmount,
+  createEmptyItemRow,
+  saveCRMItemDetailsRows,
+} from "./CRMItemDetails";
 
 const BillingsForm = (props: any) => {
   console.log(props, "billings form props");
@@ -43,8 +51,211 @@ const BillingsForm = (props: any) => {
     {},
   );
   const [tempBillingsFormArray, setTempBillingsFormArray] = useState<any[]>([]);
+  const [itemDetailsRows, setItemDetailsRows] = useState<ICRMItemDetailRow[]>([
+    createEmptyItemRow(),
+  ]);
+  const [deletedItemDetailIds, setDeletedItemDetailIds] = useState<number[]>(
+    [],
+  );
+  const [itemDetailsFieldErrors, setItemDetailsFieldErrors] = useState<{
+    [tempId: string]: {
+      ItemDetails?: boolean;
+      Quantity?: boolean;
+      Rate?: boolean;
+    };
+  }>({});
   const [loader, setLoader] = React.useState<boolean>(false);
   console.log(tempBillingsFormArray, "tembiilingsFormArray");
+
+  const mapSPItemDetails = (items: any[]): ICRMItemDetailRow[] => {
+    if (!items?.length) return [createEmptyItemRow()];
+    return items.map((item: any) => {
+      const quantity =
+        item?.Quantity !== null && item?.Quantity !== undefined
+          ? String(item.Quantity)
+          : "";
+      const rate =
+        item?.Rate !== null && item?.Rate !== undefined
+          ? String(item.Rate)
+          : "";
+      return {
+        ID: item?.ID,
+        tempId: `sp_${item?.ID}`,
+        ItemDetails: item?.ItemDetails || "",
+        Quantity: quantity,
+        Rate: rate,
+        Discount:
+          item?.Discount !== null && item?.Discount !== undefined
+            ? String(item.Discount)
+            : "",
+        Tax: item?.Tax || "",
+        // Amount = Qty × Rate (before Discount / GST)
+        Amount: calcRowAmount(quantity, rate),
+      };
+    });
+  };
+
+  const isItemDetailsRowEmpty = (row: ICRMItemDetailRow) =>
+    !(row.ItemDetails && row.ItemDetails.trim() !== "") &&
+    !(row.Quantity && row.Quantity.toString().trim() !== "") &&
+    !(row.Rate && row.Rate.toString().trim() !== "") &&
+    !(row.Discount && row.Discount.toString().trim() !== "") &&
+    !(row.Tax && row.Tax.trim() !== "");
+
+  const isItemDetailsRowComplete = (row: ICRMItemDetailRow) =>
+    !!(row.ItemDetails && row.ItemDetails.trim() !== "") &&
+    !!(row.Quantity && row.Quantity.toString().trim() !== "") &&
+    !!(row.Rate && row.Rate.toString().trim() !== "");
+
+  // Only complete rows (Item Details + Qty + Rate) are saved / totaled
+  const getMeaningfulItemRows = (rows: ICRMItemDetailRow[]) =>
+    (rows || []).filter((row) => isItemDetailsRowComplete(row));
+
+  const loadItemDetailsByInvoiceId = (invoiceId: number) => {
+    if (!invoiceId) {
+      setItemDetailsRows([createEmptyItemRow()]);
+      setDeletedItemDetailIds([]);
+      return;
+    }
+    SPServices.SPReadItems({
+      Listname: Config.ListNames.CRMItemDetails,
+      Select: "*,InvoiceMergeID/Id",
+      Expand: "InvoiceMergeID",
+      // Omit Orderbydecorasc: SPServices formatInputs flips explicit `true` to `false`.
+      // Default (undefined) becomes ascending so ID order = creation order.
+      Orderby: "ID",
+      Filter: [
+        {
+          FilterKey: "InvoiceMergeIDId",
+          Operator: "eq",
+          FilterValue: `${invoiceId}`,
+        },
+        {
+          FilterKey: "IsDeleted",
+          Operator: "eq",
+          FilterValue: "false",
+        },
+      ],
+    })
+      .then((res: any) => {
+        // Enforce creation order (lowest ID first) regardless of service defaults
+        const sorted = [...(res || [])].sort(
+          (a: any, b: any) => (Number(a?.ID) || 0) - (Number(b?.ID) || 0),
+        );
+        setItemDetailsRows(mapSPItemDetails(sorted));
+        setDeletedItemDetailIds([]);
+      })
+      .catch((err: any) => {
+        console.log(
+          err,
+          "Get CRMItemDetails error in BillingsForm.tsx component",
+        );
+        setItemDetailsRows([createEmptyItemRow()]);
+        setDeletedItemDetailIds([]);
+      });
+  };
+
+  const handleItemDetailsChange = (rows: ICRMItemDetailRow[]) => {
+    const previousIds = (itemDetailsRows || [])
+      .map((row) => row.ID)
+      .filter((id): id is number => !!id);
+    const nextIds = new Set(
+      (rows || []).map((row) => row.ID).filter((id): id is number => !!id),
+    );
+    const newlyRemoved = previousIds.filter((id) => !nextIds.has(id));
+    if (newlyRemoved.length) {
+      setDeletedItemDetailIds((prev) => [
+        ...prev,
+        ...newlyRemoved.filter((id) => !prev.includes(id)),
+      ]);
+    }
+    setItemDetailsRows(rows);
+    // Clear only the field that now has a value. Other fields keep their errors.
+    setItemDetailsFieldErrors((prev) => {
+      if (!Object.keys(prev).length) return prev;
+      const next: typeof prev = {};
+      rows.forEach((row) => {
+        const err = prev[row.tempId];
+        if (!err) return;
+        const updated: typeof err = {};
+        if (err.ItemDetails && !(row.ItemDetails && row.ItemDetails.trim())) {
+          updated.ItemDetails = true;
+        }
+        if (
+          err.Quantity &&
+          !(row.Quantity && row.Quantity.toString().trim() !== "")
+        ) {
+          updated.Quantity = true;
+        }
+        if (err.Rate && !(row.Rate && row.Rate.toString().trim() !== "")) {
+          updated.Rate = true;
+        }
+        if (Object.keys(updated).length) {
+          next[row.tempId] = updated;
+        }
+      });
+      return next;
+    });
+  };
+
+  const saveBillingTotals = async (
+    invoiceId: number,
+    total: number,
+    taxTotal: number,
+    subTotal: number,
+    totalDiscount: number,
+  ) => {
+    if (!invoiceId) return;
+    await SPServices.SPUpdateItem({
+      Listname: Config.ListNames.CRMBillings,
+      ID: invoiceId,
+      RequestJSON: {
+        // Persist as string values (matches calculated display / text-compatible columns)
+        Total: String(Number(total ?? 0).toFixed(2)),
+        TaxTotal: String(Number(taxTotal ?? 0).toFixed(2)),
+        SubTotal: String(Number(subTotal ?? 0).toFixed(2)),
+        TotalDiscount: String(Number(totalDiscount ?? 0).toFixed(2)),
+      },
+    });
+  };
+
+  const saveItemDetailsForInvoice = async (invoiceId: number) => {
+    const rowsToSave = getMeaningfulItemRows(itemDetailsRows);
+
+    // Soft-delete removed rows (IsDeleted = true) — do not permanently delete
+    if (deletedItemDetailIds.length) {
+      await Promise.all(
+        deletedItemDetailIds.map((id) =>
+          SPServices.SPUpdateItem({
+            Listname: Config.ListNames.CRMItemDetails,
+            ID: id,
+            RequestJSON: { IsDeleted: true },
+          }),
+        ),
+      );
+    }
+
+    const existingRows = rowsToSave.filter((row) => !!row.ID);
+    const newRows = rowsToSave.filter((row) => !row.ID);
+
+    // Update existing rows
+    if (existingRows.length) {
+      await Promise.all(
+        existingRows.map((row) =>
+          SPServices.SPUpdateItem({
+            Listname: Config.ListNames.CRMItemDetails,
+            ID: row.ID as number,
+            RequestJSON: buildCRMItemDetailsPayload(row, invoiceId),
+          }),
+        ),
+      );
+    }
+
+    // Insert new rows
+    if (newRows.length) {
+      await saveCRMItemDetailsRows(newRows, invoiceId);
+    }
+  };
 
   //Get All choices from Project List:
   const getAllChoiceFromCRMBillingsList = () => {
@@ -236,6 +447,58 @@ const BillingsForm = (props: any) => {
         errors.MonthlyAmount = true;
     }
 
+    // Item Details: every started row must have Item Details, Quantity, and Rate
+    const rowFieldErrors: {
+      [tempId: string]: {
+        ItemDetails?: boolean;
+        Quantity?: boolean;
+        Rate?: boolean;
+      };
+    } = {};
+    let hasIncompleteItemRow = false;
+    (itemDetailsRows || []).forEach((row) => {
+      if (isItemDetailsRowEmpty(row)) return;
+      const fieldErr: {
+        ItemDetails?: boolean;
+        Quantity?: boolean;
+        Rate?: boolean;
+      } = {};
+      if (!(row.ItemDetails && row.ItemDetails.trim() !== "")) {
+        fieldErr.ItemDetails = true;
+      }
+      if (!(row.Quantity && row.Quantity.toString().trim() !== "")) {
+        fieldErr.Quantity = true;
+      }
+      if (!(row.Rate && row.Rate.toString().trim() !== "")) {
+        fieldErr.Rate = true;
+      }
+      if (Object.keys(fieldErr).length) {
+        rowFieldErrors[row.tempId] = fieldErr;
+        hasIncompleteItemRow = true;
+      }
+    });
+    setItemDetailsFieldErrors(rowFieldErrors);
+
+    if (hasIncompleteItemRow) {
+      props.Notify(
+        "error",
+        "Validation Error",
+        "Please fill Item Details, Quantity, and Rate for every Item Details row.",
+      );
+      errors.ItemDetails = true;
+    }
+
+    // At least one complete Item Details row is required
+    const meaningfulItemRows = getMeaningfulItemRows(itemDetailsRows);
+    if (!meaningfulItemRows.length && !hasIncompleteItemRow) {
+      props.Notify(
+        "error",
+        "Validation Error",
+        "Please add at least one Item Details row before saving the invoice.",
+      );
+      errors.ItemDetails = true;
+    }
+
     setErrorMessage(errors);
 
     if (Object.keys(errors).length === 0) {
@@ -243,10 +506,76 @@ const BillingsForm = (props: any) => {
     }
   };
 
+  // Billing Model amount used when no Item Details are provided
+  const getBillingModelAmount = (): number => {
+    const model = props?.BillingModel;
+    if (model === "Milestone") {
+      return parseFloat(String(formData?.Amount ?? "")) || 0;
+    }
+    if (model === "FixedMonthly") {
+      return parseFloat(String(formData?.MonthlyAmount ?? "")) || 0;
+    }
+    if (model === "T&M") {
+      return parseFloat(String(formData?.TMAmount ?? "")) || 0;
+    }
+    return 0;
+  };
+
+  // Calculated Item Details total shown in the Billing Model amount field
+  const itemDetailsAmountDisplay = (() => {
+    const meaningfulRows = getMeaningfulItemRows(itemDetailsRows);
+    if (!meaningfulRows.length) return "";
+    return calcItemDetailsSummary(meaningfulRows).total.toFixed(2);
+  })();
+
+  // Keep Billing Model amount field in sync with Item Details total
+  React.useEffect(() => {
+    const model = props?.BillingModel;
+    const field =
+      model === "Milestone"
+        ? "Amount"
+        : model === "FixedMonthly"
+          ? "MonthlyAmount"
+          : model === "T&M"
+            ? "TMAmount"
+            : null;
+    if (!field) return;
+    setFormData((prev: any) => {
+      if (!prev) return prev;
+      if (String(prev?.[field] ?? "") === String(itemDetailsAmountDisplay)) {
+        return prev;
+      }
+      return { ...prev, [field]: itemDetailsAmountDisplay };
+    });
+    if (itemDetailsAmountDisplay) {
+      setErrorMessage((prev) => ({ ...prev, [field]: false }));
+    }
+  }, [itemDetailsAmountDisplay, props?.BillingModel]);
+
   //Json Generations:
   const generateJson = () => {
+    const meaningfulRows = getMeaningfulItemRows(itemDetailsRows);
+    const itemSummary = calcItemDetailsSummary(meaningfulRows);
+    const hasItemDetails = meaningfulRows.length > 0;
+    // Total: Item Details final total when rows exist; otherwise Billing Model amount
+    const totalToSave = hasItemDetails
+      ? itemSummary.total
+      : getBillingModelAmount();
+    const taxTotalToSave = hasItemDetails ? itemSummary.taxValue : 0;
+    const subTotalToSave = hasItemDetails ? itemSummary.subTotal : 0;
+    const totalDiscountToSave = hasItemDetails ? itemSummary.discountValue : 0;
+    const billingAmountFromItems = hasItemDetails
+      ? itemSummary.total.toFixed(2)
+      : null;
+    // Keep CRMBillings payload aligned with existing list fields.
+    // Total/TaxTotal/SubTotal/TotalDiscount are included for the new columns; ItemDetails stays UI-only.
     let json = {
-      Amount: formData?.Amount ? formData?.Amount : 0,
+      Amount:
+        props?.BillingModel === "Milestone" && billingAmountFromItems != null
+          ? billingAmountFromItems
+          : formData?.Amount
+            ? formData?.Amount
+            : 0,
       BillingFrequency: formData?.BillingFrequency
         ? formData?.BillingFrequency
         : "",
@@ -264,12 +593,23 @@ const BillingsForm = (props: any) => {
         ? formData?.CompletionPercentage
         : null,
       MileStoneName: formData?.MileStoneName ? formData?.MileStoneName : "",
-      MonthlyAmount: formData?.MonthlyAmount ? formData?.MonthlyAmount : 0,
+      MonthlyAmount:
+        props?.BillingModel === "FixedMonthly" &&
+        billingAmountFromItems != null
+          ? billingAmountFromItems
+          : formData?.MonthlyAmount
+            ? formData?.MonthlyAmount
+            : 0,
       Notes: formData?.Notes ? formData?.Notes : "",
       ProjectId: props?.selectedProjectsData?.ID,
       Rate: formData?.Rate ? formData?.Rate : 0,
       Hours: formData?.Hours ? formData?.Hours : "",
-      TMAmount: formData?.TMAmount ? formData?.TMAmount : 0,
+      TMAmount:
+        props?.BillingModel === "T&M" && billingAmountFromItems != null
+          ? billingAmountFromItems
+          : formData?.TMAmount
+            ? formData?.TMAmount
+            : 0,
       ReminderDaysBeforeDue: formData?.ReminderDaysBeforeDue
         ? formData?.ReminderDaysBeforeDue
         : "",
@@ -281,12 +621,30 @@ const BillingsForm = (props: any) => {
         ? Config.statusReverseMap[formData?.Status] || formData?.Status
         : "",
       DummyInvoice: formData?.DummyInvoice === true,
+      Total: totalToSave,
+      TaxTotal: taxTotalToSave,
+      SubTotal: subTotalToSave,
+      TotalDiscount: totalDiscountToSave,
     };
     if (props?.isEdit) {
       handleUpdate(json);
     } else {
       handleAdd(json);
     }
+  };
+
+  // Existing CRMBillings fields only (Total/TaxTotal/SubTotal/TotalDiscount saved in a follow-up update)
+  const getCRMBillingsCoreJSON = (json: any) => {
+    const {
+      ItemDetails,
+      ID,
+      Total,
+      TaxTotal,
+      SubTotal,
+      TotalDiscount,
+      ...billingPayload
+    } = json || {};
+    return billingPayload;
   };
 
   //Add datas to CRMBillings List:
@@ -297,7 +655,15 @@ const BillingsForm = (props: any) => {
         sessionStorage.getItem("billingsData") || "[]",
       );
       const randomId = Math.floor(100000 + Math.random() * 900000);
-      const newData = { ...json, ID: randomId };
+      const newData = {
+        ...getCRMBillingsCoreJSON(json),
+        Total: json?.Total ?? 0,
+        TaxTotal: json?.TaxTotal ?? 0,
+        SubTotal: json?.SubTotal ?? 0,
+        TotalDiscount: json?.TotalDiscount ?? 0,
+        ID: randomId,
+        ItemDetails: getMeaningfulItemRows(itemDetailsRows),
+      };
       const updatedArray = [...oldData, newData];
       setTempBillingsFormArray(updatedArray);
       sessionStorage.setItem("billingsData", JSON.stringify(updatedArray));
@@ -306,15 +672,50 @@ const BillingsForm = (props: any) => {
       setLoader(false);
       props?.goBackBiilingsDashboard();
     } else {
+      // 1) Existing CRMBillings create (unchanged field set)
       SPServices.SPAddItem({
         Listname: Config.ListNames.CRMBillings,
-        RequestJSON: json,
+        RequestJSON: getCRMBillingsCoreJSON(json),
       })
-        .then((res) => {
-          props.Notify("success", "Success", "Milestone added successfully");
-          emptyDatas();
-          props?.getBillingsAddDetails(res);
-          setLoader(false);
+        .then(async (res: any) => {
+          const invoiceId = res?.data?.ID ?? res?.data?.Id;
+          try {
+            if (invoiceId) {
+              // 2) Save Total / TaxTotal / SubTotal
+              try {
+                await saveBillingTotals(
+                  invoiceId,
+                  json?.Total ?? 0,
+                  json?.TaxTotal ?? 0,
+                  json?.SubTotal ?? 0,
+                  json?.TotalDiscount ?? 0,
+                );
+              } catch (totalErr) {
+                console.log(
+                  totalErr,
+                  "Save Total/TaxTotal/SubTotal/TotalDiscount err in BillingsForm.tsx",
+                );
+              }
+              // 3) Save Item Details linked by InvoiceMergeID
+              await saveItemDetailsForInvoice(invoiceId);
+            }
+            props.Notify("success", "Success", "Milestone added successfully");
+            emptyDatas();
+            props?.getBillingsAddDetails(res);
+            setLoader(false);
+          } catch (itemErr) {
+            setLoader(false);
+            console.log(
+              itemErr,
+              "Add ItemDetails to CRMItemDetails err in BillingsForm.tsx component",
+            );
+            props.Notify(
+              "error",
+              "Error",
+              "Invoice saved, but Item Details could not be saved.",
+            );
+            emptyDatas();
+          }
         })
         .catch((err) => {
           setLoader(false);
@@ -334,7 +735,17 @@ const BillingsForm = (props: any) => {
         sessionStorage.getItem("billingsData") || "[]",
       );
       const updatedArray = oldData.map((item: any) =>
-        item.ID === formData?.ID ? { ...item, ...json } : item,
+        item.ID === formData?.ID
+          ? {
+              ...item,
+              ...getCRMBillingsCoreJSON(json),
+              Total: json?.Total ?? 0,
+              TaxTotal: json?.TaxTotal ?? 0,
+              SubTotal: json?.SubTotal ?? 0,
+              TotalDiscount: json?.TotalDiscount ?? 0,
+              ItemDetails: getMeaningfulItemRows(itemDetailsRows),
+            }
+          : item,
       );
       setTempBillingsFormArray(updatedArray);
       sessionStorage.setItem("billingsData", JSON.stringify(updatedArray));
@@ -343,18 +754,57 @@ const BillingsForm = (props: any) => {
       setLoader(false);
       props?.goBackBiilingsDashboard();
     } else {
+      // 1) Existing CRMBillings update (unchanged field set)
       SPServices.SPUpdateItem({
         Listname: Config.ListNames.CRMBillings,
-        RequestJSON: json,
+        RequestJSON: getCRMBillingsCoreJSON(json),
         ID: formData?.ID,
       })
-        .then((res) => {
-          props.Notify("success", "Success", "Milestone updated successfully");
-          emptyDatas();
-          props?.getBillingsAddDetails(res);
-          setLoader(false);
+        .then(async (res: any) => {
+          try {
+            if (formData?.ID) {
+              // 2) Save Total / TaxTotal / SubTotal
+              try {
+                await saveBillingTotals(
+                  formData.ID,
+                  json?.Total ?? 0,
+                  json?.TaxTotal ?? 0,
+                  json?.SubTotal ?? 0,
+                  json?.TotalDiscount ?? 0,
+                );
+              } catch (totalErr) {
+                console.log(
+                  totalErr,
+                  "Update Total/TaxTotal/SubTotal/TotalDiscount err in BillingsForm.tsx",
+                );
+              }
+              // 3) Sync Item Details (add/update/delete)
+              await saveItemDetailsForInvoice(formData.ID);
+            }
+            props.Notify(
+              "success",
+              "Success",
+              "Milestone updated successfully",
+            );
+            emptyDatas();
+            props?.getBillingsAddDetails(res);
+            setLoader(false);
+          } catch (itemErr) {
+            setLoader(false);
+            console.log(
+              itemErr,
+              "Update ItemDetails to CRMItemDetails err in BillingsForm.tsx component",
+            );
+            props.Notify(
+              "error",
+              "Error",
+              "Invoice updated, but Item Details could not be saved.",
+            );
+            emptyDatas();
+          }
         })
         .catch((err) => {
+          setLoader(false);
           console.log(
             err,
             "Update Datas to CRMBillings err in Billings FormPage.tsx component",
@@ -363,9 +813,51 @@ const BillingsForm = (props: any) => {
     }
   };
 
-  //RowData is once comming then data set to the state:
+  //RowData is once coming then data set to the state:
   React.useEffect(() => {
-    setFormData(props?.selectedCRMBillingsRowData);
+    if (props?.selectedCRMBillingsRowData) {
+      setFormData(props?.selectedCRMBillingsRowData);
+      if (
+        props?.projectsFormAdd &&
+        props?.selectedCRMBillingsRowData?.ItemDetails?.length
+      ) {
+        setItemDetailsRows(
+          props.selectedCRMBillingsRowData.ItemDetails.map(
+            (row: any, index: number) => ({
+              ID: row?.ID || null,
+              tempId: row?.tempId || `session_${index}_${Date.now()}`,
+              ItemDetails: row?.ItemDetails || "",
+              Quantity:
+                row?.Quantity !== null && row?.Quantity !== undefined
+                  ? String(row.Quantity)
+                  : "",
+              Rate:
+                row?.Rate !== null && row?.Rate !== undefined
+                  ? String(row.Rate)
+                  : "",
+              Discount:
+                row?.Discount !== null && row?.Discount !== undefined
+                  ? String(row.Discount)
+                  : "",
+              Tax: row?.Tax || "",
+              Amount:
+                row?.Amount !== null && row?.Amount !== undefined
+                  ? String(row.Amount)
+                  : "",
+            }),
+          ),
+        );
+        setDeletedItemDetailIds([]);
+      } else if (
+        props?.selectedCRMBillingsRowData?.ID &&
+        !props?.projectsFormAdd
+      ) {
+        loadItemDetailsByInvoiceId(props.selectedCRMBillingsRowData.ID);
+      } else {
+        setItemDetailsRows([createEmptyItemRow()]);
+        setDeletedItemDetailIds([]);
+      }
+    }
   }, [props?.selectedCRMBillingsRowData]);
 
   //Initial Render:
@@ -392,6 +884,8 @@ const BillingsForm = (props: any) => {
         Status: "Not generated invoice",
         DummyInvoice: false,
       });
+      setItemDetailsRows([createEmptyItemRow()]);
+      setDeletedItemDetailIds([]);
     }
   }, []);
   return (
@@ -400,7 +894,12 @@ const BillingsForm = (props: any) => {
         <Loading />
       ) : (
         <div
-          style={{ margin: "0px", height: "350px" }}
+          style={{
+            margin: "0px",
+            height: "auto",
+            maxHeight: "80vh",
+            overflow: "auto",
+          }}
           className={styles.viewFormMain}
         >
           <div className={styles.viewFormNavBar}>
@@ -425,7 +924,12 @@ const BillingsForm = (props: any) => {
             )}
           </div>
           <div
-            style={{ height: "30vh" }}
+            style={{
+              height: "auto",
+              maxHeight: "62vh",
+              overflow: "auto",
+              display: "block",
+            }}
             className={projectFormStyles.formPage}
           >
             <div className={projectFormStyles.fieldWraps}>
@@ -486,19 +990,9 @@ const BillingsForm = (props: any) => {
                   >
                     <Label>Amount</Label>
                     <InputText
-                      value={formData?.Amount}
-                      //   onChange={(e) => handleOnChange("Amount", e.target.value)}
-                      onChange={(e) => {
-                        const onlyNumbers = e.target.value.replace(/\D/g, "");
-                        handleOnChange("Amount", onlyNumbers);
-                      }}
-                      placeholder="Enter amount"
-                      style={
-                        errorMessage["Amount"]
-                          ? { border: "2px solid #ff0000" }
-                          : undefined
-                      }
-                      disabled={props?.isView}
+                      value={itemDetailsAmountDisplay}
+                      placeholder="Amount from Item Details"
+                      disabled
                     />
                   </div>
                 </>
@@ -581,18 +1075,9 @@ const BillingsForm = (props: any) => {
                   >
                     <Label>Monthly amount</Label>
                     <InputText
-                      value={formData?.MonthlyAmount}
-                      onChange={(e) => {
-                        const onlyNumbers = e.target.value.replace(/\D/g, "");
-                        handleOnChange("MonthlyAmount", onlyNumbers);
-                      }}
-                      placeholder="Enter Monthly amount"
-                      style={
-                        errorMessage["MonthlyAmount"]
-                          ? { border: "2px solid #ff0000" }
-                          : undefined
-                      }
-                      disabled={props?.isView}
+                      value={itemDetailsAmountDisplay}
+                      placeholder="Amount from Item Details"
+                      disabled
                     />
                   </div>
                 </>
@@ -738,7 +1223,11 @@ const BillingsForm = (props: any) => {
                     className={`${projectFormStyles.allField} dealFormPage`}
                   >
                     <Label>Amount</Label>
-                    <InputText value={formData?.TMAmount || ""} disabled />
+                    <InputText
+                      value={itemDetailsAmountDisplay}
+                      placeholder="Amount from Item Details"
+                      disabled
+                    />
                   </div>
                 </>
               )}
@@ -859,6 +1348,14 @@ const BillingsForm = (props: any) => {
                 />
               </div>
             </div>
+            <CRMItemDetails
+              rows={itemDetailsRows}
+              onChange={handleItemDetailsChange}
+              isView={props?.isView}
+              billingModel={props?.BillingModel}
+              Notify={props?.Notify}
+              fieldErrors={itemDetailsFieldErrors}
+            />
           </div>
           <div className={styles.addUpdateBtns}>
             <PrimaryButton

@@ -115,6 +115,25 @@ export interface IBillingsDetails {
   ProjectId: number;
 }
 
+//CRMItemDetails List Interface:
+export interface ICRMItemDetailRow {
+  ID?: number | null;
+  tempId: string;
+  ItemDetails: string;
+  Quantity: string;
+  Rate: string;
+  Discount: string;
+  Tax: string;
+  Amount: string;
+}
+
+export interface ICRMItemDetailsSummary {
+  subTotal: number;
+  discountValue: number;
+  taxValue: number;
+  total: number;
+}
+
 //Project Risks Details Interface:
 export interface IProjectRisksDetails {
   ID: number;
