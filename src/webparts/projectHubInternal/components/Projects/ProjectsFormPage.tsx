@@ -40,6 +40,10 @@ import {
 } from "../../../../External/CommonServices/interface";
 import { sp } from "@pnp/sp";
 import Billings from "../Billings/Billings";
+import {
+  calcItemDetailsSummary,
+  saveCRMItemDetailsRows,
+} from "../Billings/CRMItemDetails";
 import { InputTextarea } from "primereact/inputtextarea";
 import { FileUpload } from "primereact/fileupload";
 import Loading from "../../../../External/Loader/Loading";
@@ -106,9 +110,9 @@ const convertBudgetToUSD = (amount: number, currency: string): number => {
 };
 
 const ProjectFormPage = (props: any) => {
-  // const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
-  const TARGET_SITE_URL =
-    "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
+  const TARGET_SITE_URL = "https://chandrudemo.sharepoint.com/sites/RupuTest";
+  // const TARGET_SITE_URL =
+  //   "https://technorucs365.sharepoint.com/sites/FinanceActivityPlanner";
 
   //Local States:
   const [leadOptions, setLeadOptions] = useState<IBasicDropDown[]>([]);
@@ -843,10 +847,14 @@ const ProjectFormPage = (props: any) => {
 
     if (Object.keys(errors).length > 0) return;
 
+    const sessionBillingsCheck: any[] = JSON.parse(
+      sessionStorage.getItem("billingsData") || "[]",
+    );
     if (
       formData?.BillingModel !== "" &&
       (!billingsListData || billingsListData.length === 0) &&
-      (billingsData.length === 0 || !billingsData)
+      (billingsData.length === 0 || !billingsData) &&
+      sessionBillingsCheck.length === 0
     ) {
       props.Notify(
         "error",
@@ -1076,18 +1084,129 @@ const ProjectFormPage = (props: any) => {
       }
 
       // 2. Billings add logic
-      if (billingsData?.length > 0 && projectId && props?.isAdd) {
-        for (const bill of billingsData) {
-          const billingJson = {
-            ...bill,
-            ID: null,
+      // Prefer sessionStorage (source of truth from BillingsForm during project create)
+      const sessionBillings: any[] = JSON.parse(
+        sessionStorage.getItem("billingsData") || "[]",
+      );
+      const billsToSave =
+        sessionBillings?.length > 0 ? sessionBillings : billingsData || [];
+
+      if (billsToSave?.length > 0 && projectId && props?.isAdd) {
+        for (const bill of billsToSave) {
+          // Existing CRMBillings payload only (do not include ItemDetails / Total / TaxTotal here)
+          const billingJson: any = {
+            Amount: bill?.Amount ? bill?.Amount : 0,
+            BillingFrequency: bill?.BillingFrequency
+              ? bill?.BillingFrequency
+              : "",
+            Currency: bill?.Currency ? bill?.Currency : "",
+            DueDate: bill?.DueDate ? bill?.DueDate : null,
+            EndMonth: bill?.EndMonth ? bill?.EndMonth : null,
+            MileStoneDescription: bill?.MileStoneDescription
+              ? bill?.MileStoneDescription
+              : "",
+            CompletionPercentage: bill?.CompletionPercentage
+              ? bill?.CompletionPercentage
+              : null,
+            MileStoneName: bill?.MileStoneName ? bill?.MileStoneName : "",
+            MonthlyAmount: bill?.MonthlyAmount ? bill?.MonthlyAmount : 0,
+            Notes: bill?.Notes ? bill?.Notes : "",
             ProjectId: projectId,
+            Rate: bill?.Rate ? bill?.Rate : 0,
+            Hours: bill?.Hours ? bill?.Hours : "",
+            TMAmount: bill?.TMAmount ? bill?.TMAmount : 0,
+            ReminderDaysBeforeDue: bill?.ReminderDaysBeforeDue
+              ? bill?.ReminderDaysBeforeDue
+              : "",
+            ResourceType: bill?.ResourceType ? bill?.ResourceType : "",
+            StartMonth: bill?.StartMonth ? bill?.StartMonth : null,
+            Status: bill?.Status ? bill?.Status : "",
+            DummyInvoice: bill?.DummyInvoice === true,
           };
+          const itemDetailsRows = Array.isArray(bill?.ItemDetails)
+            ? bill.ItemDetails
+            : [];
+          const hasItemDetails = itemDetailsRows.length > 0;
+          const summaryFromRows = calcItemDetailsSummary(itemDetailsRows);
+          // Total: Item Details final total when rows exist; otherwise Billing Model amount
+          const billingModelAmount =
+            formData?.BillingModel === "Milestone"
+              ? parseFloat(String(bill?.Amount ?? "")) || 0
+              : formData?.BillingModel === "FixedMonthly"
+                ? parseFloat(String(bill?.MonthlyAmount ?? "")) || 0
+                : formData?.BillingModel === "T&M"
+                  ? parseFloat(String(bill?.TMAmount ?? "")) || 0
+                  : 0;
+          const totalValue = hasItemDetails
+            ? bill?.Total != null && bill?.Total !== ""
+              ? Number(bill.Total)
+              : summaryFromRows.total
+            : billingModelAmount;
+          const taxTotalValue = hasItemDetails
+            ? bill?.TaxTotal != null && bill?.TaxTotal !== ""
+              ? Number(bill.TaxTotal)
+              : summaryFromRows.taxValue
+            : 0;
+          const subTotalValue = hasItemDetails
+            ? bill?.SubTotal != null && bill?.SubTotal !== ""
+              ? Number(bill.SubTotal)
+              : summaryFromRows.subTotal
+            : 0;
+          const totalDiscountValue = hasItemDetails
+            ? bill?.TotalDiscount != null && bill?.TotalDiscount !== ""
+              ? Number(bill.TotalDiscount)
+              : summaryFromRows.discountValue
+            : 0;
+
           try {
-            await SPServices.SPAddItem({
+            // 1) Existing CRMBillings save
+            const billingRes: any = await SPServices.SPAddItem({
               Listname: Config.ListNames.CRMBillings,
               RequestJSON: billingJson,
             });
+            const invoiceId =
+              billingRes?.data?.ID ?? billingRes?.data?.Id ?? null;
+
+            if (invoiceId) {
+              // 2) Save Total / TaxTotal / SubTotal / TotalDiscount on the created invoice
+              try {
+                await SPServices.SPUpdateItem({
+                  Listname: Config.ListNames.CRMBillings,
+                  ID: invoiceId,
+                  RequestJSON: {
+                    Total: String(Number(totalValue || 0).toFixed(2)),
+                    TaxTotal: String(Number(taxTotalValue || 0).toFixed(2)),
+                    SubTotal: String(Number(subTotalValue || 0).toFixed(2)),
+                    TotalDiscount: String(
+                      Number(totalDiscountValue || 0).toFixed(2),
+                    ),
+                  },
+                });
+              } catch (totalErr) {
+                console.error(
+                  "Error saving Total/TaxTotal/SubTotal/TotalDiscount:",
+                  totalErr,
+                );
+              }
+
+              // 3) Save Item Details linked via InvoiceMergeID
+              if (itemDetailsRows.length > 0) {
+                try {
+                  await saveCRMItemDetailsRows(itemDetailsRows, invoiceId);
+                } catch (itemErr: any) {
+                  console.error("Error adding CRMItemDetails:", itemErr);
+                  props.Notify?.(
+                    "error",
+                    "Error",
+                    `Invoice saved, but Item Details could not be saved: ${
+                      itemErr?.message ||
+                      "Check CRMItemDetails list fields / InvoiceMergeID lookup."
+                    }`,
+                  );
+                }
+              }
+            }
+
             setIsApproval({
               boolean: true,
               id: projectId,

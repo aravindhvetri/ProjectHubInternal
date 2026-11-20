@@ -30,6 +30,22 @@ const MainComponent = (props: any) => {
       detail: msg,
       life: 3000,
     });
+    // PrimeReact shares one z-index stack. A dialog opened after an earlier
+    // toast is placed above that toast. Lift this toast above any open mask
+    // after ZIndexUtils has written its inline z-index.
+    window.setTimeout(() => {
+      const toastEl = document.querySelector(".p-toast") as HTMLElement | null;
+      if (!toastEl) return;
+      let maxDialogZ = 0;
+      document.querySelectorAll(".p-dialog-mask").forEach((node) => {
+        const z = parseInt(window.getComputedStyle(node).zIndex, 10);
+        if (!Number.isNaN(z) && z > maxDialogZ) maxDialogZ = z;
+      });
+      const toastZ = parseInt(window.getComputedStyle(toastEl).zIndex, 10) || 0;
+      if (maxDialogZ >= toastZ) {
+        toastEl.style.setProperty("z-index", String(maxDialogZ + 2), "important");
+      }
+    }, 0);
   };
 
   const PageNavigation = (pageName: string) => {
@@ -52,7 +68,6 @@ const MainComponent = (props: any) => {
             ref={toast}
             position="top-right"
             appendTo={typeof document !== "undefined" ? document.body : null}
-            baseZIndex={100000}
           />
           {pageName === "Projects" ? (
             <div>
