@@ -9,6 +9,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import SPServices from "../../../../External/CommonServices/SPServices";
 import { Config } from "../../../../External/CommonServices/Config";
 import * as moment from "moment";
@@ -60,6 +61,7 @@ const Billings = (props: any) => {
   });
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [loader, setLoader] = React.useState<boolean>(false);
+  const [raisingInvoice, setRaisingInvoice] = React.useState<boolean>(false);
   const [isFormModalOpen, setIsFormModalOpen] = React.useState(false);
 
   //Get BillingsListDetails:
@@ -214,7 +216,9 @@ const Billings = (props: any) => {
     const projectManager = props?.data?.ProjectManager?.find(
       (user: any) => user?.email === props?.loginUserEmail,
     );
-    SPServices.SPUpdateItem({
+    setRaisingInvoice(true);
+    const minLoader = new Promise((resolve) => window.setTimeout(resolve, 3000));
+    const raiseInvoice = SPServices.SPUpdateItem({
       Listname: Config.ListNames?.CRMBillings,
       ID: Id,
       RequestJSON: {
@@ -222,12 +226,15 @@ const Billings = (props: any) => {
         Status: "1",
         InvoiceProjectManager: projectManager?.email,
       },
-    })
+    });
+    Promise.all([minLoader, raiseInvoice])
       .then(() => {
+        setRaisingInvoice(false);
         props?.Notify("success", "Success", "Invoice raised successfully");
         getBillingsListDetails();
       })
       .catch((err: any) => {
+        setRaisingInvoice(false);
         console.log(err, "Invoice trigger error in Billings.tsx component");
       });
   };
@@ -275,6 +282,13 @@ const Billings = (props: any) => {
 
   return (
     <>
+      {raisingInvoice &&
+        ReactDOM.createPortal(
+          <div className="invoiceRaiseOverlay">
+            <Loading />
+          </div>,
+          document.body,
+        )}
       {loader ? (
         <Loading />
       ) : (
