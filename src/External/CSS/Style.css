@@ -4,6 +4,11 @@
 .ms-HubNav {
   display: none !important;
 }
+.ms-Fabric {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
 
 .content_3f3fd3c2,
 .CanvasZone {
@@ -529,15 +534,48 @@ h4 {
   font-size: 12px !important;
 }
 
-/* Toast position only. Do not set z-index here — a fixed !important value
-   overrides PrimeReact ZIndexUtils and leaves the toast under the dialog mask. */
+/* Sit below the SharePoint header. top: 2px plus the enter translateY
+   animation slides the toast up under the suite bar until it is hidden. */
 .p-toast {
-  top: 2px !important;
+  top: 64px !important;
   right: 4px !important;
+}
+
+.p-toast .p-toast-message.p-toast-message-enter,
+.p-toast .p-toast-message.p-toast-message-enter-active,
+.p-toast .p-toast-message.p-toast-message-enter-done {
+  transform: none;
 }
 
 .p-toast .p-toast-message {
   margin: 0 0 1rem 0;
+}
+
+/* Full-page overlay for the invoice raise loader. The shared spinner is
+   position:absolute, so inside the form it anchors off-screen. */
+.invoiceRaiseOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.invoiceRaiseOverlay .shapeCenter {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.invoiceRaiseOverlay .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
 }
 
 /* Tostify */
